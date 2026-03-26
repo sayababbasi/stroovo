@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -9,7 +10,10 @@ interface User {
     name: string;
     email: string;
     role: string;
+    title?: string;
+    contact?: string;
     image?: string;
+    organizationId?: string;
 }
 
 interface AuthContextType {
@@ -26,6 +30,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -103,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
             setUser(null);
             setAccessToken(null);
+            router.push('/login');
         }
     };
 

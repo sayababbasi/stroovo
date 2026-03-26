@@ -2,12 +2,14 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect') || '/';
+    const { login: authLogin } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -17,17 +19,10 @@ function LoginForm() {
         e.preventDefault();
         setError('');
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
         try {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                setError(data.error || 'Login failed');
+            const result = await authLogin(email.trim().toLowerCase(), password);
+            if (!result.success) {
+                setError(result.error || 'Login failed');
                 setLoading(false);
                 return;
             }

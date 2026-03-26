@@ -10,31 +10,37 @@ import {
     BarChart2,
     Calendar,
     Target,
-    Map as MapIcon,
-    Zap,
+    Milestone,
+    ListTodo,
     FolderKanban,
     Star,
     Clock,
-    Users,
-    MessageSquare,
-    FileText,
-    Activity,
-    PieChart,
+    Network,
+    Palette,
+    Megaphone,
+    BrainCircuit,
+    MessageSquareMore,
+    FolderTree,
+    History,
+    FileBarChart2,
     TrendingUp,
+    PieChart,
     Timer,
-    Bot,
-    Lightbulb,
-    AlertTriangle,
+    Sparkles,
+    Zap,
+    ShieldAlert,
     Bell,
     Puzzle,
     UserCog,
     HelpCircle,
-    LogOut,
     ChevronDown,
     ChevronRight,
-    Settings
+    Settings,
+    LogOut,
+    Bot
 } from 'lucide-react';
 import { Project } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
 interface NavItem {
@@ -55,6 +61,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { user, logout } = useAuth();
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Workflow', 'Projects']));
     const [projects, setProjects] = useState<Project[]>([]);
 
@@ -65,13 +72,18 @@ export default function Sidebar() {
                     cache: 'no-store'
                 });
                 if (res.ok) {
-                    const data = await res.json();
-                    const uniqueProjects = Array.isArray(data) ? data.reduce((acc: Project[], current: Project) => {
-                        const x = acc.find(item => item.id === current.id);
-                        if (!x) return acc.concat([current]);
-                        else return acc;
-                    }, []) : [];
-                    setProjects(uniqueProjects);
+                    const text = await res.text();
+                    try {
+                        const data = JSON.parse(text);
+                        const uniqueProjects = Array.isArray(data) ? data.reduce((acc: Project[], current: Project) => {
+                            const x = acc.find(item => item.id === current.id);
+                            if (!x) return acc.concat([current]);
+                            else return acc;
+                        }, []) : [];
+                        setProjects(uniqueProjects);
+                    } catch (e) {
+                        console.error('Navbar projects fetch returned invalid JSON:', text.substring(0, 50));
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch sidebar projects:', err);
@@ -99,12 +111,15 @@ export default function Sidebar() {
                 { name: 'Board', href: '/board', icon: Trello },
                 { name: 'Timeline', href: '/timeline', icon: BarChart2 },
                 { name: 'Calendar', href: '/calendar', icon: Calendar },
+                { name: 'Teams', href: '/teams', icon: Network },
             ]
         },
         {
             title: 'Planning',
             items: [
                 { name: 'Goals', href: '/goals', icon: Target },
+                { name: 'Roadmap', href: '/roadmap', icon: Milestone },
+                { name: 'Sprint Planning', href: '/sprint-planning', icon: ListTodo },
             ]
         },
         {
@@ -115,34 +130,54 @@ export default function Sidebar() {
                 {
                     name: 'Starred',
                     icon: Star,
-                    children: starredProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` }))
+                    children: starredProjects.length > 0 ? starredProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` })) : [
+                        { id: 'p1', name: 'Quantum UI Overhaul', href: '#' },
+                        { id: 'p2', name: 'Edge Migration', href: '#' }
+                    ]
                 },
                 {
                     name: 'Recent',
                     icon: Clock,
-                    children: recentProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` }))
+                    children: recentProjects.length > 0 ? recentProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` })) : [
+                        { id: 'r1', name: 'Sprint Planning 2026', href: '#' },
+                        { id: 'r2', name: 'APAC Market Share', href: '#' }
+                    ]
                 },
+            ]
+        },
+        {
+            title: 'Teams',
+            items: [
+                { name: 'My Team', href: '/teams/my-team', icon: Network },
+                { name: 'Core Development', href: '/teams/core', icon: Network },
+                { name: 'Design Systems', href: '/teams/design', icon: Palette },
+                { name: 'Marketing Team', href: '/teams/marketing', icon: Megaphone },
+                { name: 'AI Research Team', href: '/teams/ai', icon: BrainCircuit },
             ]
         },
         {
             title: 'Collaboration',
             items: [
-                { name: 'Messages', href: '/messages', icon: MessageSquare, badge: '3' },
-                { name: 'Files', href: '/files', icon: FileText },
-                { name: 'Feed', href: '/activity', icon: Activity },
+                { name: 'Messages', href: '/messages', icon: MessageSquareMore },
+                { name: 'Files', href: '/files', icon: FolderTree },
+                { name: 'Activity', href: '/activity', icon: History },
             ]
         },
         {
             title: 'Analytics',
             items: [
-                { name: 'Reports', href: '/reports', icon: PieChart },
+                { name: 'Reports', href: '/reports', icon: FileBarChart2 },
                 { name: 'Productivity', href: '/analytics/productivity', icon: TrendingUp },
+                { name: 'Workload', href: '/analytics/workload', icon: PieChart },
+                { name: 'Time Tracking', href: '/analytics/time', icon: Timer },
             ]
         },
         {
             title: 'AI & Automation',
             items: [
-                { name: 'Workflow AI', href: '/ai', icon: Bot, badge: 'Beta' },
+                { name: 'Workflow AI', href: '/ai/assistant', icon: Bot, badge: 'Beta' },
+                { name: 'Smart Suggestions', href: '/ai/suggestions', icon: Zap },
+                { name: 'Risk Alerts', href: '/ai/alerts', icon: ShieldAlert },
             ]
         },
     ];
@@ -261,11 +296,52 @@ export default function Sidebar() {
                 </div>
                 <nav className={styles.nav}>
                     {settingsItems.map((item) => renderNavItem(item))}
-                    <div className={styles.navItem} style={{ color: '#FF5630', cursor: 'pointer' }}>
+                    <div 
+                        className={styles.navItem} 
+                        style={{ color: '#FF5630', cursor: 'pointer' }}
+                        onClick={() => logout()}
+                    >
                         <LogOut size={16} />
                         <span>Logout</span>
                     </div>
                 </nav>
+            </div>
+
+            {/* Fixed User Profile */}
+            <div className={styles.userProfileWrapper}>
+                <div className={styles.userProfileCard}>
+                    <div className={styles.userAvatarWrapper}>
+                        {user?.image ? (
+                            <img 
+                                src={user.image} 
+                                alt={user.name} 
+                                className={styles.userAvatar}
+                            />
+                        ) : (
+                            <div className={styles.userAvatar} style={{ 
+                                background: '#DFE1E6', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                color: '#172B4D',
+                                fontWeight: 600,
+                                fontSize: '14px'
+                            }}>
+                                {user?.name?.charAt(0) || 'U'}
+                            </div>
+                        )}
+                        <div className={styles.onlineStatusDot} />
+                    </div>
+                    <div className={styles.userInfo}>
+                        <div className={styles.userName}>{user?.name || 'Guest User'}</div>
+                        <div className={styles.userRole}>{user?.title || user?.role || 'Member'}</div>
+                        <div className={styles.statusIndicator}>
+                            <div className={styles.smallOnlineDot} />
+                            <span>Online</span>
+                        </div>
+                    </div>
+                    <ChevronRight size={14} className={styles.profileChevron} />
+                </div>
             </div>
         </aside>
     );

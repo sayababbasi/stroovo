@@ -1,19 +1,17 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
   ADMIN
   PROJECT_MANAGER
   TEAM_MEMBER
-  GUEST
+  USER
 }
 
 enum TaskStatus {
@@ -32,36 +30,116 @@ enum TaskPriority {
   URGENT
 }
 
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  teams       Team[]
+  projects    Project[]
+  goals       Goal[]
+  tasks       Task[]
+  cycles      Cycle[]
+  activityLogs ActivityLog[]
+  subscription Subscription?
+}
+
+model Team {
+  id             String        @id @default(cuid())
+  name           String
+  description    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+
+  members        User[]        @relation("TeamMembers")
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   password      String
   role          Role      @default(TEAM_MEMBER)
+  title         String?
+  contact       String?
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  
+  teams          Team[]        @relation("TeamMembers")
 
   managedProjects Project[] @relation("ProjectManager")
   tasks         Task[]    @relation("TaskAssignee")
   comments      Comment[]
   goals         Goal[]    @relation("GoalOwner")
+  activityLogs  ActivityLog[]
+}
+
+model Cycle {
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  goals       Goal[]
 }
 
 model Goal {
   id          String   @id @default(cuid())
   title       String
   description String?
-  status      String   @default("ON TRACK") // ON TRACK, AT RISK, OFF TRACK
+  status      String   @default("ON_TRACK") // ON_TRACK, AT_RISK, OFF_TRACK
   progress    Int      @default(0)
   targetDate  DateTime?
+  type        String   @default("COMPANY") // COMPANY, TEAM
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
 
   ownerId     String
   owner       User     @relation("GoalOwner", fields: [ownerId], references: [id])
   
+  cycleId     String?
+  cycle       Cycle?   @relation(fields: [cycleId], references: [id])
+
+  parentId    String?
+  parent      Goal?    @relation("GoalHierarchy", fields: [parentId], references: [id])
+  subGoals    Goal[]   @relation("GoalHierarchy")
+
   projects    Project[]
+  keyResults  KeyResult[]
+}
+
+model KeyResult {
+  id           String   @id @default(cuid())
+  title        String
+  initialValue Float    @default(0)
+  currentValue Float    @default(0)
+  targetValue  Float
+  unit         String   @default("NUMBER") // CURRENCY, NUMBER, PERCENTAGE
+  weight       Float    @default(1.0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  goalId       String
+  goal         Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
 }
 
 model Project {
@@ -71,8 +149,13 @@ model Project {
   startDate   DateTime @default(now())
   endDate     DateTime?
   status      String   @default("ACTIVE")
+  progress    Int      @default(0)
+  isStarred   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
 
   managerId   String
   manager     User     @relation("ProjectManager", fields: [managerId], references: [id])
@@ -90,11 +173,14 @@ model Task {
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   type        String       @default("TASK") // TASK, BUG, STORY, FEATURE
-  startDate   DateTime     @default(now())
+  startDate   DateTime?    @default(now())
   dueDate     DateTime?
   progress    Int          @default(0)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
 
   projectId   String
   project     Project      @relation(fields: [projectId], references: [id])
@@ -102,11 +188,13 @@ model Task {
   assigneeId  String?
   assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
 
-  // Hierarchical Tasks
   parentId    String?
   parent      Task?        @relation("SubTasks", fields: [parentId], references: [id])
   subTasks    Task[]       @relation("SubTasks")
-
+  
+  dependencies Task[]      @relation("TaskDependencies")
+  dependents   Task[]      @relation("TaskDependencies")
+  
   comments    Comment[]
   files       TaskFile[]
 }
@@ -134,6 +222,34 @@ model TaskFile {
 
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  plan      String   @default("FREE")
+  status    String   @default("ACTIVE")
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenantId  String   @unique
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model Event {

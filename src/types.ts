@@ -35,11 +35,18 @@ export interface Task {
         id?: string;
         name: string;
     };
-    assigneeId?: string;
+    assigneeId?: string | null;
     assignee?: {
         id?: string;
         name: string | null;
         image?: string | null;
     } | null;
-    subTasks?: any[];
+    subTasks?: Task[];
+    comments?: any[];
+    files?: any[];
+    _count?: {
+        comments?: number;
+        files?: number;
+        subTasks?: number;
+    };
 }

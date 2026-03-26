@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import {
     Plus,
@@ -12,25 +12,12 @@ import {
     Flag,
     AlertCircle,
     ChevronDown,
-    X
+    X,
+    Search
 } from 'lucide-react';
-import { useCallback } from 'react';
+import KanbanBoard from '@/components/KanbanBoard';
+import { Task, Project } from '@/types';
 
-interface Task {
-    id: string;
-    title: string;
-    status: string;
-    priority: string;
-    type: string;
-    progress: number;
-    dueDate: string | null;
-    projectId?: string;
-    project: { name: string };
-    assigneeId?: string | null;
-    assignee: { name: string | null } | null;
-}
-
-interface Project { id: string; name: string; }
 interface User { id: string; name: string | null; email: string; }
 
 const statusColumns = [
@@ -57,6 +44,21 @@ export default function BoardPage() {
     const [filterPriority, setFilterPriority] = useState<string>('');
     const [groupBy, setGroupBy] = useState<'none' | 'project' | 'status' | 'assignee'>('none');
     const [groupByOpen, setGroupByOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            
+            if (e.key === '/') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Modal States
     const [modalOpen, setModalOpen] = useState(false);
@@ -179,23 +181,32 @@ export default function BoardPage() {
     };
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
+        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#ffffff' }}>
             <Sidebar />
 
             <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <style>{`
-                    .kanban-column-scroll::-webkit-scrollbar { display: none; }
-                    .kanban-column-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-                    *::-webkit-scrollbar { display: none; }
-                    * { -ms-overflow-style: none; scrollbar-width: none; }
-                    body { overflow: hidden !important; }
+                    body { overflow: hidden !important; margin: 0; }
+                    .board-search-bar:focus-within { background: #FFFFFF !important; border-color: #4C9AFF !important; box-shadow: 0 0 0 2px rgba(76, 154, 255, 0.15) !important; }
                 `}</style>
 
                 {/* Header */}
-                <div style={{ padding: '20px 40px', borderBottom: '1px solid #DFE1E6', background: '#FFFFFF' }}>
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e3e6ee', background: '#FFFFFF' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#172B4D' }}>Tasks Board</h1>
+                            <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#172B4D', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>Tasks Board</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#f1f3f7', borderRadius: '8px', padding: '6px 12px', width: '280px', border: '1px solid transparent', transition: 'all 0.2s', marginLeft: '12px' }} className="board-search-bar">
+                                <Search size={16} color="#8993A4" />
+                                <input 
+                                    ref={searchInputRef}
+                                    type="text" 
+                                    placeholder="Search tasks..." 
+                                    style={{ border: 'none', background: 'transparent', outline: 'none', padding: '4px 8px', fontSize: '14px', width: '100%' }}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <span style={{ fontSize: '12px', color: '#8993A4', background: '#EBECF0', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>/</span>
+                            </div>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                             <div style={{ display: 'flex', marginRight: '8px', alignItems: 'center' }}>
@@ -275,75 +286,44 @@ export default function BoardPage() {
                                 )}
                             </div>
 
-                            <button onClick={openCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0052CC', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
-                                <Plus size={16} /> Add new
+                            <button onClick={openCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '6px', border: '1px solid #0052CC', background: '#0052CC', color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                <Plus size={16} /> New Task <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>N</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Board Content */}
-                <div style={{ flex: 1, padding: '24px 40px', display: 'flex', gap: '16px', minHeight: '0', overflow: 'hidden' }}>
-                    {statusColumns.map((column) => {
-                        const Icon = column.icon;
-                        const columnTasks = getTasksByStatus(column.key);
-
-                        return (
-                            <div
-                                key={column.key}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    const taskId = e.dataTransfer.getData('taskId');
-                                    if (taskId) handleTaskDrop(taskId, column.key);
-                                }}
-                                style={{
-                                    flex: 1,
-                                    minWidth: '0',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    background: '#F4F5F7',
-                                    borderRadius: '8px',
-                                    border: '1px solid #DFE1E6',
-                                    maxHeight: '100%'
-                                }}
-                            >
-                                <div style={{ padding: '12px 16px', borderBottom: '1px solid #DFE1E6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FFFFFF', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Icon size={16} color={column.color} />
-                                        <span style={{ fontWeight: 600, fontSize: '14px', color: '#172B4D' }}>{column.label}</span>
-                                        <span style={{ background: '#DFE1E6', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, color: '#42526E' }}>{columnTasks.length}</span>
-                                    </div>
-                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B778C' }}><MoreHorizontal size={16} /></button>
-                                </div>
-
-                                <div className="kanban-column-scroll" style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
-                                    {columnTasks.map((task) => (
-                                        <div
-                                            key={task.id}
-                                            draggable
-                                            onDragStart={(e) => { e.dataTransfer.setData('taskId', task.id); e.currentTarget.style.opacity = '0.5'; }}
-                                            onDragEnd={(e) => { e.currentTarget.style.opacity = '1'; }}
-                                            style={{ background: '#FFFFFF', border: '1px solid #DFE1E6', borderRadius: '6px', padding: '12px', cursor: 'grab', boxShadow: '0 1px 3px rgba(9,30,66,0.08)' }}
-                                        >
-                                            <div style={{ marginBottom: '8px' }}>
-                                                <span style={{ padding: '2px 8px', borderRadius: '3px', fontSize: '11px', fontWeight: 600, background: task.type === 'BUG' ? '#FFEBE6' : task.type === 'STORY' ? '#EAE6FF' : '#DEEBFF', color: task.type === 'BUG' ? '#BF2600' : task.type === 'STORY' ? '#403294' : '#0747A6' }}>{task.type}</span>
-                                            </div>
-                                            <h4 style={{ fontSize: '13px', fontWeight: 500, marginBottom: '12px', lineHeight: 1.4 }}>{task.title}</h4>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div style={{ display: 'flex', gap: '8px', color: '#6B778C', fontSize: '12px', alignItems: 'center' }}>
-                                                    {task.dueDate && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12} />{new Date(task.dueDate).toLocaleDateString()}</span>}
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MessageSquare size={12} />0</span>
-                                                </div>
-                                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: getAvatarColor(task.assignee?.name), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700 }}>{task.assignee?.name?.[0] || 'U'}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button onClick={openCreateModal} style={{ width: '100%', padding: '10px', background: 'transparent', border: '1px dashed #DFE1E6', borderRadius: '6px', color: '#6B778C', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Plus size={14} />Add task</button>
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                    <KanbanBoard 
+                        tasks={filteredTasks}
+                        onTaskUpdate={handleTaskDrop}
+                        onAddTask={(status) => {
+                            setFormStatus(status);
+                            openCreateModal();
+                        }}
+                        onEditTask={(task) => {
+                            // Logic to open edit modal if we had one here, 
+                            // for now we'll just use the create modal with existing task data
+                            // (Board page seems to mostly handle creation)
+                            setFormTitle(task.title);
+                            setFormProjectId(task.projectId || '');
+                            setFormStatus(task.status);
+                            setFormPriority(task.priority);
+                            setFormType(task.type || 'TASK');
+                            setFormAssigneeId(task.assigneeId || '');
+                            setFormDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+                            setModalOpen(true);
+                        }}
+                        onDeleteTask={async (task) => {
+                            if (!confirm(`Delete "${task.title}"?`)) return;
+                            try {
+                                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+                                await fetch(`${API_URL}/api/tasks/${task.id}`, { method: 'DELETE' });
+                                fetchTasks();
+                            } catch (err) { console.error(err); }
+                        }}
+                    />
                 </div>
 
                 {/* Modal */}

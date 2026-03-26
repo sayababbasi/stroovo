@@ -2,27 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AdminDashboard from '@/components/dashboards/admin/AdminDashboard';
+import ExecutiveDashboard from '@/components/dashboards/executive/ExecutiveDashboard';
+import ManagerDashboard from '@/components/dashboards/manager/ManagerDashboard';
+import EmployeeDashboard from '@/components/dashboards/employee/EmployeeDashboard';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  Target,
-  BarChart2,
-  ListTodo,
-  Zap,
-  CheckCircle2,
-  AlertTriangle,
-  Activity,
-  Users
+  Target, BarChart2, ListTodo, Zap, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-export default function DashboardPage() {
+// We pull the old default view into a Generic Workspace Dashboard component for now
+function GenericDashboard({ user }: { user: any }) {
   const [stats, setStats] = useState({
-    goals: 0,
-    projects: 0,
-    tasks: 0,
-    completed: 0,
-    blocked: 0,
-    inProgress: 0
+    goals: 0, projects: 0, tasks: 0, completed: 0, blocked: 0, inProgress: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -70,84 +64,68 @@ export default function DashboardPage() {
   ];
 
   return (
+    <div style={{ padding: '24px 32px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#172B4D' }}>
+          Welcome back, {user?.name?.split(' ')[0] || 'User'}
+        </h1>
+        <p style={{ fontSize: '16px', color: '#6B778C', marginTop: '8px' }}>Here's what your focus looks like today.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
+        {statCards.map((stat, i) => (
+          <div key={i} style={{
+            background: 'white', borderRadius: '8px', border: '1px solid #DFE1E6', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
+          }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#6B778C', marginBottom: '8px' }}>{stat.title}</div>
+              <div style={{ fontSize: '32px', fontWeight: 700, color: '#172B4D' }}>
+                {loading ? '...' : stat.value}
+              </div>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: stat.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <stat.icon size={22} color={stat.color} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardContainer() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F4F5F7' }}>Loading...</div>;
+  }
+
+  // Dynamic role-based rendering (Competitor Standard)
+  const renderDashboard = () => {
+    if (!user) return <GenericDashboard user={null} />;
+    
+    switch (user.role) {
+      case 'ADMIN':
+        if (user.email === 'ceo@revoticai.com') return <ExecutiveDashboard user={user} />;
+        return <AdminDashboard user={user} />;
+      case 'CEO':
+        return <ExecutiveDashboard user={user} />;
+      case 'MANAGER':
+      case 'PROJECT_MANAGER':
+        return <ManagerDashboard user={user} />;
+      case 'EMPLOYEE':
+      case 'TEAM_MEMBER':
+        return <EmployeeDashboard user={user} />;
+      default:
+        return <GenericDashboard user={user} />;
+    }
+  };
+
+  return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F5F7' }}>
       <Sidebar />
-
-      <main style={{ flex: 1, marginLeft: '240px' }}>
-        <div style={{ padding: '32px 32px 24px', background: '#FFFFFF', borderBottom: '1px solid #DFE1E6' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#172B4D' }}>Welcome back, Admin</h1>
-          <p style={{ fontSize: '16px', color: '#6B778C', marginTop: '8px' }}>Here's a snapshot of your organization's progress.</p>
-        </div>
-
-        <div style={{ padding: '24px 32px' }}>
-          {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
-            {statCards.map((stat, i) => (
-              <div key={i} style={{
-                background: 'white',
-                borderRadius: '8px',
-                border: '1px solid #DFE1E6',
-                padding: '24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start'
-              }}>
-                <div>
-                  <div style={{ fontSize: '13px', color: '#6B778C', marginBottom: '8px' }}>{stat.title}</div>
-                  <div style={{ fontSize: '32px', fontWeight: 700, color: '#172B4D' }}>
-                    {loading ? '...' : stat.value}
-                  </div>
-                </div>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '8px',
-                  background: stat.bgColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <stat.icon size={22} color={stat.color} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Activity Section */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
-            <div style={{ background: 'white', borderRadius: '8px', border: '1px solid #DFE1E6', padding: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#172B4D', marginBottom: '24px' }}>
-                Recent Activity
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#36B37E' }}></div>
-                    <span style={{ color: '#172B4D' }}><strong>Design Language - Core tokens</strong> was marked as Done</span>
-                  </div>
-                  <span style={{ color: '#6B778C' }}>2 hours ago</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0052CC' }}></div>
-                    <span style={{ color: '#172B4D' }}><strong>Component Library Implementation</strong> is In Progress</span>
-                  </div>
-                  <span style={{ color: '#6B778C' }}>4 hours ago</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ background: 'white', borderRadius: '8px', border: '1px solid #DFE1E6', padding: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#172B4D', marginBottom: '24px' }}>
-                Team Velocity
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px' }}>
-                <div style={{ fontSize: '64px', fontWeight: 700, color: '#0052CC' }}>78%</div>
-                <div style={{ fontSize: '14px', color: '#6B778C', marginTop: '8px' }}>Sprint Goal Completion</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <main style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column' }}>
+        {renderDashboard()}
       </main>
     </div>
   );
