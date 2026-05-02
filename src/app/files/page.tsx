@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import {
     Search, Upload, FolderPlus, FilePlus, Grid, List, Star, Clock,
@@ -72,14 +72,47 @@ const typeIcon = (type:string) => {
 export default function FilesPage() {
     const [view, setView] = useState<'grid'|'list'>('grid');
     const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [activeFile, setActiveFile] = useState(FILES[0]);
+    const [files, setFiles] = useState<any[]>([]);
+    const [activeFile, setActiveFile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [rightOpen, setRightOpen] = useState(true);
     const [rightTab, setRightTab] = useState('Details');
-    const [ctx, setCtx] = useState<{x:number;y:number;file:typeof FILES[0]}|null>(null);
+    const [ctx, setCtx] = useState<{x:number;y:number;file:any}|null>(null);
     const [searchQ, setSearchQ] = useState('');
     const [navSection, setNavSection] = useState('All Files');
     const [insightsOn, setInsightsOn] = useState(true);
     const [commentText, setCommentText] = useState('');
+
+    useEffect(() => {
+        const fetchFiles = async () => {
+            try {
+                const res = await fetch('/api/files');
+                if (res.ok) {
+                    const data = await res.json();
+                    setFiles(data);
+                    if (data.length > 0) setActiveFile(data[0]);
+                }
+            } catch (err) {
+                console.error('Failed to fetch files:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchFiles();
+    }, []);
+
+    const handleDeleteFile = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this file?')) return;
+        try {
+            const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setFiles(files.filter(f => f.id !== id));
+                if (activeFile?.id === id) setActiveFile(files.find(f => f.id !== id) || null);
+            }
+        } catch (err) {
+            console.error('Failed to delete file:', err);
+        }
+    };
 
     const toggleSelect = (id:string) => {
         const s = new Set(selected);
@@ -260,7 +293,7 @@ export default function FilesPage() {
                     {/* Files Section */}
                     <div>
                         <div style={{display:'flex',alignItems:'center',marginBottom:'14px'}}>
-                            <span style={{fontSize:'14px',fontWeight:700,color:'#172B4D'}}>Files <span style={{fontSize:'12px',color:'#6B778C',fontWeight:400}}>({FILES.length} items)</span></span>
+                            <span style={{fontSize:'14px',fontWeight:700,color:'#172B4D'}}>Files <span style={{fontSize:'12px',color:'#6B778C',fontWeight:400}}>({files.length} items)</span></span>
                             {selected.size>0&&(
                                 <div style={{marginLeft:'16px',display:'flex',gap:'6px'}}>
                                     <span style={{fontSize:'12px',color:'#0052CC',fontWeight:600}}>{selected.size} selected</span>
@@ -282,8 +315,8 @@ export default function FilesPage() {
 
                         {view==='grid' ? (
                             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
-                                {FILES.map(f=>{
-                                    const ti = typeIcon(f.type);
+                                {files.map(f=>{
+                                    const ti = typeIcon(f.type.split('/')[1] || f.type.toLowerCase());
                                     return (
                                         <div key={f.id} className={`file-card ${selected.has(f.id)?'sel':''}`}
                                             onClick={()=>{setActiveFile(f);setSelected(new Set());}}
@@ -295,20 +328,17 @@ export default function FilesPage() {
                                             <div style={{width:'100%',height:'80px',borderRadius:'8px',background:ti.bg,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'10px',fontSize:'24px',fontWeight:700,color:ti.color}}>{ti.label}</div>
                                             <div style={{fontSize:'13px',fontWeight:600,color:'#172B4D',marginBottom:'6px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.name}</div>
                                             <div style={{display:'flex',gap:'3px',flexWrap:'wrap',marginBottom:'8px'}}>
-                                                {f.tags.map((t,i)=><span key={i} className="tag-sm">{t}</span>)}
+                                                {f.task?.project?.name ? <span className="tag-sm">{f.task.project.name}</span> : null}
+                                                <span className="tag-sm">{f.type}</span>
                                             </div>
                                             <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                                <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner)}</div>
-                                                <span style={{fontSize:'10px',color:'#6B778C',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.owner}</span>
-                                                {f.heat==='hot'&&<span className="heat-hot">🔥 Popular</span>}
-                                                {f.heat==='warm'&&f.tasks>0&&<span className="heat-warm">Used in {f.tasks} tasks</span>}
-                                                {f.chats>0&&<span style={{fontSize:'10px',color:'#36B37E',fontWeight:700}}>Shared in {f.chats} chats</span>}
+                                                <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner || 'System'),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner || 'System')}</div>
+                                                <span style={{fontSize:'10px',color:'#6B778C',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.owner || 'System'}</span>
                                             </div>
-                                            <div style={{fontSize:'10px',color:'#8A94A6',marginTop:'6px'}}>{f.size} • {f.modified}</div>
+                                            <div style={{fontSize:'10px',color:'#8A94A6',marginTop:'6px'}}>{Math.round(f.size / 1024)} KB • {new Date(f.createdAt).toLocaleDateString()}</div>
                                             <div className="fc-actions">
-                                                {[Eye,Share2,Download,MoreHorizontal].map((Icon,i)=>(
-                                                    <button key={i} className="fc-btn" onClick={e=>e.stopPropagation()}><Icon size={12}/></button>
-                                                ))}
+                                                <button className="fc-btn" onClick={e=>{e.stopPropagation(); window.open(f.url, '_blank')}} title="View"><Eye size={12}/></button>
+                                                <button className="fc-btn" onClick={e=>{e.stopPropagation(); handleDeleteFile(f.id)}} title="Delete"><Trash2 size={12}/></button>
                                             </div>
                                         </div>
                                     );
@@ -319,24 +349,23 @@ export default function FilesPage() {
                                 <div className="list-row" style={{fontSize:'10px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',background:'#FAFBFC',borderBottom:'1px solid #DFE1E6'}}>
                                     <div>Name</div><div>Tags</div><div>Owner</div><div>Modified</div><div>Size</div><div>Actions</div>
                                 </div>
-                                {FILES.map(f=>(
+                                {files.map(f=>(
                                     <div key={f.id} className="list-row" onClick={()=>setActiveFile(f)} onContextMenu={e=>{e.preventDefault();setCtx({x:e.clientX,y:e.clientY,file:f});}}>
                                         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                                            <div style={{width:28,height:28,borderRadius:'6px',background:typeIcon(f.type).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:700,color:typeIcon(f.type).color}}>{typeIcon(f.type).label}</div>
+                                            <div style={{width:28,height:28,borderRadius:'6px',background:typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:700,color:typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).color}}>{typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).label}</div>
                                             <span style={{fontWeight:600,color:'#172B4D'}}>{f.name}</span>
                                             {f.starred&&<Star size={10} fill="#FFAB00" color="#FFAB00"/>}
                                         </div>
-                                        <div style={{display:'flex',gap:'3px'}}>{f.tags.slice(0,1).map((t,i)=><span key={i} className="tag-sm">{t}</span>)}</div>
+                                        <div style={{display:'flex',gap:'3px'}}>{f.task?.project?.name ? <span className="tag-sm">{f.task.project.name}</span> : null}</div>
                                         <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                                            <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner)}</div>
-                                            <span style={{fontSize:'12px',color:'#42526E'}}>{f.owner.split(' ')[0]}</span>
+                                            <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner || 'System'),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner || 'System')}</div>
+                                            <span style={{fontSize:'12px',color:'#42526E'}}>{(f.owner || 'System').split(' ')[0]}</span>
                                         </div>
-                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{f.modified}</div>
-                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{f.size}</div>
+                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{new Date(f.createdAt).toLocaleDateString()}</div>
+                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{Math.round(f.size / 1024)} KB</div>
                                         <div style={{display:'flex',gap:'3px'}}>
-                                            {[Eye,Share2,MoreHorizontal].map((Icon,i)=>(
-                                                <button key={i} className="fc-btn" style={{width:24,height:24}} onClick={e=>e.stopPropagation()}><Icon size={11}/></button>
-                                            ))}
+                                            <button className="fc-btn" style={{width:24,height:24}} onClick={e=>{e.stopPropagation(); window.open(f.url, '_blank')}} title="View"><Eye size={11}/></button>
+                                            <button className="fc-btn" style={{width:24,height:24}} onClick={e=>{e.stopPropagation(); handleDeleteFile(f.id)}} title="Delete"><Trash2 size={11}/></button>
                                         </div>
                                     </div>
                                 ))}
@@ -365,15 +394,16 @@ export default function FilesPage() {
                             ))}
                         </div>
                         <div style={{display:'flex',gap:'10px',alignItems:'center',marginBottom:'8px'}}>
-                            <div style={{width:40,height:40,borderRadius:'10px',background:typeIcon(activeFile.type).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:700,color:typeIcon(activeFile.type).color}}>{typeIcon(activeFile.type).label}</div>
+                            <div style={{width:40,height:40,borderRadius:'10px',background:typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:700,color:typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).color}}>{typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).label}</div>
                             <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:'13px',fontWeight:700,color:'#172B4D',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeFile.name}</div>
-                                <div style={{fontSize:'10px',color:'#6B778C'}}>{activeFile.size}</div>
+                                <div style={{fontSize:'10px',color:'#6B778C'}}>{Math.round(activeFile.size / 1024)} KB</div>
                             </div>
                         </div>
                         <div style={{display:'flex',gap:'5px'}}>
                             {activeFile.starred&&<span style={{fontSize:'10px',fontWeight:700,background:'#FFF7E6',color:'#FFAB00',padding:'2px 6px',borderRadius:'4px',display:'flex',alignItems:'center',gap:'3px'}}><Star size={9} fill="#FFAB00" color="#FFAB00"/> Starred</span>}
-                            {activeFile.tags.map((t,i)=><span key={i} className="tag-sm">{t}</span>)}
+                            <span className="tag-sm">{activeFile.type}</span>
+                            {activeFile.task?.project?.name ? <span className="tag-sm">{activeFile.task.project.name}</span> : null}
                         </div>
                     </div>
 
@@ -389,10 +419,10 @@ export default function FilesPage() {
                             <div>
                                 <div style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'10px'}}>File Details</div>
                                 {[
-                                    {label:'Uploaded by', val:activeFile.owner},
-                                    {label:'Date', val:'Mar 24, 2024 10:30 AM'},
-                                    {label:'Location', val:'Design Assets'},
-                                    {label:'Size', val:activeFile.size},
+                                    {label:'Uploaded by', val:activeFile.owner || 'System'},
+                                    {label:'Date', val:new Date(activeFile.createdAt).toLocaleString()},
+                                    {label:'Task', val:activeFile.task?.title || 'None'},
+                                    {label:'Size', val:`${Math.round(activeFile.size / 1024)} KB`},
                                 ].map((d,i)=>(
                                     <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid rgba(9,30,66,0.05)',fontSize:'12px'}}>
                                         <span style={{color:'#6B778C'}}>{d.label}</span>
@@ -401,23 +431,21 @@ export default function FilesPage() {
                                 ))}
                             </div>
 
-                            {/* Linked Tasks */}
-                            <div>
-                                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'10px'}}>
-                                    <span style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em'}}>Linked Tasks (3)</span>
-                                    <button style={{background:'none',border:'none',fontSize:'11px',color:'#0052CC',cursor:'pointer',fontWeight:600}}>+ Attach</button>
-                                </div>
-                                {LINKED_TASKS.map((t,i)=>(
-                                    <div key={i} style={{display:'flex',gap:'8px',padding:'8px',borderRadius:'8px',border:'1px solid #DFE1E6',marginBottom:'6px',cursor:'pointer',transition:'background 0.15s'}}>
-                                        <div style={{width:6,height:6,borderRadius:'50%',background:t.color,marginTop:'5px',flexShrink:0}}/>
+                            {/* Linked Task */}
+                            {activeFile.task ? (
+                                <div>
+                                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'10px'}}>
+                                        <span style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em'}}>Linked Task</span>
+                                    </div>
+                                    <div style={{display:'flex',gap:'8px',padding:'8px',borderRadius:'8px',border:'1px solid #DFE1E6',marginBottom:'6px',cursor:'pointer',transition:'background 0.15s'}}>
+                                        <div style={{width:6,height:6,borderRadius:'50%',background:'#0052CC',marginTop:'5px',flexShrink:0}}/>
                                         <div style={{flex:1}}>
-                                            <div style={{fontSize:'12px',fontWeight:600,color:'#172B4D'}}>{t.title}</div>
-                                            <div style={{fontSize:'10px',color:'#6B778C'}}>{t.project} • <span style={{color:t.color,fontWeight:600}}>{t.status}</span></div>
+                                            <div style={{fontSize:'12px',fontWeight:600,color:'#172B4D'}}>{activeFile.task.title}</div>
+                                            <div style={{fontSize:'10px',color:'#6B778C'}}>{activeFile.task.project?.name} • <span style={{color:'#0052CC',fontWeight:600}}>{activeFile.task.status}</span></div>
                                         </div>
                                     </div>
-                                ))}
-                                <button style={{width:'100%',fontSize:'11px',color:'#0052CC',background:'none',border:'none',cursor:'pointer',fontWeight:600,textAlign:'left',padding:'4px 0'}}>View All Tasks →</button>
-                            </div>
+                                </div>
+                            ) : null}
 
                             {/* Comments */}
                             <div>

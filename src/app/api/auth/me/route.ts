@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
-import { verifyAccessToken } from '@/lib/auth';
+import { verifyAccessToken, extractTokenFromHeader } from '@/lib/auth/tokens';
+import AuthenticationService from '@/lib/auth/auth-service';
+
+// Initialize auth service
+const authService = new AuthenticationService(prisma);
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -14,18 +19,24 @@ export async function OPTIONS() {
 
 export async function GET(request: Request) {
     try {
-        // Get token from Authorization header
+        // Get token from Authorization header or cookie
         const authHeader = request.headers.get('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        const cookieStore = await cookies();
+        const cookieToken = cookieStore.get('accessToken')?.value;
+        
+        const token = authHeader?.startsWith('Bearer ') 
+            ? authHeader.substring(7) 
+            : cookieToken;
+
+        if (!token) {
             return NextResponse.json(
-                { error: 'Authorization header required' },
+                { error: 'Authentication required' },
                 { status: 401, headers: corsHeaders }
             );
         }
 
-        const token = authHeader.split(' ')[1];
+        // Verify token
         const payload = verifyAccessToken(token);
-
         if (!payload) {
             return NextResponse.json(
                 { error: 'Invalid or expired token' },
@@ -41,19 +52,38 @@ export async function GET(request: Request) {
                 name: true,
                 email: true,
                 role: true,
+                title: true,
+                contact: true,
                 image: true,
+                tenantId: true,
                 createdAt: true,
+                isActive: true,
+                isEmailVerified: true,
             },
         });
 
-        if (!user) {
+        if (!user || !user.isActive) {
             return NextResponse.json(
-                { error: 'User not found' },
+                { error: 'User not found or inactive' },
                 { status: 404, headers: corsHeaders }
             );
         }
 
-        return NextResponse.json({ user }, { headers: corsHeaders });
+        // Validate session if sessionId is present
+        if (payload.sessionId) {
+            const sessionValid = await authService.validateSession(payload.sessionId, user.id);
+            if (!sessionValid) {
+                return NextResponse.json(
+                    { error: 'Session expired or invalid' },
+                    { status: 401, headers: corsHeaders }
+                );
+            }
+        }
+
+        return NextResponse.json({ 
+            user,
+            accessToken: token // Include token for client-side use
+        }, { headers: corsHeaders });
     } catch (error) {
         console.error('Get me error:', error);
         return NextResponse.json(

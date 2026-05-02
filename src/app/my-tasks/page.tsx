@@ -20,8 +20,9 @@ import {
     Edit2,
     Trash2
 } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 interface Task {
     id: string;
@@ -49,6 +50,7 @@ export default function MyTasksPage() {
     const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
         fetchMyTasks();
@@ -65,9 +67,9 @@ export default function MyTasksPage() {
         }
     };
 
-    const fetchMyTasks = async () => {
+    const fetchMyTasks = async (isSilent = false) => {
         if (!user) return;
-        setLoading(true);
+        if (!isSilent) setLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/tasks?assigneeId=${user.id}`);
             const data = await res.json();
@@ -78,6 +80,28 @@ export default function MyTasksPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // Initialize Socket
+        fetch('/api/socket'); // Ensure server is initialized
+        const s = io({ path: '/api/socket' });
+        setSocket(s);
+
+        if (user?.tenantId) {
+            s.emit('join-room', `tenant-${user.tenantId}`);
+        }
+
+        const handleUpdate = () => fetchMyTasks(true);
+        
+        s.on('TASK_CREATED', handleUpdate);
+        s.on('TASK_UPDATED', handleUpdate);
+        s.on('TASK_DELETED', handleUpdate);
+        s.on('TASK_STATUS_CHANGED', handleUpdate);
+
+        return () => {
+            s.disconnect();
+        };
+    }, [user?.tenantId]);
 
     const handleTaskUpdate = async (taskId: string, newStatus: string) => {
         // Optimistic update

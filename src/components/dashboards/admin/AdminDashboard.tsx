@@ -5,7 +5,7 @@ import { Target, BarChart2, ListTodo, Users, Settings, Activity, ShieldCheck } f
 import UserManagementPanel from './UserManagementPanel';
 import TeamManagementPanel from './TeamManagementPanel';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export default function AdminDashboard({ user }: { user: any }) {
   const [activeTab, setActiveTab] = useState('overview');

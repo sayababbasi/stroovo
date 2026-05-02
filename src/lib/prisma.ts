@@ -1,21 +1,37 @@
 import { PrismaClient } from '@prisma/client';
+// DB Sync: 2026-04-26-18-53
 import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
+import { Pool } from 'pg';
 
 const connectionString = process.env.DATABASE_URL;
 
-const pool = new pg.Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+if (!connectionString) {
+    console.error('[PRISMA] DATABASE_URL is missing!');
+}
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  prisma2: PrismaClient | undefined;
+  prismaPool2: Pool | undefined;
+};
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    adapter,
-    log: ['query', 'error', 'warn'],
+const pool =
+  globalForPrisma.prismaPool2 ||
+  new Pool({
+    connectionString,
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+const adapter = new PrismaPg(pool as any);
+
+export const prisma =
+  globalForPrisma.prisma2 ||
+  new PrismaClient({
+    adapter,
+    log: ['error', 'warn'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma2 = prisma;
+  globalForPrisma.prismaPool2 = pool;
+}
 
 export default prisma;

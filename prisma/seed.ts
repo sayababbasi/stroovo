@@ -1,7 +1,7 @@
-import { PrismaClient, Role, TaskStatus, TaskPriority } from '@prisma/client';
+import { PrismaClient, UserRole, TaskStatus, TaskPriority } from '@prisma/client/index';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { hashPassword } from '../backend/src/lib/auth';
+import { hashPassword } from '../src/lib/auth';
 import 'dotenv/config';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -16,24 +16,24 @@ async function main() {
     const ceoPassword = await hashPassword('ceo@1234');
     const ceo = await prisma.user.upsert({
         where: { email: 'ceo@revoticai.com' },
-        update: { password: ceoPassword, name: 'Sayab' },
+        update: { passwordHash: ceoPassword, name: 'Sayab', role: UserRole.CEO },
         create: {
             email: 'ceo@revoticai.com',
             name: 'Sayab',
-            password: ceoPassword,
-            role: Role.ADMIN,
+            passwordHash: ceoPassword,
+            role: UserRole.CEO,
         },
     });
 
     const adminPassword = await hashPassword('admin@123');
     const admin = await prisma.user.upsert({
         where: { email: 'admin@revoticai.com' },
-        update: { password: adminPassword },
+        update: { passwordHash: adminPassword },
         create: {
             email: 'admin@revoticai.com',
             name: 'Administrator',
-            password: adminPassword,
-            role: Role.ADMIN,
+            passwordHash: adminPassword,
+            role: UserRole.ADMIN,
         },
     });
 
@@ -41,36 +41,36 @@ async function main() {
     const adminLegacyPassword = await hashPassword('admin');
     await prisma.user.upsert({
         where: { email: 'admin@workflow.com' },
-        update: { password: adminLegacyPassword },
+        update: { passwordHash: adminLegacyPassword },
         create: {
             email: 'admin@workflow.com',
             name: 'Administrator (Legacy)',
-            password: adminLegacyPassword,
-            role: Role.ADMIN,
+            passwordHash: adminLegacyPassword,
+            role: UserRole.ADMIN,
         },
     });
 
     const pmPassword = await hashPassword('pm_password_123');
     const pm = await prisma.user.upsert({
         where: { email: 'pm@workflow.com' },
-        update: { password: pmPassword },
+        update: { passwordHash: pmPassword },
         create: {
             email: 'pm@workflow.com',
             name: 'Sarah Smith (Project Manager)',
-            password: pmPassword,
-            role: Role.PROJECT_MANAGER,
+            passwordHash: pmPassword,
+            role: UserRole.PROJECT_MANAGER,
         },
     });
 
     const devPassword = await hashPassword('dev_password_123');
     const developer = await prisma.user.upsert({
         where: { email: 'dev@workflow.com' },
-        update: { password: devPassword },
+        update: { passwordHash: devPassword },
         create: {
             email: 'dev@workflow.com',
             name: 'Alex Johnson (Lead Developer)',
-            password: devPassword,
-            role: Role.TEAM_MEMBER,
+            passwordHash: devPassword,
+            role: UserRole.TEAM_MEMBER,
         },
     });
 
@@ -179,6 +179,96 @@ async function main() {
             projectId: projectX.id,
             assigneeId: pm.id,
         }
+    });
+
+    // 6. Teams Data
+    const tenant = await prisma.tenant.upsert({
+        where: { id: 'default-tenant' },
+        update: {},
+        create: {
+            id: 'default-tenant',
+            name: 'Default Tenant',
+            domain: 'localhost',
+        },
+    });
+
+    // Create teams
+    const productTeam = await prisma.team.create({
+        data: {
+            name: 'Product Development',
+            description: 'Core product development team',
+            slug: 'product-dev',
+            tenantId: tenant.id,
+        },
+    });
+
+    const designTeam = await prisma.team.create({
+        data: {
+            name: 'Design Team',
+            description: 'UI/UX and design systems',
+            slug: 'design',
+            tenantId: tenant.id,
+        },
+    });
+
+    const engineeringTeam = await prisma.team.create({
+        data: {
+            name: 'Engineering',
+            description: 'Backend and infrastructure',
+            slug: 'engineering',
+            tenantId: tenant.id,
+        },
+    });
+
+    // Add members to teams
+    await prisma.teamMember.createMany({
+        data: [
+            { teamId: productTeam.id, userId: admin.id, role: 'ADMIN' },
+            { teamId: productTeam.id, userId: pm.id, role: 'MANAGER' },
+            { teamId: productTeam.id, userId: developer.id, role: 'MEMBER' },
+            { teamId: designTeam.id, userId: admin.id, role: 'ADMIN' },
+            { teamId: designTeam.id, userId: developer.id, role: 'MEMBER' },
+            { teamId: engineeringTeam.id, userId: pm.id, role: 'ADMIN' },
+            { teamId: engineeringTeam.id, userId: developer.id, role: 'MEMBER' },
+        ],
+    });
+
+    // Create spaces for product team
+    const backlogSpace = await prisma.teamSpace.create({
+        data: {
+            name: 'Backlog',
+            icon: '📋',
+            color: '#6366f1',
+            teamId: productTeam.id,
+        },
+    });
+
+    const sprintSpace = await prisma.teamSpace.create({
+        data: {
+            name: 'Current Sprint',
+            icon: '🚀',
+            color: '#10b981',
+            teamId: productTeam.id,
+        },
+    });
+
+    const reviewSpace = await prisma.teamSpace.create({
+        data: {
+            name: 'In Review',
+            icon: '👀',
+            color: '#f59e0b',
+            teamId: productTeam.id,
+        },
+    });
+
+    // Create lists within spaces
+    await prisma.teamList.createMany({
+        data: [
+            { name: 'To Do', type: 'TASKS', spaceId: backlogSpace.id },
+            { name: 'In Progress', type: 'TASKS', spaceId: sprintSpace.id },
+            { name: 'Done', type: 'TASKS', spaceId: sprintSpace.id },
+            { name: 'Design Assets', type: 'ASSETS', spaceId: reviewSpace.id },
+        ],
     });
 
     console.log('--- Seeding Finished Successfully ---');

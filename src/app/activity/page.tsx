@@ -254,7 +254,7 @@ export default function ActivityCenterPage() {
                                             </div>
                                             <div style={{ border: '1px solid #DFE1E6', borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <Avatar name={act.task.assignee} size={28} showOnline={false} />
+                                                    <Avatar name={act.task.assignee || 'Unknown User'} size={28} showOnline={false} />
                                                     <div>
                                                         <div style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{act.task.name}</div>
                                                         <div style={{ fontSize: '11px', color: '#6B778C' }}>Project: {act.project}</div>

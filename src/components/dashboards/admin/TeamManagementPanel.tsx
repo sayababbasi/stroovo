@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Users, Target, MoreVertical } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export default function TeamManagementPanel() {
   const [teams, setTeams] = useState<any[]>([]);

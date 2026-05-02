@@ -3,13 +3,11 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyRefreshToken, generateTokens } from '@/lib/auth';
 
-
-
 export async function OPTIONS() {
     return NextResponse.json({});
 }
 
-export async function POST() {
+export async function POST(request: Request) {
     try {
         const cookieStore = await cookies();
         const refreshToken = cookieStore.get('refreshToken')?.value;
@@ -21,27 +19,16 @@ export async function POST() {
             );
         }
 
-        // Verify refresh token
         const payload = verifyRefreshToken(refreshToken);
-        if (!payload) {
+        if (!payload || !payload.userId) {
             return NextResponse.json(
                 { error: 'Invalid or expired refresh token' },
                 { status: 401 }
             );
         }
 
-        // Get user
         const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                title: true,
-                contact: true,
-                image: true,
-            },
+            where: { id: payload.userId }
         });
 
         if (!user) {
@@ -51,37 +38,59 @@ export async function POST() {
             );
         }
 
-        // Generate new tokens
         const tokens = generateTokens({
             id: user.id,
             email: user.email,
             role: user.role,
+            tenantId: user.tenantId
         });
 
         // Create response
-        const response = NextResponse.json(
-            {
-                message: 'Token refreshed',
-                user,
-                accessToken: tokens.accessToken,
-            }
-        );
+        const response = NextResponse.json({
+            message: 'Token refreshed',
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                title: user.title,
+                contact: user.contact,
+                image: user.image,
+                tenantId: user.tenantId,
+            },
+            accessToken: tokens.accessToken,
+            expiresIn: 3600,
+        });
 
         // Update refresh token cookie
         response.cookies.set('refreshToken', tokens.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: false,
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60,
+            maxAge: 7 * 24 * 60 * 60, // 7 days
             path: '/',
+            domain: 'localhost'
+        });
+
+        // Update access token cookie
+        response.cookies.set('accessToken', tokens.accessToken, {
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 60 * 60, // 1 hour
+            path: '/',
+            domain: 'localhost'
         });
 
         return response;
-    } catch (error: any) {
-        console.error('CRITICAL Refresh token error:', error);
+
+    } catch (error) {
+        console.error('Token refresh error:', error);
         return NextResponse.json(
-            { error: 'Internal server error', message: error.message, stack: error.stack },
+            { error: 'Internal server error' },
             { status: 500 }
         );
     }
 }
+
+

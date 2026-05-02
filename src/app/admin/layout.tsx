@@ -1,72 +1,34 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-    Users,
-    FolderKanban,
-    ShieldCheck,
-    BarChart3,
-    Settings,
-    LogOut,
-    LayoutDashboard
-} from 'lucide-react';
-import styles from './admin.module.css';
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminTopBar from '@/components/admin/AdminTopBar';
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    const pathname = usePathname();
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const { user, isLoading } = useAuth();
+    const router = useRouter();
 
-    const navItems = [
-        { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-        { name: 'Users', href: '/admin/users', icon: Users },
-        { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
-        { name: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck },
-        { name: 'System Logs', href: '/admin/logs', icon: BarChart3 },
-    ];
+    React.useEffect(() => {
+        if (!isLoading && (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'CEO'))) {
+            router.push('/');
+        }
+    }, [user, isLoading, router]);
+
+    if (isLoading || !user) {
+        return <div className="flex h-screen w-full items-center justify-center bg-[#F4F5F7]">Loading Admin Control...</div>;
+    }
 
     return (
-        <div className={styles.adminContainer}>
-            <aside className={styles.sidebar}>
-                <div className={styles.logo}>
-                    WF Admin
-                </div>
-
-                <nav className={styles.nav}>
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-                            >
-                                <Icon size={20} />
-                                <span>{item.name}</span>
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div style={{ marginTop: 'auto' }}>
-                    <Link href="/" className={styles.navItem}>
-                        <LogOut size={20} />
-                        <span>Back to Platform</span>
-                    </Link>
-                    <div className={styles.navItem} style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '1rem' }}>
-                        <Settings size={20} />
-                        <span>Admin Settings</span>
-                    </div>
-                </div>
-            </aside>
-
-            <main className={styles.adminMain}>
-                {children}
-            </main>
+        <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F5F7' }}>
+            <AdminSidebar />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginLeft: '260px' }}>
+                <AdminTopBar user={user} />
+                <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }

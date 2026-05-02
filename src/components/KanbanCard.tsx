@@ -10,7 +10,7 @@ import {
     Calendar,
     CheckSquare
 } from 'lucide-react';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/components/tasks/types';
 import { useSortable } from '@dnd-kit/sortable';
 
 /* ── Types ── */
@@ -246,7 +246,9 @@ function KanbanCard({
 
             {/* Header */}
             <div style={{ paddingRight: hovered ? '90px' : 0, transition: 'padding 0.12s' }}>
-                <div className="kc-proj">{task.project?.name || 'Workflow Project'}</div>
+                <div className="kc-proj">
+                    {(task.project && typeof task.project === 'object') ? task.project.name : (task.project || 'Stroovo Project')}
+                </div>
                 <p className="kc-ttl">{task.title}</p>
             </div>
 
@@ -291,8 +293,11 @@ function KanbanCard({
                         <div className="kc-mi"><Paperclip size={11} strokeWidth={2.5} />{task._count!.files}</div>
                     )}
                 </div>
-                <div className="kc-av" title={task.assignee?.name || 'Unassigned'} style={{ background: getAvatarColor(task.assignee?.name) }}>
-                    {task.assignee?.name?.[0]?.toUpperCase() || '?'}
+                <div className="kc-av" 
+                    title={(task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee || 'Unassigned')} 
+                    style={{ background: getAvatarColor((task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee as string)) }}
+                >
+                    {((task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee as string))?.[0]?.toUpperCase() || '?'}
                 </div>
             </div>
         </div>
@@ -308,7 +313,8 @@ export default memo(KanbanCard, (prev, next) =>
     prev.task.type === next.task.type &&
     prev.task.progress === next.task.progress &&
     prev.task.dueDate === next.task.dueDate &&
-    prev.task.assignee?.id === next.task.assignee?.id &&
+    (typeof prev.task.assignee === 'object' ? prev.task.assignee?.id : prev.task.assignee) === 
+    (typeof next.task.assignee === 'object' ? next.task.assignee?.id : next.task.assignee) &&
     prev.task._count?.comments === next.task._count?.comments &&
     prev.task._count?.subTasks === next.task._count?.subTasks
 );

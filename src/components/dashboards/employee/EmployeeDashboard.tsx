@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ListTodo, Zap, CheckCircle2, Clock } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export default function EmployeeDashboard({ user }: { user: any }) {
   // Competitor standard for Employees/Individual Contributors:

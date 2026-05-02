@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = ''; // Use relative URL for same-origin API calls
 
 interface User {
     id: string;
@@ -13,7 +13,7 @@ interface User {
     title?: string;
     contact?: string;
     image?: string;
-    organizationId?: string;
+    tenantId?: string;
 }
 
 interface AuthContextType {
@@ -21,10 +21,11 @@ interface AuthContextType {
     accessToken: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string; requiresMFA?: boolean; sessionId?: string }>;
     signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refreshToken: () => Promise<boolean>;
+    verifyMFA: (sessionId: string, token: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,26 +35,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshTimeout, setRefreshTimeout] = useState<NodeJS.Timeout | null>(null);
 
-    // Try to refresh token on mount
+    // Initialize auth state from cookies/localStorage on mount
     useEffect(() => {
-        refreshToken().finally(() => setIsLoading(false));
+        initializeAuth().finally(() => setIsLoading(false));
     }, []);
 
-    // Auto-refresh token before expiry (every 14 minutes)
+    // Clear refresh timeout on unmount
     useEffect(() => {
-        if (!accessToken) return;
+        return () => {
+            if (refreshTimeout) {
+                clearTimeout(refreshTimeout);
+            }
+        };
+    }, [refreshTimeout]);
 
-        const interval = setInterval(() => {
-            refreshToken();
-        }, 14 * 60 * 1000); // 14 minutes
+    const initializeAuth = async () => {
+        try {
+            // Use raw fetch for auth/me — apiGet returns ApiResponse, not a raw Response
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (accessToken) {
+                headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+            const response = await fetch(`${API_URL}/api/auth/me`, {
+                method: 'GET',
+                headers,
+                credentials: 'include',
+            });
 
-        return () => clearInterval(interval);
-    }, [accessToken]);
+            if (response.ok) {
+                const userData = await response.json();
+                setUser(userData.user);
+                setAccessToken(userData.accessToken);
+                scheduleTokenRefresh();
+                return true;
+            }
+        } catch (error) {
+            console.error('Failed to initialize auth:', error);
+        }
+
+        // Fallback to refresh token
+        return await refreshTokenFn();
+    };
+
+    const scheduleTokenRefresh = () => {
+        if (refreshTimeout) {
+            clearTimeout(refreshTimeout);
+        }
+        
+        // Schedule refresh 2 minutes before expiry (assuming 15 min expiry)
+        const timeout = setTimeout(() => {
+            refreshTokenFn();
+        }, 13 * 60 * 1000); // 13 minutes
+        
+        setRefreshTimeout(timeout);
+    };
 
     const login = async (email: string, password: string) => {
         try {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
+            // Use raw fetch to get a proper Response with .json() and .ok
+            const res = await fetch(`${API_URL}/api/auth/login-simple`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -63,14 +105,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json();
 
             if (!res.ok) {
-                return { success: false, error: data.error || 'Login failed' };
+                // Handle structured error objects
+                let errorMessage = 'Login failed';
+                if (data.error) {
+                    if (typeof data.error === 'string') {
+                        errorMessage = data.error;
+                    } else if (data.error.message) {
+                        errorMessage = data.error.message;
+                    } else if (data.error.code) {
+                        errorMessage = `Authentication failed (${data.error.code})`;
+                    }
+                }
+                return { success: false, error: errorMessage };
             }
 
+            // Handle MFA requirement
+            if (data.requiresMFA) {
+                return { 
+                    success: false, 
+                    requiresMFA: true, 
+                    sessionId: data.sessionId,
+                    error: 'MFA verification required'
+                };
+            }
+
+            // Successful login
             setUser(data.user);
             setAccessToken(data.accessToken);
+            scheduleTokenRefresh();
+
             return { success: true };
         } catch (error) {
-            return { success: false, error: 'Network error' };
+            console.error('Login error:', error);
+            return { success: false, error: 'Network error. Please try again.' };
         }
     };
 
@@ -89,16 +156,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: data.error || 'Signup failed' };
             }
 
+            // Successful signup
             setUser(data.user);
             setAccessToken(data.accessToken);
+            scheduleTokenRefresh();
+
             return { success: true };
         } catch (error) {
+            console.error('Signup error:', error);
             return { success: false, error: 'Network error' };
         }
     };
 
     const logout = async () => {
         try {
+            // Clear refresh timeout
+            if (refreshTimeout) {
+                clearTimeout(refreshTimeout);
+                setRefreshTimeout(null);
+            }
+
+            // Call logout API
             await fetch(`${API_URL}/api/auth/logout`, {
                 method: 'POST',
                 credentials: 'include',
@@ -106,33 +184,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
+            // Clear local state regardless of API success
             setUser(null);
             setAccessToken(null);
             router.push('/login');
         }
     };
 
-    const refreshToken = async (): Promise<boolean> => {
+    const refreshTokenFn = async (): Promise<boolean> => {
         try {
+            // Use raw fetch for refresh — apiPost returns ApiResponse, not raw Response
             const res = await fetch(`${API_URL}/api/auth/refresh`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
+                body: JSON.stringify({}),
             });
 
             if (!res.ok) {
+                // Token refresh failed, clear state
                 setUser(null);
                 setAccessToken(null);
+                if (refreshTimeout) {
+                    clearTimeout(refreshTimeout);
+                    setRefreshTimeout(null);
+                }
                 return false;
             }
 
             const data = await res.json();
             setUser(data.user);
             setAccessToken(data.accessToken);
+            scheduleTokenRefresh();
             return true;
         } catch (error) {
+            console.error('Token refresh error:', error);
+            // Clear state on error
             setUser(null);
             setAccessToken(null);
+            if (refreshTimeout) {
+                clearTimeout(refreshTimeout);
+                setRefreshTimeout(null);
+            }
             return false;
+        }
+    };
+
+    const verifyMFA = async (sessionId: string, token: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    email: '', // Will be handled by session
+                    password: '', // Will be handled by session
+                    mfaToken: token,
+                    sessionId
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                return { success: false, error: data.error || 'MFA verification failed' };
+            }
+
+            // Successful MFA verification
+            setUser(data.user);
+            setAccessToken(data.accessToken);
+            scheduleTokenRefresh();
+
+            return { success: true };
+        } catch (error) {
+            console.error('MFA verification error:', error);
+            return { success: false, error: 'Network error' };
         }
     };
 
@@ -146,7 +274,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 signup,
                 logout,
-                refreshToken,
+                refreshToken: refreshTokenFn,
+                verifyMFA,
             }}
         >
             {children}

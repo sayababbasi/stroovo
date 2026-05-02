@@ -37,11 +37,14 @@ import {
     ChevronRight,
     Settings,
     LogOut,
-    Bot
+    Bot,
+    CreditCard
 } from 'lucide-react';
 import { Project } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './Sidebar.module.css';
+import { useBranding } from '@/hooks/useBranding';
+import NotificationBell from './NotificationBell';
 
 interface NavItem {
     name: string;
@@ -57,45 +60,65 @@ interface NavSection {
     collapsible?: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = '';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { user, logout } = useAuth();
-    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Workflow', 'Projects']));
+    const { user, logout, isAuthenticated, isLoading } = useAuth();
+    const branding = useBranding();
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Stroovo', 'Projects']));
     const [projects, setProjects] = useState<Project[]>([]);
 
     useEffect(() => {
+        if (isLoading || !isAuthenticated || !user) {
+            return;
+        }
+
+        const controller = new AbortController();
+
         const fetchProjects = async () => {
             try {
                 const res = await fetch(`${API_URL}/api/projects`, {
-                    cache: 'no-store'
+                    cache: 'no-store',
+                    credentials: 'include',
+                    signal: controller.signal
                 });
-                if (res.ok) {
-                    const text = await res.text();
-                    try {
-                        const data = JSON.parse(text);
-                        const uniqueProjects = Array.isArray(data) ? data.reduce((acc: Project[], current: Project) => {
-                            const x = acc.find(item => item.id === current.id);
-                            if (!x) return acc.concat([current]);
-                            else return acc;
-                        }, []) : [];
-                        setProjects(uniqueProjects);
-                    } catch (e) {
-                        console.error('Navbar projects fetch returned invalid JSON:', text.substring(0, 50));
+
+                if (!res.ok) {
+                    if (res.status !== 401 && res.status !== 403) {
+                        console.error(`Failed to fetch sidebar projects: ${res.status} ${res.statusText}`);
                     }
+                    return;
+                }
+
+                const text = await res.text();
+                try {
+                    const data = JSON.parse(text);
+                    const uniqueProjects = Array.isArray(data) ? data.reduce((acc: Project[], current: Project) => {
+                        const x = acc.find(item => item.id === current.id);
+                        if (!x) return acc.concat([current]);
+                        else return acc;
+                    }, []) : [];
+                    setProjects(uniqueProjects);
+                } catch (e) {
+                    console.error('Navbar projects fetch returned invalid JSON:', text.substring(0, 50));
                 }
             } catch (err) {
-                console.error('Failed to fetch sidebar projects:', err);
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Failed to fetch sidebar projects:', err);
+                }
             }
         };
-        
+
         const handleUpdate = () => fetchProjects();
         window.addEventListener('projectsUpdated', handleUpdate);
         fetchProjects();
 
-        return () => window.removeEventListener('projectsUpdated', handleUpdate);
-    }, []);
+        return () => {
+            controller.abort();
+            window.removeEventListener('projectsUpdated', handleUpdate);
+        };
+    }, [isAuthenticated, isLoading, user]);
 
     const starredProjects = projects.filter(p => p.isStarred);
     const recentProjects = [...projects]
@@ -104,7 +127,7 @@ export default function Sidebar() {
 
     const sections: NavSection[] = [
         {
-            title: 'Workflow',
+            title: 'Stroovo',
             items: [
                 { name: 'Dashboard', href: '/', icon: LayoutDashboard },
                 { name: 'My Tasks', href: '/tasks', icon: CheckSquare },
@@ -166,24 +189,24 @@ export default function Sidebar() {
         {
             title: 'Analytics',
             items: [
-                { name: 'Reports', href: '/reports', icon: FileBarChart2 },
-                { name: 'Productivity', href: '/analytics/productivity', icon: TrendingUp },
-                { name: 'Workload', href: '/analytics/workload', icon: PieChart },
-                { name: 'Time Tracking', href: '/analytics/time', icon: Timer },
+                { name: 'Analytics Dashboard', href: '/analytics', icon: BarChart2 },
+                { name: 'Performance Reports', href: '/reports', icon: FileBarChart2 },
             ]
         },
         {
             title: 'AI & Automation',
             items: [
-                { name: 'Workflow AI', href: '/ai/assistant', icon: Bot, badge: 'Beta' },
+                { name: 'Stroovo AI', href: '/ai/assistant', icon: Bot, badge: 'Beta' },
                 { name: 'Smart Suggestions', href: '/ai/suggestions', icon: Zap },
                 { name: 'Risk Alerts', href: '/ai/alerts', icon: ShieldAlert },
+                { name: 'Automations', href: '/automations', icon: Settings },
             ]
         },
     ];
 
     const settingsItems: NavItem[] = [
         { name: 'Notifications', href: '/settings/notifications', icon: Bell },
+        { name: 'Billing', href: '/settings/billing', icon: CreditCard },
         { name: 'Integrations', href: '/settings/integrations', icon: Puzzle },
         { name: 'User Management', href: '/admin/users', icon: UserCog },
         { name: 'Help', href: '/help', icon: HelpCircle },
@@ -255,12 +278,19 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className={styles.sidebar}>
+        <aside className={styles.sidebar} style={{ borderRight: `1px solid ${branding.primaryColor}22` }}>
             <div className={styles.logo}>
-                <div className={styles.logoIcon}>
-                    <CheckSquare size={18} color="white" />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className={styles.logoIcon} style={{ background: branding.primaryColor }}>
+                        {branding.logoUrl ? (
+                            <img src={branding.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '4px' }} />
+                        ) : (
+                            <CheckSquare size={18} color="white" />
+                        )}
+                    </div>
+                    <span className={styles.logoText}>Stroovo</span>
                 </div>
-                <span className={styles.logoText}>Workflow</span>
+                <NotificationBell />
             </div>
 
             <div className={styles.navContainer}>
@@ -296,8 +326,8 @@ export default function Sidebar() {
                 </div>
                 <nav className={styles.nav}>
                     {settingsItems.map((item) => renderNavItem(item))}
-                    <div 
-                        className={styles.navItem} 
+                    <div
+                        className={styles.navItem}
                         style={{ color: '#FF5630', cursor: 'pointer' }}
                         onClick={() => logout()}
                     >
@@ -312,16 +342,16 @@ export default function Sidebar() {
                 <div className={styles.userProfileCard}>
                     <div className={styles.userAvatarWrapper}>
                         {user?.image ? (
-                            <img 
-                                src={user.image} 
-                                alt={user.name} 
+                            <img
+                                src={user.image}
+                                alt={user.name}
                                 className={styles.userAvatar}
                             />
                         ) : (
-                            <div className={styles.userAvatar} style={{ 
-                                background: '#DFE1E6', 
-                                display: 'flex', 
-                                alignItems: 'center', 
+                            <div className={styles.userAvatar} style={{
+                                background: '#DFE1E6',
+                                display: 'flex',
+                                alignItems: 'center',
                                 justifyContent: 'center',
                                 color: '#172B4D',
                                 fontWeight: 600,

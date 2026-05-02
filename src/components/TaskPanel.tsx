@@ -11,7 +11,11 @@ import {
     Clock,
     User,
     Flag,
-    MoreHorizontal
+    MoreHorizontal,
+    CheckCircle2,
+    Send,
+    Sparkles,
+    Loader2
 } from 'lucide-react';
 import { Task } from '@/types';
 
@@ -35,12 +39,111 @@ const getAvatarColor = (name?: string | null) => {
 
 export default function TaskPanel({ task, onClose, onUpdateTask }: TaskPanelProps) {
     const [activeTab, setActiveTab] = useState('Subtasks');
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+    const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+    const [newComment, setNewComment] = useState('');
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [isAutoAssigning, setIsAutoAssigning] = useState(false);
 
-    if (!task) return null;
+    if (!task?.id) return null;
+    const taskId = task.id;
+
+    const handleAutoAssign = async () => {
+        setIsAutoAssigning(true);
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/auto-assign`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                if (onUpdateTask) {
+                    onUpdateTask(taskId, { assigneeId: data.assigneeId });
+                }
+            }
+        } catch (error) {
+            console.error('Auto-assign failed:', error);
+        } finally {
+            setIsAutoAssigning(false);
+        }
+    };
 
     const progress = task.progress || 0;
     const completedSubtasks = task.subTasks?.filter(st => st.status === 'DONE').length || 0;
     const totalSubtasks = task.subTasks?.length || 0;
+
+    const handleAddSubtask = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newSubtaskTitle.trim()) return;
+
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: newSubtaskTitle,
+                    projectId: task.projectId,
+                    parentId: taskId,
+                    status: 'TODO'
+                })
+            });
+            if (res.ok) {
+                const newSub = await res.json();
+                if (onUpdateTask) {
+                    onUpdateTask(taskId, {
+                        subTasks: [...(task.subTasks || []), newSub]
+                    });
+                }
+                setNewSubtaskTitle('');
+                setIsAddingSubtask(false);
+            }
+        } catch (error) {
+            console.error('Failed to add subtask:', error);
+        }
+    };
+
+    const toggleSubtask = async (subtask: any) => {
+        const newStatus = subtask.status === 'DONE' ? 'TODO' : 'DONE';
+        try {
+            const res = await fetch(`/api/tasks/${subtask.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+                if (onUpdateTask) {
+                    const updatedSubtasks = task.subTasks?.map(st => 
+                        st.id === subtask.id ? { ...st, status: newStatus } : st
+                    );
+                    onUpdateTask(taskId, { subTasks: updatedSubtasks });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to toggle subtask:', error);
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!newComment.trim()) return;
+        setIsSubmittingComment(true);
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newComment })
+            });
+            if (res.ok) {
+                const comment = await res.json();
+                if (onUpdateTask) {
+                    onUpdateTask(taskId, {
+                        comments: [comment, ...(task.comments || [])]
+                    });
+                }
+                setNewComment('');
+            }
+        } catch (error) {
+            console.error('Failed to add comment:', error);
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
 
     return (
         <>
@@ -315,6 +418,35 @@ export default function TaskPanel({ task, onClose, onUpdateTask }: TaskPanelProp
                         border-color: #0052CC;
                         color: #0052CC;
                     }
+
+                    .magic-btn {
+                        background: linear-gradient(135deg, #6554C0 0%, #0052CC 100%);
+                        color: white;
+                        border: none;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 11px;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                        cursor: pointer;
+                        transition: transform 0.2s;
+                    }
+                    .magic-btn:hover {
+                        transform: scale(1.05);
+                    }
+                    .magic-btn:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                    }
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                    .spin {
+                        animation: spin 1s linear infinite;
+                    }
                 `}</style>
                 
                 <div className="header-actions">
@@ -335,14 +467,25 @@ export default function TaskPanel({ task, onClose, onUpdateTask }: TaskPanelProp
 
                     <div className="properties-grid">
                         <div className="prop-label">Assignee</div>
-                        <div className="prop-value">
-                            <div 
-                                className="avatar-small"
-                                style={{ background: getAvatarColor(task.assignee?.name) }}
-                            >
-                                {task.assignee?.name?.[0]?.toUpperCase() || '?'}
+                        <div className="prop-value" style={{ width: '100%', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div 
+                                    className="avatar-small"
+                                    style={{ background: getAvatarColor(task.assignee?.name) }}
+                                >
+                                    {task.assignee?.name?.[0]?.toUpperCase() || '?'}
+                                </div>
+                                {task.assignee?.name || 'Unassigned'}
                             </div>
-                            {task.assignee?.name || 'Unassigned'}
+                            <button 
+                                onClick={handleAutoAssign}
+                                disabled={isAutoAssigning}
+                                className="magic-btn"
+                                title="AI Auto-Assign"
+                            >
+                                {isAutoAssigning ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />}
+                                Auto
+                            </button>
                         </div>
 
                         <div className="prop-label">Due Date</div>
@@ -391,7 +534,7 @@ export default function TaskPanel({ task, onClose, onUpdateTask }: TaskPanelProp
                             <div>
                                 {task.subTasks?.map((subtask: any) => (
                                     <div key={subtask.id} className={`subtask-item ${subtask.status === 'DONE' ? 'done' : ''}`}>
-                                        <div className="subtask-checkbox">
+                                        <div className="subtask-checkbox" onClick={() => toggleSubtask(subtask)}>
                                             {subtask.status === 'DONE' && <CheckCircle2 size={14} color="#FFF" />}
                                         </div>
                                         <span className="subtask-title">{subtask.title}</span>
@@ -400,14 +543,35 @@ export default function TaskPanel({ task, onClose, onUpdateTask }: TaskPanelProp
                                         </div>
                                     </div>
                                 ))}
-                                {(!task.subTasks || task.subTasks.length === 0) && (
+                                {(!task.subTasks || task.subTasks.length === 0) && !isAddingSubtask && (
                                     <div style={{ textAlign: 'center', padding: '32px 0', color: '#8993A4', fontSize: '14px' }}>
                                         No subtasks yet. Break down this task into smaller steps.
                                     </div>
                                 )}
-                                <button className="add-btn">
-                                    <Plus size={16} /> Add Subtask
-                                </button>
+                                {isAddingSubtask ? (
+                                    <form onSubmit={handleAddSubtask} style={{ marginTop: '12px' }}>
+                                        <input
+                                            autoFocus
+                                            className="subtask-input"
+                                            value={newSubtaskTitle}
+                                            onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                            placeholder="What needs to be done?"
+                                            onBlur={() => !newSubtaskTitle && setIsAddingSubtask(false)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                border: '2px solid #0052CC',
+                                                borderRadius: '6px',
+                                                outline: 'none',
+                                                fontSize: '14px'
+                                            }}
+                                        />
+                                    </form>
+                                ) : (
+                                    <button className="add-btn" onClick={() => setIsAddingSubtask(true)}>
+                                        <Plus size={16} /> Add Subtask
+                                    </button>
+                                )}
                             </div>
                         )}
                         

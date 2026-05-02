@@ -1,0 +1,53 @@
+import type { Task } from './types';
+
+export const MOCK_TASKS: Task[] = [
+    {
+        id: 'T-01', title: 'Implement Authentication OAuth', project: 'Quantum UI',
+        status: 'In Progress', priority: 'Urgent', progress: 65, assignee: 'Patrick',
+        dueDate: 'Today', tags: ['Backend', 'Security'], health: 'at_risk',
+        subtasks: [{ id: 's1', name: 'Setup Google Provider', done: true }, { id: 's2', name: 'JWT handling', done: false }],
+        comments: 4, files: 1, order: 0, createdAt: '2 days ago', updatedAt: 'Today',
+        description: 'This task involves critical updates to the authentication module. Ensure all related documentation is updated upon completion.',
+        ai: { riskLevel: 'high', delayProbability: 72, suggestions: ['Split into smaller subtasks to reduce scope risk', 'Consider pairing with Alex for faster delivery'], blockedReason: undefined, overloadWarning: true, deadlinePressure: true },
+        dependencies: [{ taskId: 'T-03', taskTitle: 'Optimize Database Queries', type: 'blocked_by', status: 'Blocked' }],
+        automationLogs: [{ id: 'a1', rule: 'Auto-escalate overdue', triggeredAt: 'Today 9:00 AM', action: 'Priority set to Urgent', success: true }],
+    },
+    {
+        id: 'T-02', title: 'Design System Migration', project: 'Design Systems',
+        status: 'To Do', priority: 'Normal', progress: 0, assignee: 'Michelle',
+        dueDate: 'Apr 12', tags: ['Design', 'UI'], health: 'on_track',
+        subtasks: [], comments: 0, files: 3, order: 1, createdAt: '5 days ago', updatedAt: '3 days ago',
+        description: 'Migrate all components from the legacy design system to the new token-based system.',
+        ai: { riskLevel: 'low', delayProbability: 12, suggestions: ['Start with foundational tokens (colors, spacing)'], overloadWarning: false, deadlinePressure: false },
+        dependencies: [], automationLogs: [],
+    },
+    {
+        id: 'T-03', title: 'Optimize Database Queries', project: 'Database Migration',
+        status: 'Blocked', priority: 'High', progress: 40, assignee: 'Alex',
+        dueDate: 'Yesterday', tags: ['Backend', 'Performance'], health: 'delayed',
+        subtasks: [{ id: 's3', name: 'Index User table', done: true }],
+        comments: 8, files: 0, order: 2, createdAt: '1 week ago', updatedAt: 'Yesterday',
+        description: 'Critical performance bottleneck in user queries. Need to add indexes and optimize N+1 queries.',
+        ai: { riskLevel: 'high', delayProbability: 88, suggestions: ['Unblock by resolving DevOps ticket #412', 'Consider read replicas for heavy queries'], blockedReason: 'Waiting on DevOps to provision staging DB', overloadWarning: false, deadlinePressure: true },
+        dependencies: [], automationLogs: [{ id: 'a2', rule: 'Blocked task alert', triggeredAt: 'Yesterday', action: 'Notified manager', success: true }],
+    },
+    {
+        id: 'T-04', title: 'Mobile App Navigation Fix', project: 'Mobile App v2',
+        status: 'Review', priority: 'Urgent', progress: 90, assignee: 'Sara',
+        dueDate: 'Tomorrow', tags: ['Mobile', 'Bug'], health: 'on_track',
+        subtasks: [], comments: 2, files: 1, order: 3, createdAt: '3 days ago', updatedAt: 'Today',
+        description: 'Fix the navigation stack issue causing back button to skip screens on Android.',
+        ai: { riskLevel: 'medium', delayProbability: 25, suggestions: ['Run regression tests on iOS before merging'], overloadWarning: false, deadlinePressure: false },
+        dependencies: [{ taskId: 'T-01', taskTitle: 'Implement Authentication OAuth', type: 'blocking', status: 'In Progress' }],
+        automationLogs: [],
+    },
+    {
+        id: 'T-05', title: 'Update Landing Page Copy', project: 'Marketing Website',
+        status: 'Completed', priority: 'Low', progress: 100, assignee: 'Patrick',
+        dueDate: 'Last Week', tags: ['Content'], health: 'on_track',
+        subtasks: [], comments: 1, files: 0, order: 4, createdAt: '2 weeks ago', updatedAt: 'Last Week',
+        description: 'Update hero section, feature descriptions, and CTA buttons with new brand messaging.',
+        ai: { riskLevel: 'low', delayProbability: 0, suggestions: [], overloadWarning: false, deadlinePressure: false },
+        dependencies: [], automationLogs: [{ id: 'a3', rule: 'Auto-complete notification', triggeredAt: 'Last Week', action: 'Notified stakeholders', success: true }],
+    },
+];

@@ -1,0 +1,150 @@
+// Enhanced Task Model for Enterprise Task Management
+// Add these fields to the existing Task model in schema.prisma
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  type        String       @default("TASK") // TASK, BUG, STORY, FEATURE
+  startDate   DateTime?    @default(now())
+  dueDate     DateTime?
+  progress    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Enhanced Enterprise Fields
+  riskScore           Float          @default(0)      // 0-100 AI-generated risk score
+  delayProbability    Int            @default(0)      // 0-100% probability of delay
+  aiInsights          Json?                          // AI-generated insights and suggestions
+  estimatedHours      Float?                         // AI-estimated effort
+  actualHours         Float?                         // Actual time spent
+  complexity          String?        @default("MEDIUM") // LOW, MEDIUM, HIGH, VERY_HIGH
+  tags                String[]                       // Searchable tags
+  customFields        Json?                          // Flexible custom fields
+  
+  // Dependency Management
+  dependencyIds       String[]                       // Array of task IDs this task depends on
+  blockedByCount     Int            @default(0)      // Number of incomplete dependencies
+  blockingCount      Int            @default(0)      // Number of tasks blocked by this one
+  
+  // Assignment & Collaboration
+  assigneeId         String?
+  assignee           User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  reviewerId         String?
+  reviewer           User?          @relation("TaskReviewer", fields: [reviewerId], references: [id])
+  watcherIds         String[]                       // Users watching this task
+  
+  // Hierarchy & Organization
+  parentId           String?
+  parent             Task?          @relation("TaskHierarchy", fields: [parentId], references: [id])
+  subTasks           Task[]         @relation("TaskHierarchy")
+  projectId          String
+  project            Project        @relation(fields: [projectId], references: [id])
+  
+  // Relationships
+  dependencies       Task[]         @relation("TaskDependencies")
+  dependents         Task[]         @relation("TaskDependencies")
+  comments           Comment[]
+  files              TaskFile[]
+  
+  // Activity & Tracking
+  lastActivityAt     DateTime       @default(now())
+  completedAt        DateTime?
+  archivedAt         DateTime?
+  
+  // Tenant
+  tenantId           String?
+  tenant             Tenant?        @relation(fields: [tenantId], references: [id])
+  
+  // Indexes for performance
+  @@index([status, priority])
+  @@index([assigneeId, status])
+  @@index([projectId, status])
+  @@index([dueDate, status])
+  @@index([riskScore])
+  @@index([delayProbability])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([lastActivityAt])
+}
+
+// Additional models for enhanced functionality
+
+model TaskDependency {
+  id           String   @id @default(cuid())
+  taskId       String
+  dependsOnId  String
+  type         String   @default("FINISH_TO_START") // FINISH_TO_START, START_TO_START, etc.
+  createdAt    DateTime @default(now())
+  
+  task         Task     @relation("TaskDependencies", fields: [taskId], references: [id])
+  dependsOn    Task     @relation("TaskDependencies", fields: [dependsOnId], references: [id])
+  
+  @@unique([taskId, dependsOnId])
+}
+
+model TaskActivity {
+  id          String   @id @default(cuid())
+  taskId      String
+  userId      String
+  action      String   // CREATED, UPDATED, ASSIGNED, COMPLETED, etc.
+  field       String?  // Which field was changed
+  oldValue    Json?    // Previous value
+  newValue    Json?    // New value
+  metadata    Json?    // Additional context
+  createdAt   DateTime @default(now())
+  
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model TaskTimeEntry {
+  id          String   @id @default(cuid())
+  taskId      String
+  userId      String
+  hours       Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@index([taskId])
+  @@index([userId])
+  @@index([date])
+}
+
+model TaskTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  title       String
+  priority    TaskPriority @default(MEDIUM)
+  type        String   @default("TASK")
+  estimatedHours Float?
+  tags        String[]
+  customFields Json?
+  tenantId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+}
+
+// Add these relationships to User model
+model User {
+  // ... existing fields ...
+  
+  reviewedTasks    Task[]         @relation("TaskReviewer")
+  timeEntries      TaskTimeEntry[]
+  taskActivities   TaskActivity[]
+  
+  // ... existing relationships ...
+}

@@ -35,9 +35,12 @@ export default function UserTable() {
 
     const fetchUsers = async () => {
         try {
-            const response = await fetch('/api/admin/users');
+            const response = await fetch('/api/users');
+            if (response.status === 401) {
+                console.error('Unauthorized: Missing tenant context');
+                return;
+            }
             const data = await response.json();
-            // Ensure data is an array before setting state
             setUsers(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -74,9 +77,22 @@ export default function UserTable() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <button className="btn btn-primary" style={{ gap: '0.5rem' }}>
+                <button className="btn btn-primary" style={{ gap: '0.5rem' }} onClick={() => {
+                    const email = window.prompt('Enter email to invite:');
+                    if (email) {
+                        fetch('/api/users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, role: 'USER' })
+                        }).then((res) => {
+                            if (res.ok) {
+                                return fetchUsers();
+                            }
+                        });
+                    }
+                }}>
                     <UserPlus size={18} />
-                    <span>Add User</span>
+                    <span>Invite User</span>
                 </button>
             </div>
 

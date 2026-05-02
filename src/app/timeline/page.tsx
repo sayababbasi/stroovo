@@ -51,10 +51,18 @@ interface Task {
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
 
-export default function TimelinePage() {
+export function TimelineView({ 
+    hideHeader,
+    teamId,
+    initialTasks
+}: { 
+    hideHeader?: boolean,
+    teamId?: string,
+    initialTasks?: any[]
+} = {}) {
     const { user } = useAuth();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [tasks, setTasks] = useState<Task[]>(initialTasks || []);
+    const [loading, setLoading] = useState(!initialTasks);
     const [viewMode, setViewMode] = useState<ViewMode>('daily');
     const [baseDate, setBaseDate] = useState(subDays(new Date(), 2)); // Start a bit earlier to see today better
     const [zoom, setZoom] = useState(100); // Column width in pixels
@@ -65,11 +73,13 @@ export default function TimelinePage() {
     // Interaction state
     const [draggingTask, setDraggingTask] = useState<{ id: string, type: 'move' | 'resize-end', initialLeft: number, initialWidth: number, startX: number } | null>(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
     const fetchTasks = useCallback(async () => {
+        if (initialTasks) return;
         try {
-            const res = await fetch(`${API_URL}/api/tasks`);
+            const url = teamId ? `${API_URL}/api/team-tasks?teamId=${teamId}` : `${API_URL}/api/tasks`;
+            const res = await fetch(url);
             const data = await res.json();
             setTasks(Array.isArray(data) ? data : []);
             setLoading(false);
@@ -77,11 +87,20 @@ export default function TimelinePage() {
             console.error(err);
             setLoading(false);
         }
-    }, [API_URL]);
+    }, [API_URL, teamId, initialTasks]);
 
     useEffect(() => {
-        fetchTasks();
-    }, [fetchTasks]);
+        if (initialTasks) {
+            setTasks(initialTasks);
+            setLoading(false);
+        }
+    }, [initialTasks]);
+
+    useEffect(() => {
+        if (!initialTasks) {
+            fetchTasks();
+        }
+    }, [fetchTasks, initialTasks]);
 
     const updateTaskDates = async (taskId: string, startDate: Date, dueDate: Date | null) => {
         try {
@@ -448,10 +467,7 @@ export default function TimelinePage() {
     };
 
     return (
-        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
-            <Sidebar />
-
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
                 <style>{`
                     .timeline-container::-webkit-scrollbar { width: 8px; height: 8px; }
                     .timeline-container::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -528,13 +544,22 @@ export default function TimelinePage() {
                 `}</style>
 
                 {/* Toolbar */}
-                <div style={{ padding: '24px 40px', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #DFE1E6', zIndex: 300, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)' }}>
+                <div style={{ 
+                    padding: hideHeader ? '12px 24px' : '24px 40px', 
+                    background: 'rgba(255, 255, 255, 0.8)', 
+                    backdropFilter: 'blur(20px)', 
+                    borderBottom: '1px solid #DFE1E6', 
+                    zIndex: 300, 
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)' 
+                }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                            {!hideHeader && (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#172B4D', letterSpacing: '-0.03em', margin: 0 }}>Visual Planner</h1>
                                 <p style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, margin: '2px 0 0 0' }}>Manage project timelines & dependencies</p>
                             </div>
+                            )}
                             
                             <div style={{ display: 'flex', background: '#F4F5F7', borderRadius: '12px', padding: '4px' }}>
                                 {(['daily', 'weekly', 'monthly'] as ViewMode[]).map(mode => (
@@ -612,9 +637,11 @@ export default function TimelinePage() {
                                 />
                             </div>
 
+                            {!hideHeader && (
                             <button style={{ padding: '10px 24px', background: '#0052CC', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(0, 82, 204, 0.3)', transition: 'transform 0.2s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
                                 <span>Create Task</span>
                             </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -813,6 +840,16 @@ export default function TimelinePage() {
                         </div>
                     </div>
                 </div>
+            </div>
+    );
+}
+
+export default function TimelinePage() {
+    return (
+        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
+            <Sidebar />
+            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <TimelineView />
             </div>
         </main>
     );

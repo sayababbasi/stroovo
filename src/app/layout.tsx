@@ -13,12 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Workflow - Portfolio & CRM",
-  description: "Work management platform dashboard",
+  title: "Stroovo – Where Work Flows Smarter",
+  description: "Stroovo is an AI-powered workflow platform that helps teams manage tasks, automate processes, and work smarter.",
 };
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
+import FloatingAI from "@/components/FloatingAI";
+import CommandPalette from "@/components/CommandPalette";
 
 export default function RootLayout({
   children,
@@ -31,6 +33,8 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster position="top-right" />
+          <CommandPalette />
+          <FloatingAI />
         </AuthProvider>
       </body>
     </html>

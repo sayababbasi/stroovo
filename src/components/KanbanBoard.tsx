@@ -32,15 +32,14 @@ import {
     Maximize2,
     Minimize2
 } from 'lucide-react';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/components/tasks/types';
 import KanbanCard from './KanbanCard';
-import TaskPanel from './TaskPanel';
 
 /* ───────────────────────── Types ───────────────────────── */
 
 interface KanbanBoardProps {
     tasks: Task[];
-    onTaskUpdate: (taskId: string, newStatus: string) => Promise<void>;
+    onTaskUpdate: (taskId: string, newStatus: string) => Promise<void> | void;
     onAddTask: (status: string) => void;
     onEditTask: (task: Task) => void;
     onDeleteTask: (task: Task) => void;
@@ -91,7 +90,6 @@ export default function KanbanBoard({
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [focusColumn, setFocusColumn] = useState<string | null>(null);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -100,10 +98,6 @@ export default function KanbanBoard({
     /* Sync props → state */
     useEffect(() => {
         setTasks(initialTasks);
-        if (selectedTask) {
-            const updated = initialTasks.find(t => t.id === selectedTask.id);
-            if (updated) setSelectedTask(updated);
-        }
     }, [initialTasks]);
 
     /* Keyboard shortcuts */
@@ -111,7 +105,7 @@ export default function KanbanBoard({
         const onKey = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
             if (e.key === 'n' || e.key === 'N') { e.preventDefault(); onAddTask('TODO'); }
-            if (e.key === 'Escape') { setSelectedTask(null); setFocusColumn(null); setActiveMenu(null); }
+            if (e.key === 'Escape') { setFocusColumn(null); setActiveMenu(null); }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -165,7 +159,7 @@ export default function KanbanBoard({
             const at = prev.find(t => t.id === aid);
             if (!at) return prev;
             const isCol = DEFAULT_COLUMNS.some(c => c.key === oid);
-            if (isCol) return at.status === oid ? prev : prev.map(t => t.id === aid ? { ...t, status: oid as any } : t);
+            if (isCol) return at.status === oid ? prev : prev.map(t => t.id === aid ? { ...t, status: oid as TaskStatus } : t);
             const ot = prev.find(t => t.id === oid);
             if (ot && at.status !== ot.status) return prev.map(t => t.id === aid ? { ...t, status: ot.status } : t);
             return prev;
@@ -184,10 +178,10 @@ export default function KanbanBoard({
             if (!at) return prev;
             let ns = at.status;
             const oc = DEFAULT_COLUMNS.find(c => c.key === oid);
-            if (oc) ns = oc.key;
+            if (oc) ns = oc.key as TaskStatus;
             else { const ot = prev.find(t => t.id === oid); if (ot) ns = ot.status; }
             const final = aid !== oid ? arrayMove(prev, prev.findIndex(t => t.id === aid), prev.findIndex(t => t.id === oid)) : prev;
-            if (ns !== at.status) { onTaskUpdate(aid, ns); return final.map(t => t.id === aid ? { ...t, status: ns as any } : t); }
+            if (ns !== at.status) { onTaskUpdate(aid, ns); return final.map(t => t.id === aid ? { ...t, status: ns as TaskStatus } : t); }
             return final;
         });
     }, [onTaskUpdate]);
@@ -414,7 +408,7 @@ export default function KanbanBoard({
                     border-radius: 10px;
                     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
                     width: 176px;
-                    z-index: 100;
+                    z-index: 50;
                     padding: 5px;
                     animation: kbs 0.1s ease-out;
                 }
@@ -530,7 +524,7 @@ export default function KanbanBoard({
                                             <KanbanCard
                                                 key={task.id}
                                                 task={task}
-                                                onClick={() => setSelectedTask(task)}
+                                                onClick={(task) => onEditTask(task)}
                                                 onEdit={onEditTask}
                                                 onDelete={onDeleteTask}
                                             />
@@ -561,8 +555,6 @@ export default function KanbanBoard({
                     </DragOverlay>
                 </DndContext>
             </div>
-
-            <TaskPanel task={selectedTask} onClose={() => setSelectedTask(null)} />
         </div>
     );
 }

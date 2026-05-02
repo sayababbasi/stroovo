@@ -24,9 +24,9 @@ export async function GET() {
         });
 
         return NextResponse.json(projects);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to fetch projects:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
                 managerId,
                 status: status || 'ACTIVE',
                 endDate: endDate ? new Date(endDate) : null,
-            },
+            } as any,
         });
 
         return NextResponse.json(project);

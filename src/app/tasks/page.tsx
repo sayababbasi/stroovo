@@ -1,451 +1,575 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
-import {
-    Search, Filter, Plus, LayoutGrid, Calendar, List, Columns,
-    CheckCircle2, Circle, AlertCircle, Clock, ChevronDown, ChevronRight,
-    MessageSquare, Paperclip, MoreHorizontal, User, Tag, 
-    ArrowUpRight, ArrowDownRight, Zap, Target, PanelRightClose,
-    Focus, X, CheckSquare, AlignLeft, Calendar as CalIcon, Send,
-    Inbox, Activity
-} from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { Search, Filter, Plus, LayoutGrid, List, Columns, Focus, ArrowUpRight, ArrowDownRight, Inbox, Check, Bot } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
+import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Task, TaskStatus, Priority } from '@/components/tasks/types';
+import { STATUS_LABELS, PRIORITY_LABELS } from '@/components/tasks/types';
+import TaskRow from '@/components/tasks/TaskRow';
+import BulkToolbar from '@/components/tasks/BulkToolbar';
+import TaskDetailsPanel from '@/components/tasks/TaskDetailsPanel';
+import AIInsightsBanner from '@/components/tasks/AIInsightsBanner';
+import CreateTaskModal from '@/components/tasks/CreateTaskModal';
+import { BoardView } from '@/app/board/page';
+import { TimelineView } from '@/app/timeline/page';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
 
-/* ─── Mock Data ─────────────────────── */
-type TaskStatus = 'To Do' | 'In Progress' | 'Review' | 'Blocked' | 'Completed';
-type Priority = 'Urgent' | 'High' | 'Normal' | 'Low';
-
-interface Subtask { id: string; name: string; done: boolean; }
-interface Task {
-    id: string; title: string; project: string; status: TaskStatus;
-    priority: Priority; progress: number; assignee: string;
-    dueDate: string; tags: string[]; health: 'on_track' | 'at_risk' | 'delayed';
-    subtasks: Subtask[]; comments: number; files: number;
+// ── Helpers to safely read project/assignee from DB response ─────────────────
+function getProjectName(t: Task): string {
+    if (!t.project) return 'No Project';
+    if (typeof t.project === 'object') return (t.project as any).name || 'No Project';
+    return t.project;
 }
-
-const INIT_TASKS: Task[] = [
-    { id: 'T-01', title: 'Implement Authentication OAuth', project: 'Quantum UI', status: 'In Progress', priority: 'Urgent', progress: 65, assignee: 'Patrick', dueDate: 'Today', tags: ['Backend', 'Security'], health: 'at_risk', subtasks: [{id:'s1',name:'Setup Google Provider',done:true},{id:'s2',name:'JWT handling',done:false}], comments: 4, files: 1 },
-    { id: 'T-02', title: 'Design System Migration', project: 'Design Systems', status: 'To Do', priority: 'Normal', progress: 0, assignee: 'Michelle', dueDate: 'Apr 12', tags: ['Design', 'UI'], health: 'on_track', subtasks: [], comments: 0, files: 3 },
-    { id: 'T-03', title: 'Optimize Database Queries', project: 'Database Migration', status: 'Blocked', priority: 'High', progress: 40, assignee: 'Alex', dueDate: 'Yesterday', tags: ['Backend', 'Performance'], health: 'delayed', subtasks: [{id:'s3',name:'Index User table',done:true}], comments: 8, files: 0 },
-    { id: 'T-04', title: 'Mobile App Navigation Fix', project: 'Mobile App v2', status: 'Review', priority: 'Urgent', progress: 90, assignee: 'Sara', dueDate: 'Tomorrow', tags: ['Mobile', 'Bug'], health: 'on_track', subtasks: [], comments: 2, files: 1 },
-    { id: 'T-05', title: 'Update Landing Page Copy', project: 'Marketing Website', status: 'Completed', priority: 'Low', progress: 100, assignee: 'Patrick', dueDate: 'Last Week', tags: ['Content'], health: 'on_track', subtasks: [], comments: 1, files: 0 },
-];
-
-const COLORS = {
-    Urgent: '#FF5630', High: '#FFAB00', Normal: '#0052CC', Low: '#6B778C',
-    'To Do': '#DFE1E6', 'In Progress': '#0052CC', Review: '#6554C0', Blocked: '#FF5630', Completed: '#36B37E',
-    on_track: '#36B37E', at_risk: '#FFAB00', delayed: '#FF5630'
-};
-
-/* ─── Helpers ────────────────────────── */
-const getAC = (s: string) => {
-    const c = ['#0052CC','#36B37E','#FF5630','#FFAB00','#6554C0','#00B8D9'];
-    let h = 0; for(let i=0;i<s.length;i++) h = s.charCodeAt(i) + ((h<<5)-h);
-    return c[Math.abs(h)%c.length];
-};
-const getInit = (n: string) => n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-
-function Avatar({ name, size=24, outline=false }: { name: string, size?: number, outline?: boolean }) {
-    if (!name) return <div style={{width:size,height:size,borderRadius:'50%',background:'#F4F5F7',border:outline?'2px solid white':'none',display:'flex',alignItems:'center',justifyContent:'center'}}><User size={12} color="#8A94A6"/></div>;
-    return (
-        <div style={{width:size,height:size,borderRadius:'50%',background:getAC(name),color:'white',fontSize:size*0.4,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:outline?'2px solid white':'none'}} title={name}>
-            {getInit(name)}
-        </div>
-    );
+function getAssigneeName(t: Task): string {
+    if (!t.assignee) return 'Unassigned';
+    if (typeof t.assignee === 'object') return (t.assignee as any).name || 'Unassigned';
+    return t.assignee;
+}
+function isOverdue(t: Task): boolean {
+    if (!t.dueDate) return false;
+    return new Date(t.dueDate) < new Date(new Date().toDateString());
+}
+function isDueToday(t: Task): boolean {
+    if (!t.dueDate) return false;
+    return new Date(t.dueDate).toDateString() === new Date().toDateString();
 }
 
 export default function TasksPage() {
-    const [tasks, setTasks] = useState(INIT_TASKS);
-    const [viewMode, setViewMode] = useState<'Table'|'Kanban'|'Timeline'|'Calendar'>('Table');
+    const { user } = useAuth();
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'Table' | 'Kanban' | 'Timeline'>('Table');
     const [quickFilter, setQuickFilter] = useState('All');
     const [focusMode, setFocusMode] = useState(false);
     const [searchQ, setSearchQ] = useState('');
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-    const [editingCell, setEditingCell] = useState<{id:string, field:string} | null>(null);
+    const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+    const [showInsights, setShowInsights] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
-    // Derived states
-    const filteredTasks = tasks.filter(t => {
-        if (focusMode && t.assignee !== 'Patrick') return false; // Default logged in user Patrick
+    const fetchTasks = useCallback(async (isSilent = false) => {
+        try {
+            setError(null);
+            if (!isSilent) setLoading(true);
+            const response = await apiGet('/api/tasks', null, { timeout: 30000 });
+            
+            if (response.success && response.data) {
+                setTasks(Array.isArray(response.data) ? response.data : []);
+            } else {
+                setError(response.error || 'Failed to load tasks. Please try again.');
+            }
+        } catch (err: any) {
+            console.error('Failed to fetch tasks:', err);
+            setError(err.message || 'Network error. Please check your connection.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Socket initialization
+        fetch('/api/socket');
+        const s = io({ path: '/api/socket' });
+        setSocket(s);
+
+        if (user?.tenantId) {
+            s.emit('join-room', `tenant-${user.tenantId}`);
+        }
+
+        const handleUpdate = () => fetchTasks(true);
+        const handleRiskUpdate = (message: any) => {
+            const payload = message?.payload || message || {};
+            if (!payload.taskId) return;
+
+            setTasks(current => current.map(task => task.id === payload.taskId ? {
+                ...task,
+                delayProbability: payload.delayProbability ?? task.delayProbability,
+                aiInsights: {
+                    ...((task.aiInsights as any) || {}),
+                    riskAnalysis: {
+                        riskLevel: String(payload.riskLevel || 'LOW').toLowerCase(),
+                        delayProbability: payload.delayProbability ?? task.delayProbability ?? 0,
+                        reasons: payload.reasons || [],
+                        recommendations: payload.recommendations || [],
+                        suggestions: payload.recommendations || [],
+                    }
+                } as any,
+            } : task));
+        };
+
+        s.on('TASK_CREATED', handleUpdate);
+        s.on('TASK_UPDATED', handleUpdate);
+        s.on('TASK_DELETED', handleUpdate);
+        s.on('TASK_STATUS_CHANGED', handleUpdate);
+        s.on('risk_update', handleRiskUpdate);
+        s.on('RISK_UPDATED', handleRiskUpdate);
+
+        return () => { s.disconnect(); };
+    }, [user?.tenantId, fetchTasks]);
+
+    useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor)
+    );
+
+    const [filterStatus, setFilterStatus] = useState<TaskStatus | 'All'>('All');
+    const [groupBy, setGroupBy] = useState<'Status' | 'Priority' | 'Project' | 'None'>('Status');
+    const [activeTipIndex, setActiveTipIndex] = useState(0);
+    const tips = useMemo(() => [
+        { text: 'Press / to search', icon: <Search size={12} /> },
+        { text: 'Shift + N for New Task', icon: <Plus size={12} /> },
+        { text: 'Group tasks by Status/Project', icon: <Columns size={12} /> },
+        { text: 'Drag & Drop to reorder', icon: <List size={12} /> }
+    ], []);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setActiveTipIndex(prev => (prev + 1) % tips.length);
+        }, 10000);
+        return () => clearInterval(timer);
+    }, [tips.length]);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if typing in input
+            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
+            // Shift + N to create task
+            if (e.shiftKey && e.key.toUpperCase() === 'N') {
+                e.preventDefault();
+                setShowCreateModal(true);
+            }
+            // / to search
+            if (e.key === '/') { 
+                e.preventDefault(); 
+                document.querySelector<HTMLInputElement>('#task-search')?.focus(); 
+            }
+            // Escape to close
+            if (e.key === 'Escape') {
+                setActiveTask(null);
+                setShowCreateModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    const filteredTasks = useMemo(() => tasks.filter(t => {
+        // Only show top-level tasks (no parentId) in the main table
+        if (t.parentId) return false;
         if (searchQ && !t.title.toLowerCase().includes(searchQ.toLowerCase())) return false;
-        if (quickFilter === 'Assigned to Me' && t.assignee !== 'Patrick') return false;
-        if (quickFilter === 'Due Today' && t.dueDate !== 'Today') return false;
-        if (quickFilter === 'Overdue' && (t.dueDate === 'Yesterday' || t.dueDate === 'Last Week')) return false;
-        if (quickFilter === 'High Priority' && !['Urgent','High'].includes(t.priority)) return false;
+        
+        // Quick Filters
+        if (quickFilter === 'Assigned to Me' && (t as any).assigneeId !== user?.id) return false;
+        if (quickFilter === 'Due Today' && !isDueToday(t)) return false;
+        if (quickFilter === 'Overdue' && !isOverdue(t)) return false;
+        if (quickFilter === 'High Priority' && t.priority !== 'HIGH' && t.priority !== 'URGENT') return false;
+        
+        // Status Filter
+        if (filterStatus !== 'All' && t.status !== filterStatus) return false;
+
+        if (focusMode) {
+            // Focus mode: show only my tasks (IN_PROGRESS / HIGH priority)
+            if (t.status !== 'IN_PROGRESS' && t.priority !== 'HIGH' && t.priority !== 'URGENT') return false;
+        }
+        
         return true;
-    });
+    }), [tasks, focusMode, searchQ, quickFilter, filterStatus, user?.id]);
 
-    const toggleSelect = (id: string, e: React.MouseEvent) => {
+    // Stats computed from real DB values
+    const stats = useMemo(() => [
+        { label: 'Total Tasks', val: tasks.length, trend: '+12%', up: true },
+        { label: 'In Progress', val: tasks.filter(t => t.status === 'IN_PROGRESS').length, trend: '+4%', up: true },
+        { label: 'Blocked', val: tasks.filter(t => t.status === 'BLOCKED').length, trend: '-2%', up: false },
+        { label: 'Completed', val: tasks.filter(t => t.status === 'DONE').length, trend: '+24%', up: true },
+        { label: 'Overdue', val: tasks.filter(t => isOverdue(t)).length, trend: '+1%', up: false },
+    ], [tasks]);
+
+    const groupedTasks = useMemo(() => {
+        if (groupBy === 'None') return { 'All Tasks': filteredTasks };
+        const groups: Record<string, Task[]> = {};
+        filteredTasks.forEach(t => {
+            let key = 'Other';
+            if (groupBy === 'Status') key = STATUS_LABELS[t.status] || t.status;
+            else if (groupBy === 'Priority') key = PRIORITY_LABELS[t.priority] || t.priority;
+            else if (groupBy === 'Project') key = getProjectName(t);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(t);
+        });
+        return groups;
+    }, [filteredTasks, groupBy]);
+
+    const handleUpdate = useCallback(async (id: string, fieldOrUpdates: keyof Task | any, val?: unknown) => {
+        const updates = typeof fieldOrUpdates === 'string' ? { [fieldOrUpdates]: val } : fieldOrUpdates;
+        
+        // Whitelist for API calls to prevent validation errors with computed fields
+        const allowedFields = ['title', 'description', 'status', 'priority', 'type', 'projectId', 'assigneeId', 'parentId', 'teamId', 'dueDate', 'progress'];
+        const apiUpdates = Object.keys(updates)
+            .filter(key => allowedFields.includes(key))
+            .reduce((obj, key) => {
+                obj[key] = updates[key];
+                return obj;
+            }, {} as any);
+
+        setSavingIds(s => new Set(s).add(id));
+        // Optimistic update
+        setTasks(ts => ts.map(t => t.id === id ? { ...t, ...updates } : t));
+        setActiveTask(prev => prev?.id === id ? { ...prev, ...updates } : prev);
+        
+        // If no API fields are being changed, skip the network request
+        if (Object.keys(apiUpdates).length === 0) {
+            setSavingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            return;
+        }
+
+        try {
+            const response = await apiPatch(`/api/tasks/${id}`, null, apiUpdates, { timeout: 30000 });
+            
+            if (response.success && response.data) {
+                setTasks(ts => ts.map(t => t.id === id ? { ...t, ...response.data } : t));
+                setActiveTask(prev => prev?.id === id ? { ...prev, ...response.data } : prev);
+            } else {
+                throw new Error(response.error || 'Failed to update task');
+            }
+        } catch (err: any) {
+            console.error('Update failed:', err.message);
+            toast.error(err.message || 'Task update failed');
+            fetchTasks();
+        } finally {
+            setSavingIds(s => { const n = new Set(s); n.delete(id); return n; });
+        }
+    }, [fetchTasks]);
+
+    const toggleSelect = useCallback((id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        const s = new Set(selectedTasks);
-        s.has(id) ? s.delete(id) : s.add(id);
-        setSelectedTasks(s);
-    };
+        setSelectedTasks(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    }, []);
 
+    const toggleExpand = useCallback((id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setExpandedRows(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    }, []);
+
+    const handleDelete = useCallback(async (id: string) => {
+        const oldTasks = [...tasks];
+        setTasks(ts => ts.filter(t => t.id !== id));
+        setSelectedTasks(s => { const n = new Set(s); n.delete(id); return n; });
+        if (activeTask?.id === id) setActiveTask(null);
+        try {
+            const response = await apiDelete(`/api/tasks/${id}`, null, { timeout: 30000 });
+            if (!response.success) {
+                throw new Error(response.error || 'Failed to delete task');
+            }
+        } catch (err: any) {
+            console.error('Delete failed:', err);
+            toast.error(err.message || 'Task delete failed');
+            setTasks(oldTasks);
+        }
+    }, [tasks, activeTask]);
+
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            setTasks(ts => {
+                const oldIdx = ts.findIndex(t => t.id === active.id);
+                const newIdx = ts.findIndex(t => t.id === over.id);
+                return arrayMove(ts, oldIdx, newIdx);
+            });
+        }
+    }, []);
+
+    const bulkStatus = useCallback((status: TaskStatus) => {
+        setTasks(ts => ts.map(t => selectedTasks.has(t.id) ? { ...t, status } : t));
+        // Persist bulk status to DB
+        Promise.all([...selectedTasks].map(id =>
+            apiPatch(`/api/tasks/${id}`, null, { status }, { timeout: 30000 })
+        )).catch(console.error);
+        setSelectedTasks(new Set());
+    }, [selectedTasks]);
+
+    const bulkPriority = useCallback((priority: Priority) => {
+        setTasks(ts => ts.map(t => selectedTasks.has(t.id) ? { ...t, priority } : t));
+        Promise.all([...selectedTasks].map(id =>
+            apiPatch(`/api/tasks/${id}`, null, { priority }, { timeout: 30000 })
+        )).catch(console.error);
+        setSelectedTasks(new Set());
+    }, [selectedTasks]);
+
+    const bulkAssign = useCallback((assignee: string) => {
+        setTasks(ts => ts.map(t => selectedTasks.has(t.id) ? { ...t, assignee } : t));
+        setSelectedTasks(new Set());
+    }, [selectedTasks]);
+
+    const bulkDelete = useCallback(async () => {
+        const ids = [...selectedTasks];
+        setTasks(ts => ts.filter(t => !selectedTasks.has(t.id)));
+        setSelectedTasks(new Set());
+        await Promise.all(ids.map(id => apiDelete(`/api/tasks/${id}`, null, { timeout: 30000 }))).catch(console.error);
+    }, [selectedTasks]);
+
+    const handleCreateSuccess = useCallback((newTask: Task) => {
+        setTasks(ts => [newTask, ...ts]);
+        setShowCreateModal(false);
+    }, []);
+
+    // Keyboard shortcut: press / to focus search
     const toggleSelectAll = () => {
         if (selectedTasks.size === filteredTasks.length) setSelectedTasks(new Set());
-        else setSelectedTasks(new Set(filteredTasks.map(t=>t.id)));
+        else setSelectedTasks(new Set(filteredTasks.map(t => t.id)));
     };
-
-    const toggleExpand = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const s = new Set(expandedRows);
-        s.has(id) ? s.delete(id) : s.add(id);
-        setExpandedRows(s);
-    };
-
-    const handleUpdate = (id: string, field: keyof Task, val: any) => {
-        setTasks(ts => ts.map(t => t.id === id ? { ...t, [field]: val } : t));
-        setEditingCell(null);
-    };
-
-    const stats = [
-        { label: 'Total Tasks', val: tasks.length, trend: '+12%', up: true, col: '#0052CC' },
-        { label: 'In Progress', val: tasks.filter(t=>t.status==='In Progress').length, trend: '+4%', up: true, col: '#36B37E' },
-        { label: 'Blocked', val: tasks.filter(t=>t.status==='Blocked').length, trend: '-2%', up: false, col: '#FF5630' },
-        { label: 'Completed', val: tasks.filter(t=>t.status==='Completed').length, trend: '+24%', up: true, col: '#36B37E' },
-        { label: 'Overdue', val: tasks.filter(t=>['Yesterday','Last Week'].includes(t.dueDate)).length, trend: '+1%', up: true, col: '#FFAB00' },
-    ];
 
     return (
-        <main style={{ display:'flex', minHeight:'100vh', background:'#FAFBFC' }} onClick={() => setEditingCell(null)}>
+        <main style={{ display: 'flex', minHeight: '100vh', background: '#FAFBFC' }}>
             <Sidebar />
-
             <style>{`
-                .qf-btn { padding:6px 12px; border-radius:14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; border:1px solid transparent; color:#42526E; background:transparent;}
+                @keyframes slideInRight { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+                @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+                @keyframes spin { to{transform:rotate(360deg)} }
+                @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+                .qf-btn { padding:6px 14px; border-radius:14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; border:1px solid transparent; color:#42526E; background:transparent; }
                 .qf-btn:hover { background:rgba(9,30,66,0.04); }
-                .qf-btn.active { background:#F0F5FF; color:#0052CC; }
-                
-                .stat-card { background:white; border-radius:12px; padding:16px; border:1px solid #DFE1E6; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 4px rgba(9,30,66,0.02); }
-                .stat-card:hover { border-color:#B3D4FF; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,82,204,0.08); }
-                
-                .vw-btn { padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; border:none; background:transparent; display:flex; gap:6px; alignItems:center; color:#6B778C; border-radius:6px; transition:0.2s;}
+                .qf-btn.active { background:#F0F5FF; color:#0052CC; border-color:#B3D4FF; }
+                .stat-card { background:white; border-radius:12px; padding:16px 18px; border:1px solid #E8EAED; cursor:pointer; transition:all 0.2s; }
+                .stat-card:hover { border-color:#B3D4FF; transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,82,204,0.08); }
+                .vw-btn { padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; border:none; background:transparent; display:flex; gap:6px; align-items:center; color:#6B778C; border-radius:6px; transition:0.15s; }
                 .vw-btn.active { background:white; color:#0052CC; box-shadow:0 1px 3px rgba(9,30,66,0.08); }
-                
-                .t-row { display:grid; grid-template-columns:40px minmax(250px,2fr) 140px 120px 100px 120px 100px 100px 140px 100px; align-items:center; border-bottom:1px solid rgba(9,30,66,0.04); background:white; position:relative; min-height:48px; transition:all 0.1s; }
-                .t-row:hover { background:#F8FAFF; border-bottom-color:#DEEBFF; z-index:1; box-shadow:0 1px 8px rgba(9,30,66,0.06); }
-                .t-row.selected { background:#E6EFFF; }
-                .t-row .r-actions { display:none; position:absolute; right:12px; top:50%; transform:translateY(-50%); gap:4px; background:linear-gradient(90deg, transparent, #F8FAFF 10%); padding-left:20px; }
-                .t-row:hover .r-actions { display:flex; }
-                
-                .c-cell { padding:0 12px; font-size:13px; color:#172B4D; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; alignItems:center; cursor:text; min-height:30px; border-radius:4px; border:1px solid transparent;}
-                .c-cell:hover { border-color:#DFE1E6; background:white; }
-                .c-head { font-size:11px; font-weight:700; color:#6B778C; text-transform:uppercase; padding:10px 12px; border-bottom:1px solid #DFE1E6; background:#FAFBFC; position:sticky; top:0; z-index:10; }
-                
-                .act-btn { width:28px; height:28px; border-radius:6px; display:flex; alignItems:center; justifyContent:center; background:white; border:1px solid #DFE1E6; cursor:pointer; color:#42526E; transition:0.15s;}
-                .act-btn:hover { background:#0052CC; color:white; border-color:#0052CC; }
-
-                .editable-select { width:100%; border:1px solid #0052CC; border-radius:4px; padding:2px 4px; font-size:12px; outline:none; background:white; }
-                
-                .health-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; box-shadow:0 0 0 2px white; }
+                .t-head { font-size:11px; font-weight:700; color:#8A94A6; text-transform:uppercase; padding:10px 10px; letter-spacing:0.03em; }
             `}</style>
-            
-            <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, marginLeft:'240px' }}>
-                
-                {/* ── Header ── */}
-                <div style={{ padding:'24px 32px 16px', background:'white', borderBottom:'1px solid #DFE1E6' }}>
-                    
-                    {/* Top Row: Title, Search, Actions */}
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px' }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                            <div style={{ background:'#E6EFFF', color:'#0052CC', padding:'8px', borderRadius:'10px' }}><Inbox size={20}/></div>
-                            <h1 style={{ fontSize:'24px', fontWeight:800, color:'#172B4D', letterSpacing:'-0.02em' }}>All Tasks</h1>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '240px' }}>
+                {/* Header */}
+                <div style={{ padding: '24px 32px 16px', background: 'white', borderBottom: '1px solid #E8EAED' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ background: '#E6EFFF', color: '#0052CC', padding: 8, borderRadius: 10 }}><Inbox size={20} /></div>
+                            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', letterSpacing: '-0.02em', margin: 0 }}>All Tasks</h1>
+                            {loading && <span style={{ fontSize: '11px', color: '#8A94A6', fontWeight: 600 }}>Refreshing...</span>}
                         </div>
-                        
-                        <div style={{ flex:1, maxWidth:'420px', margin:'0 24px', position:'relative' }}>
-                            <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8A94A6' }}/>
-                            <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search tasks... (Ctrl+K)" style={{ width:'100%', padding:'9px 12px 9px 34px', borderRadius:'8px', border:'1px solid #DFE1E6', background:'#FAFBFC', fontSize:'13px', outline:'none', transition:'all 0.2s' }} />
+                        <div style={{ flex: 1, maxWidth: 600, margin: '0 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                                <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
+                                <input id="task-search" value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                                    placeholder="Search tasks... ( / )"
+                                    style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8, border: '1px solid #E8EAED', background: '#FAFBFC', fontSize: '13px', outline: 'none' }} />
+                            </div>
+
+                            {/* Rotating Keyboard Tips */}
+                            <div key={activeTipIndex} style={{ 
+                                display: 'flex', alignItems: 'center', gap: 8, 
+                                background: '#F4F5F7', padding: '7px 14px', borderRadius: 20, 
+                                fontSize: '11px', fontWeight: 700, color: '#42526E', 
+                                animation: 'slideUp 0.3s ease-out',
+                                whiteSpace: 'nowrap',
+                                border: '1px solid #EBECF0',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                            }}>
+                                <span style={{ color: '#0052CC', fontSize: '10px', background: '#E6EFFF', padding: '2px 6px', borderRadius: 4, marginRight: 2 }}>PRO TIP</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    {tips[activeTipIndex].icon}
+                                    {tips[activeTipIndex].text}
+                                </span>
+                            </div>
                         </div>
-                        
-                        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                            <button style={{ display:'flex', alignItems:'center', gap:'6px', padding:'8px 12px', border:'1px solid #DFE1E6', background:'white', borderRadius:'8px', fontSize:'13px', fontWeight:600, color:'#42526E', cursor:'pointer' }}>
-                                <Filter size={14}/> Filter
-                            </button>
-                            <button style={{ display:'flex', alignItems:'center', gap:'6px', padding:'8px 12px', border:'1px solid #DFE1E6', background:'white', borderRadius:'8px', fontSize:'13px', fontWeight:600, color:'#42526E', cursor:'pointer' }}>
-                                <Columns size={14}/> Group: Status
-                            </button>
-                            <div style={{ width:1, height:24, background:'#DFE1E6', margin:'0 4px' }}/>
-                            <button style={{ display:'flex', alignItems:'center', gap:'6px', padding:'9px 16px', background:'#0052CC', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:700, color:'white', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,82,204,0.2)' }}>
-                                <Plus size={16}/> Create Task
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ position: 'relative' }}>
+                                <select 
+                                    value={filterStatus}
+                                    onChange={e => setFilterStatus(e.target.value as any)}
+                                    style={{ padding: '8px 12px 8px 30px', border: '1px solid #E8EAED', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', appearance: 'none', outline: 'none' }}
+                                >
+                                    <option value="All">All Statuses</option>
+                                    {Object.entries(STATUS_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                                </select>
+                                <Filter size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6', pointerEvents: 'none' }} />
+                            </div>
+
+                            <div style={{ position: 'relative' }}>
+                                <select 
+                                    value={groupBy}
+                                    onChange={e => setGroupBy(e.target.value as any)}
+                                    style={{ padding: '8px 12px 8px 30px', border: '1px solid #E8EAED', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', appearance: 'none', outline: 'none' }}
+                                >
+                                    <option value="None">No Grouping</option>
+                                    <option value="Status">Group: Status</option>
+                                    <option value="Priority">Group: Priority</option>
+                                    <option value="Project">Group: Project</option>
+                                </select>
+                                <Columns size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6', pointerEvents: 'none' }} />
+                            </div>
+
+                            <div style={{ width: 1, height: 24, background: '#E8EAED', margin: '0 4px' }} />
+                            <button onClick={() => setShowCreateModal(true)}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0052CC', border: 'none', borderRadius: 8, fontSize: '13px', fontWeight: 700, color: 'white', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,82,204,0.2)' }}>
+                                <Plus size={16} /> Create Task
                             </button>
                         </div>
                     </div>
-
-                    {/* Quick Filters & Focus Mode */}
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                        <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
                             {['All', 'Assigned to Me', 'Due Today', 'Overdue', 'High Priority'].map(f => (
-                                <button key={f} className={`qf-btn ${quickFilter===f?'active':''}`} onClick={()=>setQuickFilter(f)}>{f}</button>
+                                <button key={f} className={`qf-btn ${quickFilter === f ? 'active' : ''}`} onClick={() => setQuickFilter(f)}>{f}</button>
                             ))}
                         </div>
-                        <label style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', fontWeight:600, color:focusMode?'#0052CC':'#6B778C', cursor:'pointer', background:focusMode?'#E6EFFF':'transparent', padding:'6px 12px', borderRadius:'14px', transition:'0.2s' }}>
-                            <Focus size={14}/> Focus Mode
-                            <input type="checkbox" checked={focusMode} onChange={e=>setFocusMode(e.target.checked)} style={{display:'none'}}/>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '12px', fontWeight: 600, color: focusMode ? '#0052CC' : '#6B778C', cursor: 'pointer', background: focusMode ? '#E6EFFF' : 'transparent', padding: '6px 12px', borderRadius: 14, transition: '0.2s' }}>
+                            <Focus size={14} /> Focus Mode
+                            <input type="checkbox" checked={focusMode} onChange={e => setFocusMode(e.target.checked)} style={{ display: 'none' }} />
                         </label>
                     </div>
                 </div>
 
-                {/* ── Insights & Stats ── */}
-                <div style={{ padding:'20px 32px 0' }}>
-                    {/* AI Insight banner */}
-                    {tasks.some(t=>['Yesterday','Last Week'].includes(t.dueDate)) && (
-                        <div style={{ marginBottom:'16px', display:'flex', alignItems:'center', gap:'10px', padding:'10px 16px', background:'linear-gradient(90deg, #FFF0EB 0%, rgba(255,255,255,0) 100%)', borderLeft:'3px solid #FF5630', borderRadius:'0 8px 8px 0', fontSize:'13px', color:'#172B4D' }}>
-                            <Zap size={14} color="#FF5630" />
-                            <span style={{ fontWeight:700 }}>Heads up:</span> You have {tasks.filter(t=>['Yesterday','Last Week'].includes(t.dueDate)).length} overdue tasks that need attention.
-                        </div>
-                    )}
-                    
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'16px', marginBottom:'24px' }}>
-                        {stats.map((s,i)=>(
-                            <div key={i} className="stat-card" onClick={()=>s.label==='Overdue'?setQuickFilter('Overdue'):null}>
-                                <div style={{ fontSize:'12px', fontWeight:600, color:'#6B778C', marginBottom:'8px' }}>{s.label}</div>
-                                <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between' }}>
-                                    <span style={{ fontSize:'24px', fontWeight:800, color:'#172B4D', lineHeight:1 }}>{s.val}</span>
-                                    <div style={{ display:'flex', alignItems:'center', fontSize:'11px', fontWeight:700, color:s.up?'#36B37E':'#FF5630', background:s.up?'#E3FCEF':'#FFF0EB', padding:'2px 6px', borderRadius:'12px' }}>
-                                        {s.up ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>} {s.trend}
+                {/* Error banner */}
+                {error && (
+                    <div style={{ margin: '16px 32px 0', padding: '12px 16px', background: '#FFEBE6', border: '1px solid #FF5630', borderRadius: 8, fontSize: '13px', color: '#FF5630', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                        {error}
+                        <button onClick={() => fetchTasks()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#FF5630', fontWeight: 700, fontSize: '13px' }}>Retry</button>
+                    </div>
+                )}
+
+                {/* Stats + AI Banner */}
+                <div style={{ padding: '20px 32px 0' }}>
+                    {showInsights && <AIInsightsBanner tasks={tasks} onDismiss={() => setShowInsights(false)} />}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 16, marginBottom: 24 }}>
+                        {stats.map((s, i) => (
+                            <div key={i} className="stat-card">
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: '#8A94A6', marginBottom: 8 }}>{s.label}</div>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', lineHeight: 1 }}>{s.val}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '11px', fontWeight: 700, color: s.up ? '#36B37E' : '#FF5630', background: s.up ? '#E3FCEF' : '#FFEBE6', padding: '2px 6px', borderRadius: 12 }}>
+                                        {s.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />} {s.trend}
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    
-                    {/* View Switcher Controls */}
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
-                        <div style={{ background:'#EBECF0', padding:'4px', borderRadius:'8px', display:'inline-flex' }}>
-                            {[{v:'Table',i:List},{v:'Kanban',i:LayoutGrid},{v:'Timeline',i:Columns},{v:'Calendar',i:CalIcon}].map(m=>(
-                                <button key={m.v} className={`vw-btn ${viewMode===m.v?'active':''}`} onClick={()=>setViewMode(m.v as any)}>
-                                    <m.i size={14}/> {m.v}
+
+                    {/* View switcher */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <div style={{ background: '#EBECF0', padding: 4, borderRadius: 8, display: 'inline-flex' }}>
+                            {[{ v: 'Table', i: List }, { v: 'Kanban', i: LayoutGrid }, { v: 'Timeline', i: Columns }].map(m => (
+                                <button key={m.v} className={`vw-btn ${viewMode === m.v ? 'active' : ''}`} onClick={() => setViewMode(m.v as typeof viewMode)}>
+                                    <m.i size={14} /> {m.v}
                                 </button>
                             ))}
                         </div>
                         {selectedTasks.size > 0 && (
-                            <div style={{ display:'flex', alignItems:'center', gap:'12px', background:'#172B4D', color:'white', padding:'8px 16px', borderRadius:'8px', fontSize:'12px', fontWeight:600, boxShadow:'0 4px 12px rgba(9,30,66,0.15)', animation:'slideUp 0.2s ease-out' }}>
-                                <span>{selectedTasks.size} selected</span>
-                                <div style={{ width:1, height:16, background:'rgba(255,255,255,0.2)' }}/>
-                                <button style={{ background:'none', border:'none', color:'white', cursor:'pointer' }}>Assign</button>
-                                <button style={{ background:'none', border:'none', color:'white', cursor:'pointer' }}>Status</button>
-                                <button style={{ background:'none', border:'none', color:'#FF5630', cursor:'pointer' }}>Delete</button>
-                                <button style={{ background:'none', border:'none', color:'#8A94A6', cursor:'pointer', display:'flex', alignItems:'center' }} onClick={()=>setSelectedTasks(new Set())}><X size={14}/></button>
-                            </div>
+                            <BulkToolbar count={selectedTasks.size} onClear={() => setSelectedTasks(new Set())}
+                                onBulkStatus={bulkStatus} onBulkPriority={bulkPriority}
+                                onBulkAssign={bulkAssign} onBulkDelete={bulkDelete} />
                         )}
                     </div>
                 </div>
 
-                {/* ── Core Table View ── */}
-                <div style={{ flex:1, margin:'0 32px 32px', background:'white', border:'1px solid #DFE1E6', borderRadius:'12px', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 2px 8px rgba(9,30,66,0.04)' }}>
-                    <div className="t-row" style={{ minHeight:40, background:'#FAFBFC' }}>
-                        <div className="c-head" style={{ textAlign:'center' }}>
-                            <input type="checkbox" checked={selectedTasks.size===filteredTasks.length && filteredTasks.length>0} onChange={toggleSelectAll} style={{ accentColor:'#0052CC' }}/>
+                {/* Table View */}
+                {viewMode === 'Table' && (
+                    <div style={{ flex: 1, margin: '0 32px 32px', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(9,30,66,0.04)' }}>
+                        {/* Table Header */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '28px 36px 1fr 180px 130px 110px 140px 130px 110px', alignItems: 'center', borderBottom: '1px solid #E8EAED', background: '#FAFBFC', position: 'sticky', top: 0, zIndex: 10 }}>
+                            <div className="t-head" />
+                            <div className="t-head" style={{ display: 'flex', justifyContent: 'center' }}>
+                                <div onClick={toggleSelectAll} style={{ width: 16, height: 16, borderRadius: 4, border: `2px solid ${selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : '#DFE1E6'}`, background: selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                    {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 && <Check size={10} color="white" strokeWidth={3} />}
+                                </div>
+                            </div>
+                            <div className="t-head">Task Name</div>
+                            <div className="t-head">Project</div>
+                            <div className="t-head">Status</div>
+                            <div className="t-head">Priority</div>
+                            <div className="t-head">Progress</div>
+                            <div className="t-head">Assignee</div>
+                            <div className="t-head">Due Date</div>
                         </div>
-                        <div className="c-head">Task Name</div>
-                        <div className="c-head">Project</div>
-                        <div className="c-head">Status</div>
-                        <div className="c-head">Priority</div>
-                        <div className="c-head">Progress</div>
-                        <div className="c-head">Assignee</div>
-                        <div className="c-head">Due Date</div>
-                        <div className="c-head">Tags</div>
-                        <div className="c-head"></div>
-                    </div>
-                    
-                    <div style={{ flex:1, overflowY:'auto' }}>
-                        {filteredTasks.length === 0 ? (
-                            <div style={{ padding:'64px', textAlign:'center', color:'#8A94A6' }}>
-                                <div style={{ width:64, height:64, background:'#F4F5F7', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}><CheckCircle2 size={32} color="#DFE1E6"/></div>
-                                <div style={{ fontSize:'16px', fontWeight:600, color:'#172B4D', marginBottom:'8px' }}>No tasks found</div>
-                                <div style={{ fontSize:'13px' }}>Create your first task or try relaxing your filters.</div>
-                            </div>
-                        ) : (
-                            filteredTasks.map(t => {
-                                const isExp = expandedRows.has(t.id);
-                                return (
-                                <React.Fragment key={t.id}>
-                                    <div className={`t-row ${selectedTasks.has(t.id)?'selected':''}`} style={{ borderLeft:`3px solid ${COLORS[t.priority]}` }} onClick={() => setActiveTask(t)}>
-                                        <div className="c-cell" style={{ justifyContent:'center' }}>
-                                            <input type="checkbox" checked={selectedTasks.has(t.id)} readOnly onClick={e=>toggleSelect(t.id, e)} style={{ accentColor:'#0052CC' }}/>
-                                        </div>
-                                        
-                                        <div className="c-cell" style={{ display:'flex', gap:'8px', fontWeight:600 }}>
-                                            <button style={{ background:'none', border:'none', padding:2, cursor:'pointer', color:'#8A94A6' }} onClick={e=>toggleExpand(t.id, e)}>
-                                                <ChevronRight size={14} style={{ transform: isExp?'rotate(90deg)':'none', transition:'0.2s' }}/>
-                                            </button>
-                                            <div style={{ width:8, height:8, borderRadius:'50%', background:COLORS[t.health], marginTop:6, flexShrink:0 }} title={`Health: ${t.health}`}/>
-                                            <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis' }}>{t.title}</span>
-                                            {(t.comments>0 || t.files>0) && (
-                                                <div style={{ display:'flex', gap:'6px', color:'#8A94A6', fontSize:'11px', fontWeight:500, alignItems:'center' }}>
-                                                    {t.comments>0 && <span style={{display:'flex',gap:2,alignItems:'center'}}><MessageSquare size={10}/>{t.comments}</span>}
-                                                    {t.files>0 && <span style={{display:'flex',gap:2,alignItems:'center'}}><Paperclip size={10}/>{t.files}</span>}
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="c-cell" style={{ color:'#42526E' }}>{t.project}</div>
-                                        
-                                        <div className="c-cell" onClick={e=>{e.stopPropagation();setEditingCell({id:t.id,field:'status'})}}>
-                                            {editingCell?.id===t.id && editingCell.field==='status' ? (
-                                                <select className="editable-select" value={t.status} onChange={e=>handleUpdate(t.id, 'status', e.target.value)} onBlur={()=>setEditingCell(null)} autoFocus onClick={e=>e.stopPropagation()}>
-                                                    {['To Do','In Progress','Review','Blocked','Completed'].map(o=><option key={o}>{o}</option>)}
-                                                </select>
-                                            ) : (
-                                                <span style={{ fontSize:'11px', fontWeight:600, padding:'2px 8px', borderRadius:'12px', background:t.status==='Completed'?'#E3FCEF':t.status==='Blocked'?'#FFF0EB':t.status==='In Progress'?'#E6EFFF':'#EBECF0', color:COLORS[t.status] }}>{t.status}</span>
-                                            )}
-                                        </div>
 
-                                        <div className="c-cell" onClick={e=>{e.stopPropagation();setEditingCell({id:t.id,field:'priority'})}}>
-                                            {editingCell?.id===t.id && editingCell.field==='priority' ? (
-                                                <select className="editable-select" value={t.priority} onChange={e=>handleUpdate(t.id, 'priority', e.target.value)} onBlur={()=>setEditingCell(null)} autoFocus onClick={e=>e.stopPropagation()}>
-                                                    {['Urgent','High','Normal','Low'].map(o=><option key={o}>{o}</option>)}
-                                                </select>
-                                            ) : (
-                                                <span style={{ fontSize:'12px', fontWeight:600, color:COLORS[t.priority] }}><span className="health-dot" style={{background:COLORS[t.priority]}}/>{t.priority}</span>
-                                            )}
-                                        </div>
-
-                                        <div className="c-cell">
-                                            <div style={{ width:'100%', height:'6px', background:'#EBECF0', borderRadius:'3px', overflow:'hidden' }}>
-                                                <div style={{ width:`${t.progress}%`, height:'100%', background:t.progress===100?'#36B37E':'#0052CC', borderRadius:'3px', transition:'width 0.3s' }}/>
-                                            </div>
-                                            <span style={{ fontSize:'10px', color:'#6B778C', marginLeft:'6px', width:'24px', textAlign:'right' }}>{t.progress}%</span>
-                                        </div>
-
-                                        <div className="c-cell" onClick={e=>{e.stopPropagation();}}>
-                                            <Avatar name={t.assignee}/>
-                                            <span style={{ marginLeft:8 }}>{t.assignee}</span>
-                                        </div>
-
-                                        <div className="c-cell" style={{ color:['Yesterday','Last Week'].includes(t.dueDate)?'#FF5630':t.dueDate==='Today'?'#0052CC':'#6B778C', fontWeight:['Yesterday','Last Week','Today'].includes(t.dueDate)?600:400 }}>
-                                            {t.dueDate}
-                                        </div>
-
-                                        <div className="c-cell" style={{ display:'flex', gap:'4px' }}>
-                                            {t.tags.slice(0,1).map(tg=><span key={tg} style={{fontSize:'10px',background:'#F4F5F7',color:'#42526E',padding:'2px 6px',borderRadius:'4px',fontWeight:600}}>{tg}</span>)}
-                                            {t.tags.length>1 && <span style={{fontSize:'10px',color:'#8A94A6'}}>+{t.tags.length-1}</span>}
-                                        </div>
-
-                                        {/* Hover Actions */}
-                                        <div className="r-actions" onClick={e=>e.stopPropagation()}>
-                                            <button className="act-btn" title="Edit"><AlignLeft size={13}/></button>
-                                            <button className="act-btn" title="Assign"><User size={13}/></button>
-                                            <button className="act-btn" title="Comment"><MessageSquare size={13}/></button>
-                                            <button className="act-btn" title="More"><MoreHorizontal size={13}/></button>
-                                        </div>
+                        {/* Table Body */}
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                            {loading && tasks.length === 0 ? (
+                                <div style={{ padding: 64, textAlign: 'center', color: '#8A94A6' }}>
+                                    <div style={{ width: 40, height: 40, border: '3px solid #E8EAED', borderTopColor: '#0052CC', borderRadius: '50%', margin: '0 auto 16px', animation: 'spin 0.8s linear infinite' }} />
+                                    Loading tasks...
+                                </div>
+                            ) : filteredTasks.length === 0 ? (
+                                <div style={{ padding: 64, textAlign: 'center', color: '#8A94A6' }}>
+                                    <div style={{ width: 64, height: 64, background: '#F4F5F7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                        <Bot size={28} color="#DFE1E6" />
                                     </div>
-
-                                    {/* Expanded Row Content */}
-                                    {isExp && (
-                                        <div style={{ background:'#FAFBFC', borderBottom:'1px solid #DFE1E6', padding:'16px 16px 16px 64px', display:'flex', flexDirection:'column', gap:'12px', boxShadow:'inset 0 2px 4px rgba(9,30,66,0.02)' }}>
-                                            {t.subtasks.length > 0 && (
-                                                <div style={{ width:'400px' }}>
-                                                    <div style={{ fontSize:'11px', fontWeight:700, color:'#8A94A6', textTransform:'uppercase', marginBottom:'8px' }}>Subtasks ({t.subtasks.filter(s=>s.done).length}/{t.subtasks.length})</div>
-                                                    {t.subtasks.map(st=>(
-                                                        <div key={st.id} style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:st.done?'#8A94A6':'#172B4D', textDecoration:st.done?'line-through':'none', padding:'4px 0' }}>
-                                                            <input type="checkbox" checked={st.done} readOnly style={{ accentColor:'#0052CC' }}/>
-                                                            {st.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div style={{ display:'flex', gap:'8px' }}>
-                                                <input placeholder="Type a comment..." style={{ width:'300px', padding:'6px 12px', border:'1px solid #DFE1E6', borderRadius:'16px', fontSize:'12px', outline:'none' }} onClick={e=>e.stopPropagation()}/>
-                                                <button style={{ padding:'6px 16px', background:'#FAFBFC', border:'1px solid #DFE1E6', borderRadius:'16px', fontSize:'12px', fontWeight:600, color:'#42526E', cursor:'pointer' }}>Attach File</button>
+                                    <div style={{ fontSize: 16, fontWeight: 600, color: '#172B4D', marginBottom: 8 }}>No tasks found</div>
+                                    <Inbox size={48} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
+                                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#172B4D', marginBottom: 4 }}>No tasks found</div>
+                                    <div style={{ fontSize: '13px' }}>Try adjusting your search or filters</div>
+                                </div>
+                            ) : (
+                                Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+                                    <React.Fragment key={groupName}>
+                                        {groupBy !== 'None' && (
+                                            <div style={{ background: '#F4F5F7', padding: '8px 16px', fontSize: '11px', fontWeight: 800, color: '#42526E', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #EBECF0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8A94A6' }} />
+                                                {groupName} <span style={{ color: '#8A94A6', fontWeight: 600 }}>({groupTasks.length})</span>
                                             </div>
-                                        </div>
-                                    )}
-                                </React.Fragment>
-                                );
-                            })
-                        )}
+                                        )}
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                            <SortableContext items={groupTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                                                {groupTasks.map(task => (
+                                                    <TaskRow
+                                                        key={task.id}
+                                                        task={task}
+                                                        isSelected={selectedTasks.has(task.id)}
+                                                        isExpanded={expandedRows.has(task.id)}
+                                                        isSaving={savingIds.has(task.id)}
+                                                        onSelect={toggleSelect}
+                                                        onToggleExpand={toggleExpand}
+                                                        onUpdate={handleUpdate}
+                                                        onOpenDetails={setActiveTask}
+                                                        onDelete={handleDelete}
+                                                    />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    </React.Fragment>
+                                ))
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Kanban / Timeline Views */}
+                {viewMode === 'Kanban' && (
+                    <div style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
+                        <BoardView hideHeader={true} />
+                    </div>
+                )}
+                {viewMode === 'Timeline' && (
+                    <div style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
+                        <TimelineView hideHeader={true} />
+                    </div>
+                )}
             </div>
 
-            {/* ── Quick Preview Panel (Right Side) ── */}
+            {/* Task Details Side Panel */}
             {activeTask && (
-                <div style={{ width:'340px', background:'white', borderLeft:'1px solid #DFE1E6', display:'flex', flexDirection:'column', flexShrink:0, boxShadow:'-4px 0 24px rgba(9,30,66,0.04)', animation:'slideInRight 0.2s ease-out' }}>
-                    <div style={{ padding:'16px 20px', borderBottom:'1px solid #DFE1E6', display:'flex', alignItems:'flex-start', justifyContent:'space-between', background:'#FAFBFC' }}>
-                        <div>
-                            <div style={{ fontSize:'11px', fontWeight:700, color:'#6B778C', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:'6px', display:'flex', alignItems:'center', gap:'6px' }}>
-                                <span style={{ width:8, height:8, borderRadius:'1px', background:COLORS[activeTask.project==='Quantum UI'?'In Progress':'Review'] }}/> {activeTask.project}
-                            </div>
-                            <div style={{ fontSize:'16px', fontWeight:700, color:'#172B4D', lineHeight:1.3 }}>{activeTask.title}</div>
-                        </div>
-                        <div style={{ display:'flex', gap:'4px' }}>
-                            <button className="act-btn" style={{border:'none',background:'none'}}><MoreHorizontal size={16}/></button>
-                            <button className="act-btn" style={{border:'none',background:'none'}} onClick={()=>setActiveTask(null)}><PanelRightClose size={16}/></button>
-                        </div>
-                    </div>
-
-                    <div style={{ flex:1, overflowY:'auto', padding:'20px' }}>
-                        <div style={{ display:'grid', gridTemplateColumns:'80px 1fr', gap:'12px', fontSize:'13px', marginBottom:'24px' }}>
-                            <div style={{ color:'#8A94A6' }}>Assignee</div>
-                            <div style={{ display:'flex', alignItems:'center', gap:'8px', color:'#172B4D', fontWeight:500 }}><Avatar name={activeTask.assignee}/> {activeTask.assignee}</div>
-                            
-                            <div style={{ color:'#8A94A6' }}>Status</div>
-                            <div><span style={{ fontSize:'12px', fontWeight:600, padding:'2px 8px', borderRadius:'12px', background:activeTask.status==='Completed'?'#E3FCEF':activeTask.status==='Blocked'?'#FFF0EB':activeTask.status==='In Progress'?'#E6EFFF':'#EBECF0', color:COLORS[activeTask.status], cursor:'pointer' }}>{activeTask.status}</span></div>
-
-                            <div style={{ color:'#8A94A6' }}>Due Date</div>
-                            <div style={{ color:['Yesterday','Last Week'].includes(activeTask.dueDate)?'#FF5630':'#172B4D', display:'flex', alignItems:'center', gap:'6px', cursor:'pointer' }}><CalIcon size={14}/> {activeTask.dueDate}</div>
-                            
-                            <div style={{ color:'#8A94A6' }}>Priority</div>
-                            <div><span style={{ fontSize:'12px', fontWeight:600, color:COLORS[activeTask.priority], display:'flex', alignItems:'center', cursor:'pointer' }}><span className="health-dot" style={{background:COLORS[activeTask.priority],marginBottom:0}}/>{activeTask.priority}</span></div>
-                        </div>
-
-                        <div style={{ marginBottom:'24px' }}>
-                            <div style={{ fontSize:'13px', fontWeight:700, color:'#172B4D', marginBottom:'8px' }}>Description</div>
-                            <p style={{ fontSize:'13px', color:'#42526E', lineHeight:1.5 }}>
-                                This task involves critical updates to the module. Ensure all related documentation is updated upon completion. See the attached Figma designs for reference.
-                            </p>
-                        </div>
-
-                        {activeTask.subtasks.length > 0 && (
-                            <div style={{ marginBottom:'24px' }}>
-                                <div style={{ fontSize:'13px', fontWeight:700, color:'#172B4D', marginBottom:'8px', display:'flex', justifyContent:'space-between' }}>Subtasks <span>{activeTask.subtasks.filter(s=>s.done).length}/{activeTask.subtasks.length}</span></div>
-                                <div style={{ height:'4px', background:'#EBECF0', borderRadius:'2px', marginBottom:'12px' }}>
-                                    <div style={{ height:'100%', background:'#36B37E', borderRadius:'2px', width:`${(activeTask.subtasks.filter(s=>s.done).length/activeTask.subtasks.length)*100}%` }}/>
-                                </div>
-                                {activeTask.subtasks.map(st => (
-                                    <div key={st.id} style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:st.done?'#8A94A6':'#172B4D', padding:'6px 0' }}>
-                                        <input type="checkbox" defaultChecked={st.done} style={{ accentColor:'#0052CC', width:16, height:16 }}/>
-                                        <span style={{ textDecoration:st.done?'line-through':'none' }}>{st.name}</span>
-                                    </div>
-                                ))}
-                                <button style={{ fontSize:'12px', color:'#8A94A6', background:'none', border:'none', marginTop:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'4px' }}>+ Add Subtask</button>
-                            </div>
-                        )}
-
-                        <div>
-                            <div style={{ fontSize:'13px', fontWeight:700, color:'#172B4D', marginBottom:'12px' }}>Activity</div>
-                            <div style={{ display:'flex', gap:'12px', marginBottom:'16px' }}>
-                                <div style={{ width:32, height:32, borderRadius:'50%', background:'#F4F5F7', display:'flex', alignItems:'center', justifyContent:'center' }}><Activity size={14} color="#8A94A6"/></div>
-                                <div>
-                                    <div style={{ fontSize:'13px' }}><span style={{fontWeight:600}}>Patrick</span> created this task</div>
-                                    <div style={{ fontSize:'11px', color:'#8A94A6' }}>2 days ago</div>
-                                </div>
-                            </div>
-                            <div style={{ display:'flex', gap:'12px' }}>
-                                <Avatar name="Alex" size={32}/>
-                                <div style={{ background:'#FAFBFC', border:'1px solid #DFE1E6', padding:'10px', borderRadius:'0 8px 8px 8px', fontSize:'13px', color:'#172B4D', width:'100%' }}>
-                                    I'll take a look at this tomorrow. The backend team needs to set up the new endpoints first.
-                                    <div style={{ fontSize:'11px', color:'#8A94A6', marginTop:'6px' }}>Yesterday at 4:30 PM</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ padding:'16px 20px', borderTop:'1px solid #DFE1E6', background:'white' }}>
-                        <div style={{ display:'flex', alignItems:'center', border:'1px solid #DFE1E6', borderRadius:'20px', padding:'4px 4px 4px 16px', background:'#FAFBFC' }}>
-                            <input placeholder="Ask a question or post an update..." style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:'13px' }}/>
-                            <button style={{ width:28, height:28, borderRadius:'50%', background:'#0052CC', color:'white', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}><Send size={12} style={{marginLeft:-2}} /></button>
-                        </div>
-                    </div>
-                </div>
+                <TaskDetailsPanel
+                    key={activeTask.id}
+                    task={activeTask}
+                    onClose={() => setActiveTask(null)}
+                    onUpdate={handleUpdate}
+                />
             )}
-            
-            <style>{`
-                @keyframes slideInRight { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
-                @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-            `}</style>
+
+            {/* Create Task Modal */}
+            {showCreateModal && (
+                <CreateTaskModal onClose={() => setShowCreateModal(false)} onSuccess={handleCreateSuccess} />
+            )}
         </main>
     );
 }

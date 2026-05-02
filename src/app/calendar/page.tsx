@@ -45,11 +45,21 @@ interface Task {
 
 type ViewMode = 'month' | 'week' | 'day' | 'agenda';
 
-export default function CalendarPage() {
+export function CalendarView({ 
+    hideHeader, 
+    hideSidebar,
+    teamId,
+    initialTasks 
+}: { 
+    hideHeader?: boolean, 
+    hideSidebar?: boolean,
+    teamId?: string,
+    initialTasks?: any[]
+} = {}) {
     const [viewMode, setViewMode] = useState<ViewMode>('month');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [tasks, setTasks] = useState<Task[]>(initialTasks || []);
+    const [loading, setLoading] = useState(!initialTasks);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDayTasks, setSelectedDayTasks] = useState<{ day: Date, tasks: Task[] } | null>(null);
     const [quickAddDay, setQuickAddDay] = useState<Date | null>(null);
@@ -63,7 +73,7 @@ export default function CalendarPage() {
     }, []);
 
     const fetchProjects = async () => {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
         try {
             const res = await fetch(`${API_URL}/api/projects`);
             if (res.ok) {
@@ -81,9 +91,12 @@ export default function CalendarPage() {
     };
 
     const fetchTasks = () => {
+        if (initialTasks) return;
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-        fetch(`${API_URL}/api/tasks`)
+        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+        const url = teamId ? `${API_URL}/api/team-tasks?teamId=${teamId}` : `${API_URL}/api/tasks`;
+        
+        fetch(url)
             .then(res => {
                 const contentType = res.headers.get("content-type");
                 if (res.ok && contentType && contentType.includes("application/json")) {
@@ -104,7 +117,7 @@ export default function CalendarPage() {
     const handleAddTask = async () => {
         if (!newTaskTitle || !quickAddDay) return;
         
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
         try {
             const res = await fetch(`${API_URL}/api/tasks`, {
                 method: 'POST',
@@ -129,9 +142,18 @@ export default function CalendarPage() {
     };
 
     useEffect(() => {
-        fetchTasks();
+        if (initialTasks) {
+            setTasks(initialTasks);
+            setLoading(false);
+        }
+    }, [initialTasks]);
+
+    useEffect(() => {
+        if (!initialTasks) {
+            fetchTasks();
+        }
         fetchProjects();
-    }, []);
+    }, [teamId]);
 
     const filteredTasks = useMemo(() => {
         return tasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -216,11 +238,10 @@ export default function CalendarPage() {
     const handleToday = () => setCurrentDate(new Date());
 
     return (
-        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
-            <Sidebar />
-
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#F4F5F7', position: 'relative' }}>
             {/* Left Mini-Calendar Sidebar area */}
-            <div style={{ width: '280px', flexShrink: 0, marginLeft: '240px', background: 'white', borderRight: '1px solid #EDF2F7', display: 'flex', flexDirection: 'column', padding: '32px' }}>
+            {!hideSidebar && (
+            <div style={{ width: '280px', flexShrink: 0, background: 'white', borderRight: '1px solid #EDF2F7', display: 'flex', flexDirection: 'column', padding: '32px' }}>
                 <div style={{ marginBottom: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#172B4D' }}>{format(currentDate, 'MMMM yyyy')}</h3>
@@ -268,11 +289,12 @@ export default function CalendarPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EDF2F7' }}>
                         <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#0052CC' }}></div>
                         <span style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {projects[0]?.name || 'Workflow Cloud'}
+                            {projects[0]?.name || 'Stroovo Cloud'}
                         </span>
                     </div>
                 </div>
             </div>
+            )}
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
                 <style>{`
@@ -283,9 +305,15 @@ export default function CalendarPage() {
                     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 `}</style>
 
-                <div style={{ padding: '20px 32px', borderBottom: '1px solid #EDF2F7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ 
+                    padding: hideHeader ? '12px 24px' : '20px 32px', 
+                    borderBottom: '1px solid #EDF2F7', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                        <h1 style={{ fontSize: '22px', fontWeight: 600, color: '#172B4D' }}>Calendar</h1>
+                        {!hideHeader && <h1 style={{ fontSize: '22px', fontWeight: 600, color: '#172B4D' }}>Calendar</h1>}
                         
                         <div style={{ display: 'flex', background: '#F4F5F7', padding: '3px', borderRadius: '6px' }}>
                             {(['day', 'week', 'month', 'agenda'] as ViewMode[]).map(mode => (
@@ -311,12 +339,14 @@ export default function CalendarPage() {
                             />
                         </div>
                         <button onClick={handleToday} style={{ border: '1px solid #DFE1E6', background: 'white', padding: '6px 16px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer' }}>Today</button>
+                        {!hideHeader && (
                         <button 
                             onClick={() => setQuickAddDay(new Date())}
                             style={{ padding: '8px 20px', background: '#0052CC', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
                         >
                             <Plus size={18} /> Add Event
                         </button>
+                        )}
                     </div>
                 </div>
 
@@ -621,6 +651,17 @@ export default function CalendarPage() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+export default function CalendarPage() {
+    return (
+        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
+            <Sidebar />
+            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', overflow: 'hidden' }}>
+                <CalendarView />
+            </div>
         </main>
     );
 }
