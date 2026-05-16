@@ -82,9 +82,12 @@ export default function MyTasksPage() {
     };
 
     useEffect(() => {
-        // Initialize Socket
-        fetch('/api/socket'); // Ensure server is initialized
-        const s = io({ path: '/api/socket' });
+        // Initialize Socket from live URL
+        const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+        const s = io(SOCKET_URL, {
+            transports: ['websocket'],
+            forceNew: true
+        });
         setSocket(s);
 
         if (user?.tenantId) {

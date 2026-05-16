@@ -97,7 +97,7 @@ export class StripeProvider implements PaymentProvider {
 
     private async handleInvoicePaid(invoice: Stripe.Invoice) {
         const stripeSubscriptionId = (invoice as any).subscription as string;
-        
+
         if (stripeSubscriptionId) {
             await (prisma as any).subscription.update({
                 where: { stripeSubscriptionId },

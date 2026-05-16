@@ -76,9 +76,12 @@ export default function TasksPage() {
     }, []);
 
     useEffect(() => {
-        // Socket initialization
-        fetch('/api/socket');
-        const s = io({ path: '/api/socket' });
+        // Socket initialization from environment variable
+        const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+        const s = io(SOCKET_URL, {
+            transports: ['websocket'],
+            forceNew: true
+        });
         setSocket(s);
 
         if (user?.tenantId) {

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_URL = ''; // Use relative URL for same-origin API calls
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ''; 
 
 interface User {
     id: string;
