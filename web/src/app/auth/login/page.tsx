@@ -82,7 +82,10 @@ function LoginForm() {
         }
       } else {
         const redirect = searchParams?.get("redirect") || "/dashboard";
-        window.location.href = redirect;
+        // Give localStorage time to settle
+        setTimeout(() => {
+          window.location.href = redirect;
+        }, 1000);
       }
     } catch (err) {
       setError("An unexpected error occurred");

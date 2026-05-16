@@ -54,19 +54,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
         try {
+            console.log('[Auth] Initializing auth state...');
             // Try to load from localStorage first for faster UX
             const storedToken = localStorage.getItem('stroovo_token');
             const storedUser = localStorage.getItem('stroovo_user');
             
+            console.log('[Auth] Stored token found:', !!storedToken);
+            console.log('[Auth] Stored user found:', !!storedUser);
+
             if (storedToken && storedUser) {
                 setAccessToken(storedToken);
                 setUser(JSON.parse(storedUser));
-                // We'll still verify with the backend
+                console.log('[Auth] Hydrated state from localStorage');
             }
 
             const currentToken = accessToken || storedToken;
-            if (!currentToken) return false;
+            if (!currentToken) {
+                console.log('[Auth] No token available, skipping verification');
+                return false;
+            }
 
+            console.log('[Auth] Verifying token with backend...');
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             headers['Authorization'] = `Bearer ${currentToken}`;
             
@@ -76,8 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 credentials: 'include',
             });
 
+            console.log('[Auth] /me response status:', response.status);
+
             if (response.ok) {
                 const userData = await response.json();
+                console.log('[Auth] Token verified successfully');
                 setUser(userData.user);
                 setAccessToken(userData.accessToken || currentToken);
                 
@@ -88,14 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 scheduleTokenRefresh();
                 return true;
             } else {
+                console.warn('[Auth] Token verification failed, status:', response.status);
                 // If backend says token is invalid, clear storage
                 localStorage.removeItem('stroovo_token');
                 localStorage.removeItem('stroovo_user');
             }
         } catch (error) {
-            console.error('Failed to initialize auth:', error);
+            console.error('[Auth] Failed to initialize auth:', error);
         }
 
+        console.log('[Auth] Attempting token refresh fallback...');
         // Fallback to refresh token
         return await refreshTokenFn();
     };

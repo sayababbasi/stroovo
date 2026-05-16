@@ -47,7 +47,10 @@ function LoginForm() {
 
             // Hardened redirect sequence
             setLoading(false);
-            window.location.href = redirect;
+            // Give localStorage time to settle
+            setTimeout(() => {
+                window.location.href = redirect;
+            }, 1000);
         } catch (err: any) {
             console.error('Login submit error:', err);
             setError('Unable to connect to server');
