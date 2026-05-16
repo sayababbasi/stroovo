@@ -1,49 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "baseUrl": ".",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["web/src/*"]
+    },
+    "composite": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "node_modules/.prisma/client/index.d.ts",
-    "src/types/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "src/app_restored/**/*",
-    "src/ai/risk-old.ts",
-    "prisma/seed-sample-simple.ts",
-    "migrate-to-neon.ts",
-    "fix-tenant.ts",
-    "setup-ai.ts",
-    "temp-seed-rbac.ts",
-    "test-prisma-models.ts",
-    "test-prisma.ts",
-    "scripts/**/*"
+  "references": [
+    { "path": "./web" },
+    { "path": "./server" }
   ]
 }

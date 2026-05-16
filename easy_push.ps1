@@ -1,18 +1,24 @@
 # Easy Git Push Script
-# Automates the Git add, commit, and push process.
+# Just run this script to push your latest code to GitHub!
+# Usage: Right-click > "Run with PowerShell", OR type: .\easy_push.ps1 in terminal
 
-$message = Read-Host "Enter commit message (or press Enter for 'Auto-backup: $(Get-Date -Format 'yyyy-MM-dd HH:mm')')"
+Write-Host "===============================" -ForegroundColor Yellow
+Write-Host "   Stroovo - Easy Git Push" -ForegroundColor Yellow
+Write-Host "===============================" -ForegroundColor Yellow
+
+$message = Read-Host "`nEnter commit message (or press Enter for auto-message)"
 if ([string]::IsNullOrWhiteSpace($message)) {
     $message = "Auto-backup: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 }
 
-Write-Host "Staging changes..." -ForegroundColor Cyan
+Write-Host "`nStaging all changes..." -ForegroundColor Cyan
 git add .
 
-Write-Host "Committing changes..." -ForegroundColor Cyan
+Write-Host "Committing with message: '$message'" -ForegroundColor Cyan
 git commit -m "$message"
 
-Write-Host "Pushing to GitHub..." -ForegroundColor Cyan
+Write-Host "Pushing to GitHub (main branch)..." -ForegroundColor Cyan
 git push origin main
 
-Write-Host "`nSync Complete!" -ForegroundColor Green
+Write-Host "`n✅ Push Complete! Your code is now on GitHub." -ForegroundColor Green
+Write-Host "==============================================`n" -ForegroundColor Green
