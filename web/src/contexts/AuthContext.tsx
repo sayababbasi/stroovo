@@ -54,11 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
         try {
-            // Use raw fetch for auth/me — apiGet returns ApiResponse, not a raw Response
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (accessToken) {
-                headers['Authorization'] = `Bearer ${accessToken}`;
+            // Try to load from localStorage first for faster UX
+            const storedToken = localStorage.getItem('stroovo_token');
+            const storedUser = localStorage.getItem('stroovo_user');
+            
+            if (storedToken && storedUser) {
+                setAccessToken(storedToken);
+                setUser(JSON.parse(storedUser));
+                // We'll still verify with the backend
             }
+
+            const currentToken = accessToken || storedToken;
+            if (!currentToken) return false;
+
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            headers['Authorization'] = `Bearer ${currentToken}`;
+            
             const response = await fetch(`${API_URL}/api/auth/me`, {
                 method: 'GET',
                 headers,
@@ -68,9 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
                 const userData = await response.json();
                 setUser(userData.user);
-                setAccessToken(userData.accessToken);
+                setAccessToken(userData.accessToken || currentToken);
+                
+                // Update storage
+                localStorage.setItem('stroovo_token', userData.accessToken || currentToken);
+                localStorage.setItem('stroovo_user', JSON.stringify(userData.user));
+                
                 scheduleTokenRefresh();
                 return true;
+            } else {
+                // If backend says token is invalid, clear storage
+                localStorage.removeItem('stroovo_token');
+                localStorage.removeItem('stroovo_user');
             }
         } catch (error) {
             console.error('Failed to initialize auth:', error);
@@ -133,6 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Successful login
             setUser(data.user);
             setAccessToken(data.accessToken);
+            
+            // Persist to localStorage
+            localStorage.setItem('stroovo_token', data.accessToken);
+            localStorage.setItem('stroovo_user', JSON.stringify(data.user));
+            
             scheduleTokenRefresh();
 
             return { success: true };
@@ -188,6 +213,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Clear local state regardless of API success
             setUser(null);
             setAccessToken(null);
+            localStorage.removeItem('stroovo_token');
+            localStorage.removeItem('stroovo_user');
             router.push('/login');
         }
     };
@@ -206,6 +233,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Token refresh failed, clear state
                 setUser(null);
                 setAccessToken(null);
+                localStorage.removeItem('stroovo_token');
+                localStorage.removeItem('stroovo_user');
                 if (refreshTimeout) {
                     clearTimeout(refreshTimeout);
                     setRefreshTimeout(null);
@@ -216,6 +245,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json();
             setUser(data.user);
             setAccessToken(data.accessToken);
+            localStorage.setItem('stroovo_token', data.accessToken);
+            localStorage.setItem('stroovo_user', JSON.stringify(data.user));
             scheduleTokenRefresh();
             return true;
         } catch (error) {
@@ -223,6 +254,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Clear state on error
             setUser(null);
             setAccessToken(null);
+            localStorage.removeItem('stroovo_token');
+            localStorage.removeItem('stroovo_user');
             if (refreshTimeout) {
                 clearTimeout(refreshTimeout);
                 setRefreshTimeout(null);

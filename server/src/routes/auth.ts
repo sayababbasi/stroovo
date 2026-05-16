@@ -31,6 +31,40 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
+      accessToken: token, // Added for compatibility with frontend
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Alias for compatibility with some frontend versions
+router.post('/login-simple', async (req, res) => {
+  // Same logic as /login
+  const { email, password } = req.body;
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { tenant: true }
+    });
+    if (!user || user.passwordHash !== password) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '24h' }
+    );
+    res.json({
+      token,
+      accessToken: token,
       user: {
         id: user.id,
         name: user.name,
@@ -97,6 +131,44 @@ router.post('/signup', async (req, res) => {
     }
     res.status(500).json({ error: 'Signup failed' });
   }
+// GET /api/auth/me
+router.get('/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: { tenant: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId
+      }
+    });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
+  // Since we use JWT, we just return success
+  res.json({ success: true });
 });
 
 export default router;
