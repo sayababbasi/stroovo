@@ -18,7 +18,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026') as any;
     req.user = decoded;
     next();
   } catch (error) {
