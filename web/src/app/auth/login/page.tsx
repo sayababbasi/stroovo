@@ -82,7 +82,7 @@ function LoginForm() {
         }
       } else {
         const redirect = searchParams?.get("redirect") || "/dashboard";
-        router.push(redirect);
+        window.location.href = redirect;
       }
     } catch (err) {
       setError("An unexpected error occurred");
