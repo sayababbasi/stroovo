@@ -1,7 +1,7 @@
 # 🚀 Stroovo — AI-Powered Team Collaboration Platform
 
 Stroovo is an AI-powered SaaS platform for team collaboration, task management, and real-time communication — similar to ClickUp, Notion, and Monday.com.
-**Visit Official Link** https://stroovo.revoticai.com/  (https:stroovo.revoticai.com)
+**Visit Official Link** https://stroovo.revoticai.com
 
 🔗 **GitHub:** [github.com/sayababbasi/stroovo](https://github.com/sayababbasi/stroovo)
 
