@@ -132,8 +132,8 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ error: 'Signup failed' });
   }
 });
-// GET /api/auth/me
-router.get('/me', async (req, res) => {
+// GET /api/auth/me (also aliased as /session)
+router.get(['/me', '/session'], async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -159,7 +159,8 @@ router.get('/me', async (req, res) => {
         email: user.email,
         role: user.role,
         tenantId: user.tenantId
-      }
+      },
+      accessToken: token // Return the same token for persistence
     });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
