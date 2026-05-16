@@ -30,6 +30,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Attach io to app for access in routes
+app.set('io', io);
+
 // Health Check
 app.get('/', (req, res) => {
   res.json({ 

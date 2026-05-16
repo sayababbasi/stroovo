@@ -80,7 +80,7 @@ class SocketService {
     }
 
     // WebSocket endpoint from environment variables
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://stroovo.onrender.com';
 
     this.socket = io(SOCKET_URL, {
       transports: ['websocket'],

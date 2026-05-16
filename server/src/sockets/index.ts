@@ -4,20 +4,48 @@ export const setupWebSockets = (io: SocketIOServer) => {
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
-    // Join tenant-specific room
+    // Join team/tenant room (supporting both naming conventions)
     socket.on('join-tenant', (tenantId: string) => {
+      socket.join(tenantId);
       socket.join(`tenant-${tenantId}`);
-      console.log(`Socket ${socket.id} joined room tenant-${tenantId}`);
+      console.log(`Socket ${socket.id} joined tenant ${tenantId}`);
     });
 
-    // Task Updates
-    socket.on('task-update', (data: { tenantId: string, taskId: string, type: string }) => {
-      io.to(`tenant-${data.tenantId}`).emit('task-updated', data);
+    socket.on('join-team', (teamId: string) => {
+      socket.join(teamId);
+      socket.join(`tenant-${teamId}`);
+      console.log(`Socket ${socket.id} joined team ${teamId}`);
     });
 
-    // Notifications
-    socket.on('send-notification', (data: { tenantId: string, userId: string, message: string }) => {
-      io.to(`tenant-${data.tenantId}`).emit('new-notification', data);
+    // Task Events (Matching frontend SocketEvents interface)
+    socket.on('task-update', (data: any) => {
+      const room = data.teamId || data.tenantId;
+      if (room) {
+        socket.to(room).to(`tenant-${room}`).emit('TASK_UPDATED', data);
+      }
+    });
+
+    socket.on('TASK_UPDATED', (data: any) => {
+      const room = data.teamId || data.tenantId;
+      if (room) {
+        socket.to(room).to(`tenant-${room}`).emit('TASK_UPDATED', data);
+      }
+    });
+
+    // Presence
+    socket.on('typing', (data: any) => {
+      const room = data.teamId || data.tenantId;
+      if (room) {
+        socket.to(room).to(`tenant-${room}`).emit('USER_TYPING', data);
+      }
+    });
+
+    // Chat
+    socket.on('message-sent', (data: any) => {
+      const room = data.teamId || data.tenantId;
+      if (room) {
+        socket.to(room).to(`tenant-${room}`).emit('MESSAGE_SENT', data);
+      }
     });
 
     socket.on('disconnect', () => {

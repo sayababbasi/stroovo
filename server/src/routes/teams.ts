@@ -9,6 +9,7 @@ router.use(authenticate as any);
 
 // GET /api/teams - Get teams for tenant
 router.get('/', async (req: AuthRequest, res: Response) => {
+  const io = req.app.get('io');
   try {
     const teams = await prisma.team.findMany({
       where: { tenantId: req.user?.tenantId },
@@ -18,6 +19,12 @@ router.get('/', async (req: AuthRequest, res: Response) => {
         }
       }
     });
+    
+    // Optional: Emit presence/access event
+    if (io && req.user?.tenantId) {
+       // io.to(req.user.tenantId).emit('USER_VIEWING_TEAMS', { userId: req.user.id });
+    }
+
     res.json(teams);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch teams' });

@@ -31,6 +31,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 // POST /api/tasks - Create new task
 router.post('/', async (req: AuthRequest, res: Response) => {
   const { title, description, status, priority, projectId, assigneeId, dueDate } = req.body;
+  const io = req.app.get('io');
 
   try {
     const task = await prisma.task.create({
@@ -43,8 +44,21 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         assigneeId,
         dueDate: dueDate ? new Date(dueDate) : null,
         tenantId: req.user?.tenantId
+      },
+      include: {
+        assignee: { select: { id: true, name: true, image: true } },
+        project: { select: { id: true, name: true } }
       }
     });
+
+    // Emit realtime update
+    if (io && req.user?.tenantId) {
+      io.to(req.user.tenantId).to(`tenant-${req.user.tenantId}`).emit('TASK_CREATED', {
+        teamId: req.user.tenantId,
+        task
+      });
+    }
+
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create task' });
@@ -55,12 +69,26 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 router.patch('/:id', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
+  const io = req.app.get('io');
 
   try {
     const task = await prisma.task.update({
       where: { id, tenantId: req.user?.tenantId },
-      data: updates
+      data: updates,
+      include: {
+        assignee: { select: { id: true, name: true, image: true } },
+        project: { select: { id: true, name: true } }
+      }
     });
+
+    // Emit realtime update
+    if (io && req.user?.tenantId) {
+      io.to(req.user.tenantId).to(`tenant-${req.user.tenantId}`).emit('TASK_UPDATED', {
+        teamId: req.user.tenantId,
+        task
+      });
+    }
+
     res.json(task);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update task' });
@@ -70,11 +98,21 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
 // DELETE /api/tasks/:id - Delete task
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const io = req.app.get('io');
 
   try {
     await prisma.task.delete({
       where: { id, tenantId: req.user?.tenantId }
     });
+
+    // Emit realtime update
+    if (io && req.user?.tenantId) {
+      io.to(req.user.tenantId).to(`tenant-${req.user.tenantId}`).emit('TASK_DELETED', {
+        teamId: req.user.tenantId,
+        taskId: id
+      });
+    }
+
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete task' });
