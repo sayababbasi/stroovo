@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { PaymentProvider, SubscriptionParams } from './provider';
 import { prisma } from '@/lib/prisma';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'dummy_key_for_build', {
     apiVersion: '2025-01-27' as any,
 });
 

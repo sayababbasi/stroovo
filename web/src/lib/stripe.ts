@@ -4,6 +4,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
     console.warn('STRIPE_SECRET_KEY is not defined in .env');
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'dummy_key_for_build', {
     apiVersion: '2024-12-18.acacia' as any,
 });
