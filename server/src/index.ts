@@ -54,6 +54,17 @@ process.on('SIGTERM', () => {
   });
 });
 
+// Self-Ping mechanism to keep Render free tier awake
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+const KEEP_ALIVE_INTERVAL = 14 * 60 * 1000; // 14 minutes
+
+setInterval(() => {
+  console.log(`[Keep-Alive] Pinging ${KEEP_ALIVE_URL}...`);
+  fetch(KEEP_ALIVE_URL)
+    .then(res => console.log(`[Keep-Alive] Status: ${res.status}`))
+    .catch(err => console.error(`[Keep-Alive] Error:`, err.message));
+}, KEEP_ALIVE_INTERVAL);
+
 server.listen(PORT, () => {
   console.log(`🚀 Stroovo Backend running on port ${PORT}`);
 });
