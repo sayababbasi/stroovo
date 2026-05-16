@@ -47,8 +47,7 @@ function LoginForm() {
 
             // Hardened redirect sequence
             setLoading(false);
-            router.push(redirect);
-            router.refresh();
+            window.location.href = redirect;
         } catch (err: any) {
             console.error('Login submit error:', err);
             setError('Unable to connect to server');
