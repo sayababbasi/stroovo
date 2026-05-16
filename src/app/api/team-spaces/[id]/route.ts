@@ -12,11 +12,12 @@ const updateSpaceSchema = z.object({
 // GET /api/team-spaces/[id] - Get a specific space
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const space = await prisma.teamSpace.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         lists: {
           orderBy: { createdAt: 'asc' }
@@ -44,14 +45,15 @@ export async function GET(
 // PUT /api/team-spaces/[id] - Update a space
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     const validatedData = updateSpaceSchema.parse(body);
 
     const space = await prisma.teamSpace.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       include: {
         lists: true,
@@ -77,11 +79,12 @@ export async function PUT(
 // DELETE /api/team-spaces/[id] - Delete a space
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await prisma.teamSpace.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Space deleted successfully' });

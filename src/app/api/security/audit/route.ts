@@ -21,11 +21,11 @@ export async function POST(request: Request) {
         vulnerabilities: report.vulnerabilities.length,
         warnings: report.tests.filter(t => t.status === 'WARNING').length,
         testsRun: report.tests.length,
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           report: report,
           timestamp: report.timestamp,
           baseUrl: baseUrl || 'default'
-        }
+        }))
       }
     });
 
@@ -68,10 +68,7 @@ export async function GET(request: Request) {
     const audits = await prisma.securityAudit.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
-      skip: offset,
-      include: {
-        _count: true
-      }
+      skip: offset
     });
 
     const total = await prisma.securityAudit.count();

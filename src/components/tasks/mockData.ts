@@ -1,6 +1,6 @@
 import type { Task } from './types';
 
-export const MOCK_TASKS: Task[] = [
+export const MOCK_TASKS: any[] = [
     {
         id: 'T-01', title: 'Implement Authentication OAuth', project: 'Quantum UI',
         status: 'In Progress', priority: 'Urgent', progress: 65, assignee: 'Patrick',

@@ -134,12 +134,12 @@ export class TasksAPI {
       const validatedData = validateUpdateTask(data);
       
       // Get current task
-      const currentTask = await prisma.task.findUnique({
+      const currentTask = await (prisma.task as any).findUnique({
         where: { id: taskId },
         include: {
           assignee: true,
-          taskDependencies: true,
-          taskDependentOn: true
+          dependencies: true,
+          dependedBy: true
         }
       });
 
@@ -169,7 +169,7 @@ export class TasksAPI {
         const newValues: Record<string, any> = {};
 
         // Update the task
-        const updatedTask = await tx.task.update({
+        const updatedTask = await (tx.task as any).update({
           where: { id: taskId },
           data: {
             title: validatedData.title,
@@ -186,7 +186,7 @@ export class TasksAPI {
           include: {
             assignee: true,
             project: true,
-            taskDependencies: true,
+            dependencies: true,
             subTasks: true
           }
         });
@@ -397,11 +397,11 @@ export class TasksAPI {
    */
   static async deleteTask(taskId: string, userId: string, tenantId?: string) {
     try {
-      const task = await prisma.task.findUnique({
+      const task = await (prisma.task as any).findUnique({
         where: { id: taskId },
         include: {
-          taskDependencies: true,
-          taskDependentOn: true,
+          dependencies: true,
+          dependedBy: true,
           subTasks: true
         }
       });
@@ -414,7 +414,7 @@ export class TasksAPI {
       }
 
       // Check if task has dependents
-      if (task.taskDependentOn.length > 0) {
+      if ((task as any).dependedBy.length > 0) {
         return NextResponse.json(
           { error: 'Cannot delete task with active dependencies' },
           { status: 400 }
@@ -516,9 +516,9 @@ export class TasksAPI {
       }
 
       if (validatedQuery.hasDependencies === true) {
-        where.taskDependencies = { some: {} };
+        where.dependencies = { some: {} };
       } else if (validatedQuery.hasDependencies === false) {
-        where.taskDependencies = { none: {} };
+        where.dependencies = { none: {} };
       }
 
       if (validatedQuery.isOverdue === true) {
@@ -537,12 +537,12 @@ export class TasksAPI {
 
       // Execute query with pagination
       const [tasks, total] = await Promise.all([
-        prisma.task.findMany({
+        (prisma.task as any).findMany({
           where,
           include: {
             assignee: true,
             project: true,
-            taskDependencies: true,
+            dependencies: true,
             subTasks: true,
             _count: {
               select: {
@@ -562,7 +562,7 @@ export class TasksAPI {
 
       // Add AI risk analysis if requested
       const tasksWithRisk = await Promise.all(
-        tasks.map(async (task) => {
+        tasks.map(async (task: any) => {
           const riskAnalysis = await RiskEngine.evaluateTaskRisk(task.id);
           return {
             ...task,
@@ -600,13 +600,13 @@ export class TasksAPI {
    */
   static async getTask(taskId: string, userId?: string, tenantId?: string) {
     try {
-      const task = await prisma.task.findUnique({
+      const task = await (prisma.task as any).findUnique({
         where: { id: taskId },
         include: {
           assignee: true,
           project: true,
-          taskDependencies: true,
-          taskDependentOn: {
+          dependencies: true,
+          dependedBy: {
             include: { assignee: true }
           },
           subTasks: {
@@ -707,12 +707,12 @@ export class TasksAPI {
     // Get dependency analysis
     const dependencyAnalysis = new Map();
     for (const task of tasks) {
-      const deps = task.taskDependencies || task.dependencies || [];
+      const deps = task.dependencies || task.dependencies || [];
       dependencyAnalysis.set(task.id, {
         totalDependencies: deps.length,
         incompleteDependencies: deps.filter((d: any) => d.status !== 'DONE').length,
         criticalPath: false, // Would be calculated based on project structure
-        blockedTasks: task.taskDependentOn?.length || task.dependents?.length || 0,
+        blockedTasks: task.dependedBy?.length || task.dependents?.length || 0,
         dependencyRisk: 0 // Would be calculated
       });
     }

@@ -633,7 +633,7 @@ export class NotificationTesting {
             id: userId,
             email: `${userId}@test.com`,
             name: `Test User ${userId}`,
-            password: 'hashed_password',
+            passwordHash: 'hashed_password',
             tenantId: tenantId,
             role: 'ADMIN' // Give admin role for testing
           }

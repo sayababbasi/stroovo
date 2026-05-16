@@ -260,7 +260,7 @@ export default function KanbanBoard({
                     overflow: hidden;
                     transition: box-shadow 0.15s, opacity 0.2s;
                 }
-                .kb-root .kb-col.focus { flex: none; width: calc(100vw - 64px); max-width: 1200px; }
+                .kb-root .kb-col.focus { flex: none; width: calc(100% - 64px); max-width: 1200px; }
                 .kb-root .kb-col.dimmed { opacity: 0.3; pointer-events: none; }
                 .kb-root .kb-col.collapsed {
                     flex: none;

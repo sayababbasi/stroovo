@@ -42,13 +42,12 @@ export default function AlertsPage() {
     try {
       const response = await apiGet('/api/ai/risks', accessToken);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch risks: ${response.statusText}`);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch risks');
       }
 
-      const result = await response.json();
-      setRisks(result.data?.risks || []);
-      setSummary(result.data?.summary || null);
+      setRisks(response.data?.risks || []);
+      setSummary(response.data?.summary || null);
       setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');

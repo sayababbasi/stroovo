@@ -19,7 +19,7 @@ export async function GET(
         
         console.log('[GET /api/tasks/:id] Fetching task:', id, 'by user:', userId);
         
-        const task = await prisma.task.findUnique({
+        const task = await (prisma.task as any).findUnique({
             where: { id },
             include: {
                 project: { select: { name: true } },
@@ -28,7 +28,7 @@ export async function GET(
                     select: { id: true, title: true, status: true, priority: true },
                     orderBy: { createdAt: 'asc' }
                 },
-                taskDependencies: { select: { id: true, title: true, status: true } },
+                dependencies: { select: { id: true, title: true, status: true } },
                 files: true,
                 _count: { select: { comments: true, files: true } },
             }
@@ -107,13 +107,13 @@ export async function PATCH(
         const task = await TaskService.updateTask(id, parsed.data, userId, tenantId);
 
         // 3. Return full task
-        const fullTask = await prisma.task.findUnique({
+        const fullTask = await (prisma.task as any).findUnique({
             where: { id: task.id },
             include: {
                 project: { select: { name: true } },
                 assignee: { select: { name: true, image: true } },
                 subTasks: { select: { id: true, title: true, status: true } },
-                taskDependencies: { select: { id: true, title: true, status: true } },
+                dependencies: { select: { id: true, title: true, status: true } },
                 files: true,
                 _count: { select: { comments: true, files: true } },
             }

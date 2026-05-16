@@ -20,11 +20,11 @@ export async function POST(request: Request) {
         testsRun: report.tests.length,
         failures: report.failures.length,
         warnings: report.warnings.length,
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           report: report,
           timestamp: report.timestamp,
           baseUrl: baseUrl || 'default'
-        }
+        }))
       }
     });
 

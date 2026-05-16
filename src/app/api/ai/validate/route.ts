@@ -22,11 +22,11 @@ export async function POST(request: Request) {
         warnings: report.warnings.length,
         averageResponseTime: Math.round(report.aiMetrics.averageResponseTime),
         successRate: Math.round(report.aiMetrics.successRate * 100),
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           report: report,
           timestamp: report.timestamp,
           baseUrl: baseUrl || 'default'
-        }
+        }))
       }
     });
 

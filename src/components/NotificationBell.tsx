@@ -23,14 +23,14 @@ export default function NotificationBell() {
         const fetchNotifications = async () => {
             try {
                 const res = await apiGet('/api/notifications', accessToken);
-                if (!res.ok) {
-                    if (res.status === 401 || res.status === 403) {
+                if (!res.success) {
+                    if (res.error?.includes('unauthorized') || res.error?.includes('forbidden')) {
                         setNotifications([]);
                         setUnreadCount(0);
                     }
                     return;
                 }
-                const data = await res.json();
+                const data = res.data || {};
                 setNotifications(data.notifications || []);
                 setUnreadCount(data.unreadCount || 0);
             } catch (error) {

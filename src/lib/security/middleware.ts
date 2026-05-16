@@ -411,7 +411,7 @@ export function withSecurity(
         });
         
         // Call the handler with sanitized request
-        const response = await handler(newRequest, securityResult.context);
+        const response = await handler(newRequest as any, securityResult.context);
         return applySecurityHeaders(response);
       } catch (error) {
         // If sanitization fails, proceed with original request

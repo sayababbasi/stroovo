@@ -237,8 +237,18 @@ export class SmartFeaturesEngine {
       requiresApproval = false;
     }
 
+    // Determine which event would trigger this status change
+    let transitionEvent: any = 'PROGRESS';
+    if (recommendedStatus === 'BLOCKED') transitionEvent = 'BLOCK';
+    else if (recommendedStatus === 'IN_PROGRESS') transitionEvent = 'START';
+    else if (recommendedStatus === 'REVIEW') transitionEvent = 'REVIEW';
+    else if (recommendedStatus === 'DONE') transitionEvent = 'APPROVE';
+    else if (recommendedStatus === 'TODO') {
+      transitionEvent = currentStatus === 'BLOCKED' ? 'UNBLOCK' : 'CREATE';
+    }
+
     // Check if transition is valid
-    const canTransition = this.stateMachine.canTransition(currentStatus, 'STATUS_CHANGED');
+    const canTransition = recommendedStatus === currentStatus || this.stateMachine.canTransition(currentStatus, transitionEvent);
     if (!canTransition) {
       recommendedStatus = currentStatus;
       reason = 'Invalid status transition';
@@ -540,7 +550,7 @@ export class SmartFeaturesScheduler {
    */
   private async processAllTasks(): Promise<void> {
     // Would fetch all active tasks from database
-    const activeTasks = []; // await this.getActiveTasks();
+    const activeTasks: any[] = []; // await this.getActiveTasks();
     
     if (activeTasks.length === 0) return;
 
@@ -562,7 +572,7 @@ export class SmartFeaturesScheduler {
    */
   public async processDeadlineReminders(): Promise<void> {
     // Would fetch tasks with due dates
-    const tasksWithDueDates = []; // await this.getTasksWithDueDates();
+    const tasksWithDueDates: any[] = []; // await this.getTasksWithDueDates();
     
     const reminders = await this.engine.checkDeadlineReminders(tasksWithDueDates);
     

@@ -8,13 +8,15 @@ async function main() {
         console.log('Fetching all users and roles...');
         const users = await prisma.user.findMany({
             select: {
+                id: true,
                 email: true,
-                role: true
+                role: true,
+                tenantId: true
             }
         });
         console.log('Users found:', users.length);
         users.forEach(u => {
-            console.log(`- ${u.email}: ${u.role}`);
+            console.log(`- ${u.email}: ${u.role} (Tenant: ${u.tenantId})`);
         });
         await prisma.$disconnect();
     } catch (error: any) {

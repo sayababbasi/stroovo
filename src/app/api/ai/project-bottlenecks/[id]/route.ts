@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Check permission - all roles can view bottlenecks for projects they have access to
   const authResult = await requirePermission('projects.read')(request as any);
@@ -14,7 +14,7 @@ export async function GET(
   try {
     const headerList = await headers();
     const userId = headerList.get('x-user-id');
-    const { projectId } = await params;
+    const { id: projectId } = await params;
     
     console.log('[GET /api/ai/project-bottlenecks/:projectId] Analyzing bottlenecks for project:', projectId, 'by user:', userId);
     

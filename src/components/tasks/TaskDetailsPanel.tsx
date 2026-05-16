@@ -172,7 +172,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
   const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>(task.files as any || []);
-  const [dependencies, setDependencies] = useState<any[]>(task.dependencies || (task as any).taskDependencies || []);
+  const [dependencies, setDependencies] = useState<any[]>(task.dependencies || []);
   const [description, setDescription] = useState(task.description || '');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -200,7 +200,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
         if (res.ok) {
           const full = await res.json();
           setFiles(full.files || []);
-          setDependencies(full.taskDependencies || full.dependencies || []);
+          setDependencies(full.dependencies || []);
         }
       } catch (err) {
         console.error('Failed to load task details:', err);
@@ -219,7 +219,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
     setSubtasks(fresh.subTasks || []);
     setGenerationHistory(fresh.generationHistory || []);
     setFiles(fresh.files || []);
-    setDependencies(fresh.taskDependencies || fresh.dependencies || []);
+    setDependencies(fresh.dependencies || []);
     onUpdate(task.id, {
       progress: fresh.progress,
       subTasks: fresh.subTasks,
@@ -228,7 +228,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
       riskScore: fresh.riskScore,
       generationHistory: fresh.generationHistory,
       files: fresh.files,
-      dependencies: fresh.taskDependencies || fresh.dependencies,
+      dependencies: fresh.dependencies,
     } as any);
   }, [onUpdate, task.id]);
 

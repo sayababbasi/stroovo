@@ -37,6 +37,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'users.read.all',
     'system.logs.read',
     'ai.use',
+    'automations.read',
   ],
   MANAGER: [
     'analytics.read',
@@ -50,6 +51,10 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'teams.manage',
     'users.read.all',
     'ai.use',
+    'automations.read',
+    'automations.create',
+    'automations.update',
+    'automations.execute',
   ],
   TEAM_LEAD: [
     'projects.read',
@@ -62,6 +67,8 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'teams.read',
     'users.read.team',
     'ai.use',
+    'automations.read',
+    'automations.execute',
   ],
   MEMBER: [
     'projects.read',
@@ -70,6 +77,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'tasks.update.own',
     'users.read.own',
     'ai.use',
+    'automations.read',
   ],
 };
 

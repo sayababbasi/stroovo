@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sessionManager } from '@/lib/auth/session-manager';
 import { requireAuth } from '@/lib/auth/rbac';
@@ -6,7 +6,7 @@ import { requireAuth } from '@/lib/auth/rbac';
 // Initialize session manager
 const sessionService = sessionManager(prisma);
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await requireAuth()(request);
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await requireAuth()(request);

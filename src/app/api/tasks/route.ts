@@ -31,24 +31,22 @@ export async function GET(request: Request) {
         if (listId) whereClause.listId = listId;
         if (priority) whereClause.priority = priority;
 
-        const tasks = await prisma.task.findMany({
+        const tasks = await (prisma.task as any).findMany({
             where: whereClause,
             include: {
                 project: { select: { name: true } },
                 assignee: { select: { name: true, image: true } },
                 subTasks: true,
                 parent: { select: { title: true } },
-                taskDependencies: { select: { id: true, title: true, status: true } },
+                dependencies: { select: { id: true, title: true, status: true } },
                 team: { select: { id: true, name: true } },
-                space: { select: { id: true, name: true, icon: true, color: true } },
-                list: { select: { id: true, name: true, type: true } },
                 _count: { select: { comments: true, files: true } },
             },
             orderBy: { createdAt: 'desc' }
         });
 
         const visibleTasks = await Promise.all(
-            tasks.map(async (task) => ((await canAccessTask(authResult.user, task, 'read')) ? task : null))
+            tasks.map(async (task: any) => ((await canAccessTask(authResult.user, task, 'read')) ? task : null))
         );
 
         return NextResponse.json(visibleTasks.filter(Boolean));

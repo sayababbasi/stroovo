@@ -30,7 +30,7 @@ export class AIIntegrationEngine {
           assignee: true,
           project: true,
           subTasks: true,
-          taskDependencies: true,
+          dependencies: true,
         }
       });
 
@@ -101,7 +101,7 @@ export class AIIntegrationEngine {
         assignee: task.assignee?.name,
         project: task.project?.name,
         subtaskCount: task.subTasks?.length || 0,
-        dependencyCount: task.taskDependencies?.length || 0,
+        dependencyCount: task.dependencies?.length || 0,
         dueDate: task.dueDate,
       };
 
@@ -159,7 +159,7 @@ export class AIIntegrationEngine {
       suggestions.push('Consider breaking this into multiple main tasks');
     }
 
-    if (task.taskDependencies && task.taskDependencies.length > 2) {
+    if (task.dependencies && task.dependencies.length > 2) {
       suggestions.push('Monitor dependencies closely to avoid delays');
     }
 
@@ -175,11 +175,8 @@ export class AIIntegrationEngine {
       const task = await prisma.task.findUnique({
         where: { id: taskId },
         include: {
-          project: {
-            include: {
-              team: true
-            }
-          }
+          project: true,
+          team: true
         }
       });
 
@@ -211,8 +208,12 @@ export class AIIntegrationEngine {
 
       // Use AI to rank assignees if available
       const aiResult = await aiService.rankAssignees(
-        { title: task.title, description: task.description },
-        teamMembers
+        { title: task.title, description: task.description || undefined },
+        teamMembers.map((m: any) => ({
+          id: m.id,
+          name: m.name || 'Unknown',
+          skills: m.skills || []
+        }))
       );
 
       if (!aiResult.fallback && aiResult.bestMatchId) {

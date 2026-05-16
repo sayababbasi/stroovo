@@ -60,6 +60,12 @@ const TeamManagement: React.FC<TeamManagementProps> = ({
   const [roleFilter, setRoleFilter] = useState<TeamRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  
+  // User picker state
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Check permissions
   const canInviteMembers = hasPermission('ADMIN', currentUserRole, Permission.INVITE_MEMBERS, 'team');
@@ -77,6 +83,31 @@ const TeamManagement: React.FC<TeamManagementProps> = ({
       });
     }
   }, [activeTab]);
+
+  // Fetch available users when invite modal opens
+  useEffect(() => {
+    if (!isInviteModalOpen) return;
+    
+    const fetchAvailableUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const params = new URLSearchParams({ teamId: team.id });
+        if (userSearchQuery) params.append('search', userSearchQuery);
+        
+        const response = await apiGet(`/api/team-members/available?${params}`, null);
+        if (response.success && response.data) {
+          setAvailableUsers(Array.isArray(response.data) ? response.data : []);
+        }
+      } catch (err) {
+        console.error('Error fetching available users:', err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchAvailableUsers, 300);
+    return () => clearTimeout(debounce);
+  }, [isInviteModalOpen, team.id, userSearchQuery]);
 
   // Filter members
   const filteredMembers = team.members.filter(member => {
@@ -119,10 +150,18 @@ const TeamManagement: React.FC<TeamManagementProps> = ({
   };
 
   const handleInvite = () => {
-    if (!inviteEmail.trim()) return;
-    onMemberInvite(inviteEmail, inviteRole);
+    // Use selected user's email if picked, otherwise use typed email
+    const emailToInvite = selectedUserId 
+      ? availableUsers.find(u => u.id === selectedUserId)?.email 
+      : inviteEmail.trim();
+    
+    if (!emailToInvite) return;
+    
+    onMemberInvite(emailToInvite, inviteRole);
     setInviteEmail('');
     setInviteRole(TeamRole.MEMBER);
+    setSelectedUserId(null);
+    setUserSearchQuery('');
     setIsInviteModalOpen(false);
   };
 
@@ -465,18 +504,55 @@ const TeamManagement: React.FC<TeamManagementProps> = ({
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
+                      Select User or Enter Email
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                       <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="Enter email address"
+                        type="text"
+                        value={userSearchQuery !== '' ? userSearchQuery : inviteEmail}
+                        onChange={(e) => {
+                          setUserSearchQuery(e.target.value);
+                          setInviteEmail(e.target.value); // fallback for new email
+                          setSelectedUserId(null);
+                        }}
+                        placeholder="Search existing users or type email..."
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                    
+                    {/* User Dropdown */}
+                    {(userSearchQuery || availableUsers.length > 0) && !selectedUserId && (
+                      <div className="mt-1 bg-white border border-gray-200 rounded-lg shadow-sm max-h-40 overflow-y-auto">
+                        {loadingUsers ? (
+                          <div className="p-3 text-center text-sm text-gray-500">Loading...</div>
+                        ) : availableUsers.length > 0 ? (
+                          availableUsers.map(user => (
+                            <button
+                              key={user.id}
+                              onClick={() => {
+                                setSelectedUserId(user.id);
+                                setUserSearchQuery(user.name);
+                                setInviteEmail(user.email);
+                              }}
+                              className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 text-left transition-colors"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm shrink-0">
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-sm text-gray-500 text-center">
+                            No existing users found. Press Send Invite to invite via email.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>

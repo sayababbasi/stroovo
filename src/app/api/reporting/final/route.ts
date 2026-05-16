@@ -54,10 +54,7 @@ export async function GET(request: Request) {
     const reports = await prisma.finalReport.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
-      skip: offset,
-      include: {
-        _count: true
-      }
+      skip: offset
     });
 
     const total = await prisma.finalReport.count();

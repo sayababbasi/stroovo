@@ -37,7 +37,8 @@ export class ComprehensiveTestRunner {
                 await this.prisma.$queryRaw`SELECT 1`;
                 return { success: true, message: 'Database connection successful' };
               } catch (error) {
-                return { success: false, message: `Database connection failed: ${error.message}`, error: error.message };
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                return { success: false, message: `Database connection failed: ${message}`, error: message };
               }
             }
           }
@@ -54,7 +55,8 @@ export class ComprehensiveTestRunner {
                 const token = 'test-jwt-token';
                 return { success: true, message: 'JWT token generation successful', data: { token } };
               } catch (error) {
-                return { success: false, message: `JWT token generation failed: ${error.message}`, error: error.message };
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                return { success: false, message: `JWT token generation failed: ${message}`, error: message };
               }
             }
           }
@@ -87,7 +89,7 @@ export class ComprehensiveTestRunner {
           }
         } catch (error) {
           failedTests++;
-          console.log(`    💥 Test crashed: ${error.message}`);
+          console.log(`    💥 Test crashed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     }

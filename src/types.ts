@@ -21,7 +21,7 @@ export interface Project {
 }
 
 export interface Task {
-    id?: string;
+    id: string;
     title: string;
     status: string;
     priority: string;
@@ -29,6 +29,7 @@ export interface Task {
     progress?: number;
     dueDate: string | null;
     createdAt?: string;
+    updatedAt?: string;
     description?: string;
     projectId?: string;
     project?: {

@@ -96,19 +96,16 @@ export class SystemHealthMonitor {
       
       // Test a simple generation to ensure AI is responsive
       const testPrompt = 'Test';
-      await ollamaClient.generate({
-        model: models.models?.[0]?.name || 'llama2',
-        prompt: testPrompt,
-        options: { num_predict: 1 }
-      });
+      const modelName = models[0]?.name || 'llama2';
+      await ollamaClient.generate(testPrompt, modelName, { max_tokens: 1 });
 
       return {
         service: 'ai',
         status: latency < 2000 ? 'healthy' : latency < 5000 ? 'degraded' : 'unhealthy',
         latency,
         metadata: { 
-          models: models.models?.length || 0,
-          availableModels: models.models?.map(m => m.name) || []
+          models: models.length,
+          availableModels: models.map(m => m.name)
         }
       };
     } catch (error) {

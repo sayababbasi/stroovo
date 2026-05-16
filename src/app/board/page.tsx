@@ -304,9 +304,9 @@ export function BoardView({ hideHeader }: { hideHeader?: boolean } = {}) {
 
 export default function BoardPage() {
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#FAFBFC' }}>
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#FAFBFC' }}>
             <Sidebar />
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <BoardView />
             </div>
         </div>

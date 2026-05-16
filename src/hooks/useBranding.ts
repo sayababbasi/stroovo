@@ -10,7 +10,7 @@ export interface Branding {
 
 export function useBranding() {
     const [branding, setBranding] = useState<Branding>({
-        logoUrl: null,
+        logoUrl: '/logo.png',
         primaryColor: '#0052CC',
         secondaryColor: '#0747A6'
     });
@@ -24,7 +24,7 @@ export function useBranding() {
                 if (res.ok) {
                     const data = await res.json();
                     setBranding({
-                        logoUrl: data.logoUrl,
+                        logoUrl: data.logoUrl || '/logo.png',
                         primaryColor: data.primaryColor || '#0052CC',
                         secondaryColor: data.secondaryColor || '#0747A6'
                     });

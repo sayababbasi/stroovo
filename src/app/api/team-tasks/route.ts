@@ -69,18 +69,7 @@ export async function GET(request: NextRequest) {
             name: true
           }
         },
-        space: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        list: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
+
         project: {
           select: {
             id: true,
@@ -136,12 +125,7 @@ export async function POST(request: NextRequest) {
         team: {
           select: { id: true, name: true }
         },
-        space: {
-          select: { id: true, name: true }
-        },
-        list: {
-          select: { id: true, name: true }
-        },
+
         project: {
           select: { id: true, name: true }
         }

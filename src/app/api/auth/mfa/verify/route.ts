@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { mfaService } from '@/lib/auth/mfa';
 import { requireAuth } from '@/lib/auth/rbac';
@@ -6,7 +6,7 @@ import { requireAuth } from '@/lib/auth/rbac';
 // Initialize MFA service
 const authService = mfaService(prisma);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await requireAuth()(request);

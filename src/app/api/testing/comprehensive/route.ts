@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const { baseUrl, quickCheck, productionReadiness } = body;
 
     // Initialize comprehensive test runner
-    const runner = comprehensiveTestRunner(prisma, baseUrl);
+    const runner = comprehensiveTestRunner(prisma) as any;
 
     if (quickCheck) {
       // Quick health check for CI/CD
@@ -80,10 +80,7 @@ export async function GET(request: Request) {
     const reports = await prisma.comprehensiveTest.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
-      skip: offset,
-      include: {
-        _count: true
-      }
+      skip: offset
     });
 
     const total = await prisma.comprehensiveTest.count();

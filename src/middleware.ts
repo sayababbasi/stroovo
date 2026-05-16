@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 const jwtSecret = process.env.JWT_SECRET || 'stroovo-production-v2-stable-2026';
 const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   console.log(`[PROXY] Processing: ${pathname}`);
 
@@ -14,7 +14,9 @@ export async function proxy(request: NextRequest) {
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname.startsWith('/_next') ||
-    pathname === '/favicon.ico'
+    pathname === '/favicon.ico' ||
+    pathname === '/logo.png' ||
+    pathname === '/icon.png'
   ) {
     return NextResponse.next();
   }
@@ -80,5 +82,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png|icon.png).*)'],
 };

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { passwordManager } from '@/lib/auth/password-manager';
 import { requireAuth } from '@/lib/auth/rbac';
@@ -6,7 +6,7 @@ import { requireAuth } from '@/lib/auth/rbac';
 // Initialize password manager
 const passwordService = passwordManager(prisma);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await requireAuth()(request);
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await requireAuth()(request);

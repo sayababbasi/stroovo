@@ -105,10 +105,10 @@ export function registerTaskEventHandlers() {
       // Check dependents and unblock them if possible
       const task = await prisma.task.findUnique({
           where: { id: event.taskId },
-          include: { dependents: true }
+          include: { dependedBy: true }
       });
 
-      if (task && task.dependents.length > 0) {
+      if (task && task.dependedBy.length > 0) {
           // This would be a more complex check in a real system, seeing if ALL dependencies are met
           // For now, we will log that dependents might be unblocked
           console.log(`Task ${event.taskId} completed. Dependents might be unblocked.`);

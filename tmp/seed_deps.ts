@@ -24,7 +24,7 @@ async function main() {
         await prisma.task.update({
             where: { id: tasks[0].id },
             data: {
-                taskDependencies: {
+                dependencies: {
                     connect: [{ id: tasks[1].id }]
                 }
             }
@@ -33,7 +33,7 @@ async function main() {
         await prisma.task.update({
             where: { id: tasks[2].id },
             data: {
-                taskDependencies: {
+                dependencies: {
                     connect: [{ id: tasks[0].id }]
                 }
             }

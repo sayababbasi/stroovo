@@ -425,8 +425,8 @@ export class SessionManager {
         s.status === SessionStatus.SUSPICIOUS
       );
 
-      const devices = [...new Set(sessions.map(s => s.device).filter(Boolean))];
-      const locations = [...new Set(sessions.map(s => s.location).filter(Boolean))];
+      const devices = [...new Set(sessions.map(s => s.device).filter(Boolean) as string[])];
+      const locations = [...new Set(sessions.map(s => s.location).filter(Boolean) as string[])];
       const lastLogin = sessions[0]?.createdAt || null;
 
       return {

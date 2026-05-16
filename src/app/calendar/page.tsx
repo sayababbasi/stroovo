@@ -657,9 +657,9 @@ export function CalendarView({
 
 export default function CalendarPage() {
     return (
-        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
+        <main style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#F4F5F7' }}>
             <Sidebar />
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ flex: 1, marginLeft: '260px', display: 'flex', overflow: 'hidden' }}>
                 <CalendarView />
             </div>
         </main>

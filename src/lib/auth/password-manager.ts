@@ -53,7 +53,7 @@ export class PasswordManager {
         requireNumbers: settings?.passwordRequireNumbers ?? true,
         requireSymbols: settings?.passwordRequireSymbols ?? true,
         preventReuse: settings?.preventPasswordReuse || 5,
-        expiryDays: settings?.passwordExpiryDays,
+        expiryDays: settings?.passwordExpiryDays || undefined,
       };
     } catch (error) {
       console.error('Error getting password policy:', error);

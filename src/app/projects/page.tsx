@@ -1,945 +1,418 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import {
-    Plus, Search, ChevronDown, ChevronRight, ChevronLeft,
-    Flame, Star, Zap, AlertTriangle, Rocket, Clock,
-    MoreHorizontal, ExternalLink, ListPlus, BarChart2,
-    CheckCircle2, Calendar, Users, FileText, Upload,
-    X, Filter, Pin, ArrowUpRight, Activity, TrendingUp,
-    Folder, Target, Eye
+  Folder, FolderCheck, AlertTriangle, CheckCircle,
+  TrendingUp, Search, SlidersHorizontal, ChevronDown,
+  Star, MoreVertical, LayoutGrid, List, Clock, ShieldAlert,
+  Zap, Calendar, ChevronRight, CheckSquare, Activity, Settings
 } from 'lucide-react';
-import useSWR from 'swr';
-import { io, Socket } from 'socket.io-client';
-import toast from 'react-hot-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { useProjectStore } from './project-store';
 
-/* ─── Types ────────────────────────────────────────────── */
-interface Project {
-    id: string;
-    name: string;
-    description: string | null;
-    status: string;
-    startDate: string;
-    endDate: string | null;
-    manager: { name: string | null, id?: string, image?: string };
-    _count: { tasks: number };
-    riskScore: number;
-    healthStatus: string;
-    aiInsights?: any;
-    teamIds?: string[];
-    tags?: string[];
-    updatedAt: string;
-    isStarred?: boolean;
-    progress?: number;
-}
-
-interface EnrichedProject extends Project {
-    progress: number;
-    health: 'on_track' | 'at_risk' | 'delayed' | 'completed';
-    tags: string[];
-    updatedAgo: string;
-    pinned: boolean;
-    category: string;
-    teamSize: number;
-}
-
-const fetcher = (url: string) => fetch(url).then((res) => {
-    if (!res.ok) throw new Error('An error occurred while fetching the data.');
-    return res.json();
-});
+// MOCK DATA GENERATOR FOR REAL-TIME SIMULATION
+const initialProjects = [
+  { id: '1', name: 'E-Commerce Platform', desc: 'Build next-gen e-commerce solution', owner: 'Ali Raza', ownerAvatar: 'https://i.pravatar.cc/150?u=ali', status: 'Active', progress: 64, health: 'Good', healthColor: '#10B981', endStr: 'May 30, 2026', endSub: 'in 25 days', team: ['https://i.pravatar.cc/150?u=t1', 'https://i.pravatar.cc/150?u=t2', 'https://i.pravatar.cc/150?u=t3'], lastUpdated: '2h ago', starred: true },
+  { id: '2', name: 'Mobile Application', desc: 'Cross-platform mobile app', owner: 'Sara Khan', ownerAvatar: 'https://i.pravatar.cc/150?u=sara', status: 'Active', progress: 48, health: 'At Risk', healthColor: '#EF4444', endStr: 'Jun 15, 2026', endSub: 'in 41 days', team: ['https://i.pravatar.cc/150?u=t4', 'https://i.pravatar.cc/150?u=t5', 'https://i.pravatar.cc/150?u=t6'], lastUpdated: '5h ago', starred: true },
+  { id: '3', name: 'Internal Dashboard', desc: 'Analytics & reporting dashboard', owner: 'Usman Tariq', ownerAvatar: 'https://i.pravatar.cc/150?u=usman', status: 'Active', progress: 72, health: 'Good', healthColor: '#10B981', endStr: 'Jun 05, 2026', endSub: 'in 31 days', team: ['https://i.pravatar.cc/150?u=t7', 'https://i.pravatar.cc/150?u=t8'], lastUpdated: '1h ago', starred: true },
+  { id: '4', name: 'Marketing Website Redesign', desc: 'Revamp corporate website', owner: 'Zainab Fatima', ownerAvatar: 'https://i.pravatar.cc/150?u=zainab', status: 'Planning', progress: 15, health: 'On Track', healthColor: '#3B82F6', endStr: 'Jul 10, 2026', endSub: 'in 66 days', team: ['https://i.pravatar.cc/150?u=t9'], lastUpdated: '1d ago', starred: false },
+  { id: '5', name: 'CRM Integration', desc: 'Integrate CRM with existing tools', owner: 'Ahmed Hassan', ownerAvatar: 'https://i.pravatar.cc/150?u=ahmed', status: 'Active', progress: 55, health: 'At Risk', healthColor: '#EF4444', endStr: 'May 25, 2026', endSub: 'in 20 days', team: ['https://i.pravatar.cc/150?u=t10', 'https://i.pravatar.cc/150?u=t11'], lastUpdated: '3h ago', starred: true },
+  { id: '6', name: 'AI Chatbot Development', desc: 'AI-powered customer support bot', owner: 'Ayesha Noor', ownerAvatar: 'https://i.pravatar.cc/150?u=ayesha', status: 'Active', progress: 38, health: 'On Track', healthColor: '#3B82F6', endStr: 'Jun 20, 2026', endSub: 'in 46 days', team: ['https://i.pravatar.cc/150?u=t12', 'https://i.pravatar.cc/150?u=t13'], lastUpdated: '6h ago', starred: false },
+  { id: '7', name: 'Data Migration Project', desc: 'Migrate legacy data to new system', owner: 'Hamza Ali', ownerAvatar: 'https://i.pravatar.cc/150?u=hamza', status: 'On Hold', progress: 10, health: 'At Risk', healthColor: '#EF4444', endStr: 'Jul 01, 2026', endSub: 'in 57 days', team: ['https://i.pravatar.cc/150?u=t14'], lastUpdated: '2d ago', starred: false },
+  { id: '8', name: 'Performance Optimization', desc: 'Improve system performance', owner: 'Bilal Ahmed', ownerAvatar: 'https://i.pravatar.cc/150?u=bilal', status: 'Completed', progress: 100, health: 'Excellent', healthColor: '#8B5CF6', endStr: 'Apr 20, 2026', endSub: 'Completed', team: ['https://i.pravatar.cc/150?u=t15', 'https://i.pravatar.cc/150?u=t16'], lastUpdated: '3d ago', starred: true },
+];
 
 export default function ProjectsPage() {
-    const { user } = useAuth();
-    const { 
-        searchQuery, setSearchQuery, 
-        statusFilter, setStatusFilter, 
-        ownerFilter, setOwnerFilter, 
-        selectedProjectId, setSelectedProjectId 
-    } = useProjectStore();
+  const [activeTab, setActiveTab] = useState('All Projects');
+  const [projects, setProjects] = useState(initialProjects);
 
-    const [activeTab, setActiveTab] = useState('Overview');
-    const [expandedSections, setExpandedSections] = useState<Set<string>>(
-        new Set(['🔥 Active', '⭐ Priority', '⚡ Recently Updated', '⚠️ At Risk', '🚀 Completed'])
-    );
-    const [hoveredProject, setHoveredProject] = useState<string | null>(null);
-    const [socket, setSocket] = useState<Socket | null>(null);
-    const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [createForm, setCreateForm] = useState({ name: '', description: '' });
-    const [isCreating, setIsCreating] = useState(false);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
-    const queryParams = new URLSearchParams();
-    if (debouncedSearch) queryParams.set('search', debouncedSearch);
-    if (statusFilter !== 'ALL') queryParams.set('status', statusFilter);
-    if (ownerFilter) queryParams.set('owner', ownerFilter);
-    const queryString = queryParams.toString();
-    
-    const { data: projectsData, error: projectsError, isLoading: projectsLoading, mutate: mutateProjects } = useSWR(`/api/projects${queryString ? `?${queryString}` : ''}`, fetcher, { revalidateOnFocus: true });
-    
-    const { data: selectedProjectData, mutate: mutateSelectedProject } = useSWR(selectedProjectId ? `/api/projects/${selectedProjectId}` : null, fetcher);
-    const { data: tasksData, mutate: mutateTasks } = useSWR(selectedProjectId ? `/api/tasks?projectId=${selectedProjectId}` : null, fetcher);
-    const { data: activityData, mutate: mutateActivity } = useSWR(selectedProjectId ? `/api/projects/${selectedProjectId}/activity` : null, fetcher);
-
-    useEffect(() => {
-        fetch('/api/socket');
-        const s = io({ path: '/api/socket' });
-        setSocket(s);
-
-        if (user?.tenantId) {
-            s.emit('join-room', `tenant-${user.tenantId}`);
+  // Simulate Real-time Updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProjects(prev => prev.map(p => {
+        if (p.status === 'Active' && Math.random() > 0.7) {
+          const newProg = Math.min(100, p.progress + Math.floor(Math.random() * 3));
+          return { ...p, progress: newProg, lastUpdated: 'Just now' };
         }
+        return p;
+      }));
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
-        const handleProjectUpdate = () => {
-            mutateProjects();
-            if (selectedProjectId) {
-                mutateSelectedProject();
-                mutateTasks();
-                mutateActivity();
-            }
-        };
+  return (
+    <main style={{ display: 'flex', minHeight: '100vh', background: '#F8F9FA', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      <Sidebar />
+      <style>{`
+        .p-stat-card { background: white; border: 1px solid #DFE1E6; border-radius: 12px; padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(9,30,66,0.03); transition: all 0.2s; }
+        .p-stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(9,30,66,0.08); border-color: #C1C7D0; }
+        .p-tab { padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; color: #6B778C; transition: all 0.2s; }
+        .p-tab.active { color: #0052CC; border-bottom-color: #0052CC; }
+        .p-tab:hover:not(.active) { color: #172B4D; }
+        .p-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+        .p-table th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 700; color: #6B778C; text-transform: uppercase; border-bottom: 1px solid #DFE1E6; background: #FAFBFC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-table td { padding: 12px; border-bottom: 1px solid #F4F5F7; vertical-align: middle; background: white; transition: background 0.2s; overflow: hidden; text-overflow: ellipsis; }
+        .p-table tr:hover td { background: #FAFBFC; }
+        .p-table tr:last-child td { border-bottom: none; }
+        .p-table td:first-child { border-radius: 8px 0 0 8px; }
+        .p-table td:last-child { border-radius: 0 8px 8px 0; }
+        .p-avatar { width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; margin-left: -8px; }
+        .p-avatar:first-child { margin-left: 0; }
+        .btn-primary { background: #0052CC; color: white; border: none; border-radius: 8px; padding: 0 16px; height: 36px; font-size: 13px; font-weight: 600; display: inline-flex; alignItems: center; gap: 8px; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:hover { background: #0747A6; }
+        .btn-secondary { background: white; color: #172B4D; border: 1px solid #DFE1E6; border-radius: 8px; padding: 0 16px; height: 36px; font-size: 13px; font-weight: 600; display: inline-flex; alignItems: center; gap: 8px; cursor: pointer; transition: background 0.2s; }
+        .btn-secondary:hover { background: #F4F5F7; }
+        .status-pill { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #C1C7D0; border-radius: 4px; }
+      `}</style>
 
-        s.on('PROJECT_CREATED', handleProjectUpdate);
-        s.on('PROJECT_UPDATED', handleProjectUpdate);
-        s.on('PROJECT_DELETED', handleProjectUpdate);
-        s.on('TASK_CREATED', handleProjectUpdate);
-        s.on('TASK_UPDATED', handleProjectUpdate);
-        s.on('TASK_DELETED', handleProjectUpdate);
-        s.on('RISK_UPDATED', handleProjectUpdate);
+      <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
-        return () => { s.disconnect(); };
-    }, [user?.tenantId, selectedProjectId, mutateProjects, mutateSelectedProject, mutateTasks, mutateActivity]);
+        {/* ── HEADER ── */}
+        <div style={{ padding: '24px 32px 0 32px', background: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+            <div>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: '#172B4D', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Projects</h1>
+              <p style={{ fontSize: 14, color: '#6B778C', margin: 0 }}>Manage all projects and deliver exceptional results.</p>
+            </div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} color="#8A94A6" style={{ position: 'absolute', left: 12, top: 10 }} />
+                <input type="text" placeholder="Search projects..." style={{ height: 36, paddingLeft: 36, paddingRight: 16, borderRadius: 8, border: '1px solid #DFE1E6', fontSize: 13, width: 240, outline: 'none' }} />
+                <div style={{ position: 'absolute', right: 8, top: 8, background: '#F4F5F7', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#6B778C' }}>⌘K</div>
+              </div>
+              <button className="btn-secondary"><SlidersHorizontal size={14} /> Filters</button>
+              <button className="btn-secondary">View: Active <ChevronDown size={14} color="#8A94A6" /></button>
+              <button className="btn-primary"><Folder size={14} /> Create Project</button>
+            </div>
+          </div>
 
-    useEffect(() => {
-        if (projectsError) toast.error('Failed to load projects');
-    }, [projectsError]);
-
-    const projects: Project[] = Array.isArray(projectsData) ? projectsData : [];
-    
-    // Auto-calculate progress dynamically from real tasks
-    const getProjectProgress = (projId: string, currentTasksData: any) => {
-        if (!currentTasksData || !Array.isArray(currentTasksData)) return 0;
-        const tasksForProj = currentTasksData;
-        const completed = tasksForProj.filter((t: any) => t.status === 'DONE').length;
-        return tasksForProj.length > 0 ? Math.round((completed / tasksForProj.length) * 100) : 0;
-    };
-
-    /* ─── Helpers ───────────────────────────────── */
-    const getAvatarColor = (str: string = '') => {
-        if (!str) return '#42526E';
-        const colors = ['#0052CC', '#36B37E', '#FF5630', '#FFAB00', '#6554C0', '#00B8D9', '#FF8B00'];
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        return colors[Math.abs(hash) % colors.length];
-    };
-
-    const enrichProject = useCallback((p: any, index: number): EnrichedProject => {
-        let health: 'on_track' | 'at_risk' | 'delayed' | 'completed' = 'on_track';
-        if (p.status === 'COMPLETED') health = 'completed';
-        else if (p.healthStatus === 'AT_RISK') health = 'at_risk';
-        else if (p.healthStatus === 'DELAYED') health = 'delayed';
-
-        const tags = Array.isArray(p.tags) && p.tags.length > 0 ? p.tags : ['General'];
-        const updatedDate = new Date(p.updatedAt || new Date());
-        const diffMs = Date.now() - updatedDate.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        const updatedAgo = diffMins < 60 ? `${diffMins}m ago` : diffMins < 1440 ? `${Math.floor(diffMins/60)}h ago` : 'Yesterday';
-
-        const categories = ['Frontend', 'Backend', 'DevOps', 'Design', 'Marketing'];
-
-        // If it's the selected project, we can use the freshly loaded tasks to calculate accurate progress
-        let calculatedProgress = p.progress || 0;
-        if (p.id === selectedProjectId && tasksData) {
-            calculatedProgress = getProjectProgress(p.id, tasksData);
-        }
-
-        return {
-            ...p,
-            progress: calculatedProgress,
-            health,
-            tags,
-            updatedAgo,
-            pinned: p.isStarred || index < 2,
-            category: categories[index % categories.length],
-            teamSize: p.teamIds?.length || (3 + (index % 5)),
-            riskScore: p.riskScore || 0,
-            aiInsights: p.aiInsights || null
-        };
-    }, [tasksData, selectedProjectId]);
-
-    const enrichedProjects = useMemo(() => projects.map((p, i) => enrichProject(p, i)), [projects, enrichProject]);
-    const selectedProject: EnrichedProject | null = selectedProjectId ? enrichedProjects.find(p => p.id === selectedProjectId) || null : null;
-
-    /* ─── Smart Categories ──────────────────────── */
-    const categories = useMemo(() => {
-        const active = enrichedProjects.filter(p => p.status === 'ACTIVE' && p.health !== 'at_risk' && p.health !== 'delayed');
-        const priority = enrichedProjects.filter(p => p.pinned);
-        const recent = [...enrichedProjects].sort(() => Math.random() - 0.5).slice(0, 3);
-        const atRisk = enrichedProjects.filter(p => p.health === 'at_risk' || p.health === 'delayed');
-        const completed = enrichedProjects.filter(p => p.status === 'COMPLETED' || p.health === 'completed');
-        return [
-            { label: '🔥 Active', items: active, icon: Flame, color: '#FF5630' },
-            { label: '⭐ Priority', items: priority, icon: Star, color: '#FFAB00' },
-            { label: '⚡ Recently Updated', items: recent, icon: Zap, color: '#0052CC' },
-            { label: '⚠️ At Risk', items: atRisk, icon: AlertTriangle, color: '#FF5630' },
-            { label: '🚀 Completed', items: completed, icon: Rocket, color: '#36B37E' },
-        ].filter(c => c.items.length > 0);
-    }, [enrichedProjects]);
-
-    const toggleSection = (label: string) => {
-        setExpandedSections(prev => {
-            const next = new Set(prev);
-            next.has(label) ? next.delete(label) : next.add(label);
-            return next;
-        });
-    };
-
-    const getHealthBadge = (health: string) => {
-        switch (health) {
-            case 'on_track': return { label: 'On Track', color: '#36B37E', bg: 'rgba(54,179,126,0.1)', dot: '🟢' };
-            case 'at_risk': return { label: 'At Risk', color: '#FFAB00', bg: 'rgba(255,171,0,0.1)', dot: '🟡' };
-            case 'delayed': return { label: 'Delayed', color: '#FF5630', bg: 'rgba(255,86,48,0.1)', dot: '🔴' };
-            case 'completed': return { label: 'Completed', color: '#36B37E', bg: 'rgba(54,179,126,0.1)', dot: '✅' };
-            default: return { label: 'Unknown', color: '#6B778C', bg: '#F4F5F7', dot: '⚪' };
-        }
-    };
-
-    const getProgressColor = (progress: number, health: string) => {
-        if (health === 'completed') return '#36B37E';
-        if (health === 'delayed') return '#FF5630';
-        if (health === 'at_risk') return '#FFAB00';
-        return progress > 60 ? '#36B37E' : '#0052CC';
-    };
-
-    const tabs = ['Overview', 'Tasks', 'Timeline', 'Team', 'AI Insights', 'Docs'];
-
-    const handleCreateProject = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsCreating(true);
-        try {
-            const res = await fetch('/api/projects', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(createForm)
-            });
-            if (!res.ok) throw new Error('Failed to create project');
-            
-            toast.success('Project created successfully');
-            setShowCreateModal(false);
-            setCreateForm({ name: '', description: '' });
-            mutateProjects(); // Optmistic reload
-        } catch (err) {
-            toast.error('Error creating project');
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
-    const formatRelativeTime = (dateString: string) => {
-        const date = new Date(dateString);
-        const diffMs = Date.now() - date.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffMins < 1440) return `${Math.floor(diffMins/60)}h ago`;
-        return `${Math.floor(diffMins/1440)}d ago`;
-    };
-
-    const liveTasks = useMemo(() => {
-        const tasks = selectedProjectData?.tasks || (Array.isArray(tasksData) ? tasksData : []);
-        if (!tasks || !Array.isArray(tasks)) return [];
-        return tasks.map(t => ({
-            id: t.id,
-            title: t.title,
-            tag: t.tags?.[0] || 'General',
-            due: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'No Date',
-            progress: t.progress || 0,
-            date: new Date(t.createdAt).toLocaleDateString(),
-            status: t.status,
-            type: t.type || 'TASK'
-        }));
-    }, [tasksData, selectedProjectData]);
-
-    const liveActivity = useMemo(() => {
-        const activities = selectedProjectData?.activityLogs || (Array.isArray(activityData) ? activityData : []);
-        if (!activities || !Array.isArray(activities)) return [];
-        return activities.map((a: any) => ({
-            user: a.user?.name || 'Unknown User',
-            action: a.action.replace(/_/g, ' ').toLowerCase(),
-            target: a.metadata?.name || a.metadata?.title || '',
-            time: formatRelativeTime(a.createdAt),
-            images: false
-        }));
-    }, [activityData, selectedProjectData]);
-
-    const liveMilestones = useMemo(() => {
-        const tasks = selectedProjectData?.tasks || (Array.isArray(tasksData) ? tasksData : []);
-        if (!tasks || !Array.isArray(tasks)) return [];
-        return tasks.filter((t: any) => t.type === 'MILESTONE').map((t: any) => ({
-            title: t.title,
-            due: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'TBD',
-            dueIn: t.dueDate ? `${Math.ceil((new Date(t.dueDate).getTime() - Date.now()) / (1000 * 3600 * 24))} days` : '',
-            progress: t.progress || 0
-        }));
-    }, [tasksData, selectedProjectData]);
-
-    const liveFiles = useMemo(() => {
-        const files = selectedProjectData?.files || [];
-        if (!files || !Array.isArray(files) || files.length === 0) {
-            return [
-                { name: 'No files attached yet', icon: '📄', size: '' }
-            ];
-        }
-        return files.map((f: any) => ({
-            name: f.name,
-            icon: f.type?.includes('image') ? '🖼️' : '📄',
-            size: `${(f.size / 1024 / 1024).toFixed(1)}MB`
-        }));
-    }, [selectedProjectData]);
-
-    /* ─── Render ────────────────────────────────── */
-    return (
-        <main style={{ display: 'flex', minHeight: '100vh', background: '#F8F9FA' }}>
-            <Sidebar />
-
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column' }}>
-                <style>{`
-                    .project-row {
-                        display: flex;
-                        align-items: center;
-                        padding: 12px 20px;
-                        border-bottom: 1px solid rgba(9,30,66,0.06);
-                        transition: all 0.15s cubic-bezier(0.2,0,0,1);
-                        cursor: pointer;
-                        position: relative;
-                    }
-                    .project-row:hover {
-                        background: #F4F5F7;
-                    }
-                    .project-row:last-child { border-bottom: none; }
-                    .quick-actions {
-                        display: none;
-                        position: absolute;
-                        right: 16px;
-                        top: 50%;
-                        transform: translateY(-50%);
-                        gap: 4px;
-                        z-index: 5;
-                    }
-                    .project-row:hover .quick-actions { display: flex; }
-                    .project-row:hover .updated-text { display: none; }
-                    .qa-btn {
-                        padding: 4px 8px;
-                        border-radius: 6px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        border: 1px solid #DFE1E6;
-                        background: white;
-                        color: #42526E;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                        transition: all 0.15s;
-                    }
-                    .qa-btn:hover { background: #0052CC; color: white; border-color: #0052CC; }
-
-                    .progress-mini { height: 4px; background: #EBECF0; border-radius: 2px; overflow: hidden; flex: 1; max-width: 120px; }
-                    .progress-mini-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.2,0,0,1); }
-
-                    .avatar-sm { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid white; font-size: 8px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; margin-left: -6px; }
-                    .avatar-sm:first-child { margin-left: 0; }
-
-                    .health-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-                    .health-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px; }
-
-                    .project-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: white; flex-shrink: 0; }
-
-                    .filter-pill { padding: 6px 12px; border-radius: 8px; border: 1px solid transparent; background: #F4F5F7; font-size: 12px; font-weight: 500; color: #42526E; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
-                    .filter-pill:hover { background: #EBECF0; }
-                    .filter-pill.active { background: #E6EFFF; color: #0052CC; border-color: rgba(0,82,204,0.15); }
-
-                    .section-header { display: flex; align-items: center; gap: 8px; padding: 8px 20px; cursor: pointer; user-select: none; }
-                    .section-header:hover { background: rgba(9,30,66,0.02); }
-
-                    .search-box { position: relative; flex: 1; max-width: 360px; }
-                    .search-box input { width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #DFE1E6; font-size: 13px; outline: none; background: #FAFBFC; transition: all 0.2s; }
-                    .search-box input:focus { border-color: #0052CC; background: white; box-shadow: 0 0 0 3px rgba(0,82,204,0.08); }
-
-                    .tag-sm { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #F4F5F7; color: #42526E; font-weight: 500; white-space: nowrap; }
-
-                    /* Detail Panel */
-                    .detail-panel {
-                        position: fixed;
-                        top: 0;
-                        right: 0;
-                        width: 50vw;
-                        max-width: 720px;
-                        height: 100vh;
-                        background: white;
-                        box-shadow: -8px 0 24px rgba(9,30,66,0.12);
-                        z-index: 100;
-                        display: flex;
-                        flex-direction: column;
-                        animation: slideIn 0.25s cubic-bezier(0.2,0,0,1);
-                    }
-                    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-                    .detail-overlay {
-                        position: fixed;
-                        top: 0; left: 0; right: 0; bottom: 0;
-                        background: rgba(9,30,66,0.3);
-                        z-index: 99;
-                        animation: fadeIn 0.2s ease;
-                    }
-                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-                    .tab-nav { display: flex; gap: 0; border-bottom: 1px solid #DFE1E6; padding: 0 24px; }
-                    .tab-btn {
-                        padding: 12px 16px;
-                        font-size: 13px;
-                        font-weight: 500;
-                        color: #6B778C;
-                        border: none;
-                        background: none;
-                        cursor: pointer;
-                        border-bottom: 2px solid transparent;
-                        transition: all 0.2s;
-                    }
-                    .tab-btn:hover { color: #172B4D; }
-                    .tab-btn.active { color: #0052CC; border-bottom-color: #0052CC; font-weight: 600; }
-
-                    .task-row {
-                        display: flex;
-                        align-items: center;
-                        padding: 10px 0;
-                        border-bottom: 1px solid rgba(9,30,66,0.06);
-                        gap: 12px;
-                        transition: all 0.15s;
-                    }
-                    .task-row:hover { background: rgba(0,82,204,0.02); margin: 0 -16px; padding: 10px 16px; border-radius: 8px; }
-
-                    .file-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(9,30,66,0.06); }
-                    .file-row:last-child { border-bottom: none; }
-
-                    .skeleton { background: linear-gradient(90deg, #F4F5F7 25%, #EBECF0 50%, #F4F5F7 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
-                    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-                    /* Modal Styles */
-                    .modal-overlay {
-                        position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(9,30,66,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;
-                    }
-                    .modal-content {
-                        background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 8px 32px rgba(9,30,66,0.15);
-                    }
-                    .form-group { margin-bottom: 16px; }
-                    .form-label { display: block; font-size: 12px; font-weight: 600; color: #42526E; margin-bottom: 6px; }
-                    .form-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DFE1E6; font-size: 13px; outline: none; }
-                    .form-input:focus { border-color: #0052CC; box-shadow: 0 0 0 2px rgba(0,82,204,0.1); }
-                `}</style>
-
-                {/* ─── Page Header ───────────────────────── */}
-                <div style={{ padding: '24px 32px 16px', background: 'white', borderBottom: '1px solid #DFE1E6' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ background: '#E6EFFF', padding: '8px', borderRadius: '8px', color: '#0052CC' }}>
-                                <Folder size={20} />
-                            </div>
-                            <div>
-                                <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#172B4D', letterSpacing: '-0.01em' }}>Projects</h1>
-                                <p style={{ fontSize: '13px', color: '#6B778C', marginTop: '2px' }}>
-                                    {projectsLoading ? 'Loading...' : `${enrichedProjects.length} projects • ${enrichedProjects.filter(p => p.status === 'ACTIVE').length} active`}
-                                </p>
-                            </div>
-                        </div>
-                        <button onClick={() => setShowCreateModal(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, boxShadow: '0 2px 8px rgba(0,82,204,0.2)' }}>
-                            <Plus size={16} /> Create Project
-                        </button>
-                    </div>
-
-                    {/* ─── Filter Bar ──────────────────── */}
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <div className="search-box">
-                            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
-                            <input placeholder="Search projects..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                        </div>
-                        <div style={{ height: '20px', width: '1px', background: '#DFE1E6' }} />
-                        <select className="filter-pill" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ appearance: 'none', paddingRight: '28px', backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' fill=\'%236B778C\' viewBox=\'0 0 24 24\'><path d=\'M7 10l5 5 5-5z\'/></svg>")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}>
-                            <option value="ALL">All Statuses</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="PLANNING">Planning</option>
-                            <option value="COMPLETED">Completed</option>
-                        </select>
-                        <div className="filter-pill">
-                            <Users size={12} /> Owner <ChevronDown size={10} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* ─── Project List ──────────────────────── */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
-                    {projectsLoading ? (
-                        <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {[1,2,3,4,5].map(i => (
-                                <div key={i} className="skeleton" style={{ height: '56px', width: '100%' }} />
-                            ))}
-                        </div>
-                    ) : categories.length === 0 ? (
-                        <div style={{ padding: '80px', textAlign: 'center', color: '#6B778C' }}>
-                            <Folder size={40} style={{ marginBottom: '16px', opacity: 0.3 }} />
-                            <p style={{ fontSize: '15px', fontWeight: 500 }}>No projects found</p>
-                            <p style={{ fontSize: '13px', marginTop: '4px' }}>Create a project to get started</p>
-                        </div>
+          {/* ── KPI CARDS ── */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+            {[
+              { title: 'Total Projects', value: '24', sub: '↑ 4 from last month', icon: Folder, color: '#0052CC', bg: '#E6EFFF' },
+              { title: 'Active Projects', value: '16', sub: '↑ 3 from last month', icon: FolderCheck, color: '#10B981', bg: '#D1FAE5' },
+              { title: 'At Risk Projects', value: '3', sub: '↓ 1 from last month', icon: AlertTriangle, color: '#EF4444', bg: '#FEE2E2', subColor: '#EF4444' },
+              { title: 'Completed Projects', value: '5', sub: '↑ 2 from last month', icon: CheckCircle, color: '#8B5CF6', bg: '#EDE9FE' },
+              { title: 'On Track', value: '13', sub: '54% of total', icon: TrendingUp, color: '#10B981', bg: '#D1FAE5', isGraph: true }
+            ].map(k => (
+              <div key={k.title} className="p-stat-card">
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, color: k.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <k.icon size={20} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#6B778C' }}>{k.title}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#172B4D', lineHeight: 1.2, marginTop: 4 }}>{k.value}</div>
+                    {!k.isGraph ? (
+                      <div style={{ fontSize: 11, fontWeight: 600, color: k.subColor || '#36B37E', marginTop: 4 }}>{k.sub}</div>
                     ) : (
-                        categories.map(cat => {
-                            const isExpanded = expandedSections.has(cat.label);
-                            return (
-                                <div key={cat.label} style={{ marginBottom: '4px' }}>
-                                    <div className="section-header" onClick={() => toggleSection(cat.label)}>
-                                        {isExpanded ? <ChevronDown size={14} color="#6B778C" /> : <ChevronRight size={14} color="#6B778C" />}
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{cat.label}</span>
-                                        <span style={{ fontSize: '11px', color: '#6B778C', background: '#EBECF0', padding: '1px 6px', borderRadius: '8px', fontWeight: 600 }}>{cat.items.length}</span>
-                                    </div>
-
-                                    {isExpanded && (
-                                        <div style={{ background: 'white', borderRadius: '10px', border: '1px solid rgba(9,30,66,0.08)', margin: '0 8px 8px', overflow: 'hidden' }}>
-                                            {cat.items.map(project => {
-                                                const hb = getHealthBadge(project.health);
-                                                const progressColor = getProgressColor(project.progress, project.health);
-
-                                                return (
-                                                    <div
-                                                        key={project.id}
-                                                        className="project-row"
-                                                        onClick={() => setSelectedProjectId(project.id)}
-                                                        onMouseEnter={() => setHoveredProject(project.id)}
-                                                        onMouseLeave={() => setHoveredProject(null)}
-                                                    >
-                                                        {/* Project Icon */}
-                                                        <div className="project-icon" style={{ background: getAvatarColor(project.name), marginRight: '12px' }}>
-                                                            {project.name[0]}
-                                                        </div>
-
-                                                        {/* Info Block */}
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#172B4D', letterSpacing: '-0.01em' }}>{project.name}</span>
-                                                                {project.tags.map(t => <span key={t} className="tag-sm">• {t}</span>)}
-                                                            </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                {project.pinned && <Star size={10} color="#FFAB00" fill="#FFAB00" />}
-                                                                <span style={{ fontSize: '11px', color: '#6B778C' }} className="updated-text">Updated {project.updatedAgo}</span>
-                                                                {/* Avatar stack */}
-                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                    {Array.from({ length: Math.min(project.teamSize, 4) }).map((_, i) => (
-                                                                        <div key={i} className="avatar-sm" style={{ background: getAvatarColor(`${project.name}${i}`), zIndex: 4 - i }}>
-                                                                            {String.fromCharCode(65 + i)}
-                                                                        </div>
-                                                                    ))}
-                                                                    {project.teamSize > 4 && (
-                                                                        <div className="avatar-sm" style={{ background: '#42526E', zIndex: 0, fontSize: '7px' }}>+{project.teamSize - 4}</div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Progress + Health */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '8px' }}>
-                                                            <div className="progress-mini">
-                                                                <div className="progress-mini-fill" style={{ width: `${project.progress}%`, background: progressColor }} />
-                                                            </div>
-                                                            <span style={{ fontSize: '12px', fontWeight: 700, color: progressColor, minWidth: '32px', textAlign: 'right' }}>{project.progress}%</span>
-                                                            <span className="health-badge" style={{ background: hb.bg, color: hb.color }}>
-                                                                <span className="health-dot" style={{ background: hb.color }} />
-                                                                {hb.label}
-                                                            </span>
-                                                            <ChevronRight size={14} color="#C1C7D0" />
-                                                        </div>
-
-                                                        {/* Quick Actions (hover) */}
-                                                        <div className="quick-actions">
-                                                            <button className="qa-btn"><ExternalLink size={10} /> Open</button>
-                                                            <button className="qa-btn"><ListPlus size={10} /> + Task</button>
-                                                            <button className="qa-btn"><BarChart2 size={10} /> Timeline</button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
+                      <svg width="100%" height="24" viewBox="0 0 100 24" preserveAspectRatio="none" style={{ marginTop: 4 }}>
+                        <path d="M0,20 L20,15 L40,18 L60,8 L80,12 L100,2" fill="none" stroke="#10B981" strokeWidth="2" />
+                        <circle cx="100" cy="2" r="3" fill="#10B981" />
+                      </svg>
                     )}
-
-                    {/* ─── Create Project Footer ──────── */}
-                    <div style={{ padding: '16px 20px' }}>
-                        <button onClick={() => setShowCreateModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#6B778C', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-                            <Plus size={14} /> Create Project
-                        </button>
-                    </div>
+                  </div>
                 </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── TABS & FILTERS ── */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #DFE1E6' }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['All Projects', 'Starred', 'My Projects', 'Shared With Me', 'Archived'].map(t => (
+                <div key={t} className={`p-tab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{t}</div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 16, paddingBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#42526E', fontWeight: 600 }}>
+                Group: <span style={{ color: '#172B4D', background: '#F4F5F7', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>None <ChevronDown size={14} /></span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#42526E', fontWeight: 600 }}>
+                Sort: <span style={{ color: '#172B4D', background: '#F4F5F7', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>Recently Updated <ChevronDown size={14} /></span>
+              </div>
+              <button className="btn-secondary" style={{ padding: '0 8px', height: 28 }}><LayoutGrid size={14} /></button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SCROLLABLE CONTENT ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', gap: 24, minWidth: 0 }}>
+
+          {/* ── MAIN AREA ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
+
+            {/* PROJECT TABLE */}
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', boxShadow: '0 1px 3px rgba(9,30,66,0.03)', overflow: 'hidden', overflowX: 'auto', minHeight: '50vh' }}>
+              <table className="p-table" style={{ minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 36 }}></th>
+                    <th style={{ width: '18%' }}>Project</th>
+                    <th style={{ width: '12%' }}>Owner</th>
+                    <th style={{ width: '8%' }}>Status</th>
+                    <th style={{ width: '14%' }}>Progress</th>
+                    <th style={{ width: '9%' }}>Health</th>
+                    <th style={{ width: '12%' }}>End Date</th>
+                    <th style={{ width: '10%' }}>Team</th>
+                    <th style={{ width: '10%' }}>Updated</th>
+                    <th style={{ width: 40 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projects.map(p => (
+                    <tr key={p.id} onClick={() => window.location.href = `/projects/${p.id}`} style={{ cursor: 'pointer' }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <Star size={16} fill={p.starred ? "#F59E0B" : "none"} color={p.starred ? "#F59E0B" : "#C1C7D0"} />
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#172B4D', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        <div style={{ color: '#6B778C', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.desc}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <img src={p.ownerAvatar} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.owner}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="status-pill" style={{
+                          background: p.status === 'Active' ? '#E6EFFF' : p.status === 'Completed' ? '#EDE9FE' : p.status === 'Planning' ? '#E3FCEF' : '#F4F5F7',
+                          color: p.status === 'Active' ? '#0052CC' : p.status === 'Completed' ? '#8B5CF6' : p.status === 'Planning' ? '#006644' : '#42526E'
+                        }}>{p.status}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ flex: 1, height: 6, background: '#EBECF0', borderRadius: 3 }}>
+                            <div style={{ width: `${p.progress}%`, height: '100%', background: p.status === 'Completed' ? '#8B5CF6' : '#0052CC', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#42526E', width: 32 }}>{p.progress}%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#172B4D' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.healthColor }} /> {p.health}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.endStr}</div>
+                        <div style={{ fontSize: 11, color: '#6B778C', marginTop: 2 }}>{p.endSub}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex' }}>
+                          {p.team.map((img, i) => (
+                            <img key={i} src={img} alt="" className="p-avatar" style={{ zIndex: 10 - i }} />
+                          ))}
+                          {p.team.length > 3 && (
+                            <div className="p-avatar" style={{ background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#42526E', zIndex: 1 }}>+2</div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ fontSize: 13, color: '#6B778C', fontWeight: 500 }}>{p.lastUpdated}</td>
+                      <td>
+                        <div style={{ padding: 6, borderRadius: 6, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); }} className="hover:bg-gray-100">
+                          <MoreVertical size={16} color="#8A94A6" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #DFE1E6', background: '#FAFBFC' }}>
+                <span style={{ fontSize: 12, color: '#6B778C', fontWeight: 600 }}>Showing 1 to 8 of 24 projects</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} /></button>
+                  <button className="btn-primary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>1</button>
+                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>2</button>
+                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>3</button>
+                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} /></button>
+                </div>
+              </div>
             </div>
 
-            {/* ─── Create Project Modal ───────────────── */}
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={() => !isCreating && setShowCreateModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#172B4D' }}>Create Project</h2>
-                            <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B778C' }}><X size={20}/></button>
-                        </div>
-                        <form onSubmit={handleCreateProject}>
-                            <div className="form-group">
-                                <label className="form-label">Project Name</label>
-                                <input required className="form-input" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="e.g. Website Redesign" />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Description</label>
-                                <textarea className="form-input" value={createForm.description} onChange={e => setCreateForm({...createForm, description: e.target.value})} placeholder="Project goals and details..." rows={3} />
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                                <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: '8px 16px', background: 'none', border: 'none', color: '#6B778C', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                                <button type="submit" disabled={isCreating} style={{ padding: '8px 16px', background: '#0052CC', border: 'none', color: 'white', fontWeight: 600, borderRadius: '6px', cursor: isCreating ? 'not-allowed' : 'pointer', opacity: isCreating ? 0.7 : 1 }}>
-                                    {isCreating ? 'Creating...' : 'Create Project'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+            {/* BOTTOM WIDGETS ROW */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+
+              {/* Recent Activity */}
+              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Recent Activity</h3>
+                  <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
                 </div>
-            )}
-
-            {/* ─── Detail Panel Overlay ───────────────── */}
-            {selectedProject && (
-                <>
-                    <div className="detail-overlay" onClick={() => setSelectedProjectId(null)} />
-                    <div className="detail-panel">
-                        {/* Header */}
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #DFE1E6', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <button onClick={() => setSelectedProjectId(null)} style={{ background: '#F4F5F7', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#6B778C' }}>
-                                <X size={16} />
-                            </button>
-                            <div className="project-icon" style={{ background: getAvatarColor(selectedProject.name), width: '40px', height: '40px', borderRadius: '12px', fontSize: '18px' }}>
-                                {selectedProject.name[0]}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#172B4D' }}>{selectedProject.name}</h2>
-                                    <MoreHorizontal size={16} color="#6B778C" style={{ cursor: 'pointer' }} />
-                                </div>
-                                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                                    {selectedProject.tags.map(t => <span key={t} className="tag-sm" style={{ background: '#E6EFFF', color: '#0052CC' }}>{t}</span>)}
-                                </div>
-                            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { u: 'Ali Raza', a: 'updated project', p: 'E-Commerce Platform', t: '2h ago', img: 'https://i.pravatar.cc/150?u=ali' },
+                    { u: 'Sara Khan', a: 'moved task to In Progress', p: 'Mobile Application', t: '5h ago', img: 'https://i.pravatar.cc/150?u=sara' },
+                    { u: 'Usman Tariq', a: 'completed milestone', p: 'Internal Dashboard', t: '6h ago', img: 'https://i.pravatar.cc/150?u=usman' }
+                  ].map((act, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <img src={act.img} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+                      <div>
+                        <div style={{ fontSize: 12, color: '#42526E', lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.u}</span> {act.a} <br />
+                          <span style={{ fontWeight: 600 }}>{act.p}</span>
                         </div>
-
-                        {/* Tabs */}
-                        <div className="tab-nav">
-                            {tabs.map(tab => (
-                                <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Content Area */}
-                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex' }}>
-                            {/* Left Content (70%) */}
-                            <div style={{ flex: 7, padding: '20px 24px', borderRight: '1px solid #DFE1E6', overflowY: 'auto' }}>
-
-                                {/* Search + Filter within detail */}
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                                    <div className="search-box" style={{ maxWidth: '280px' }}>
-                                        <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
-                                        <input placeholder="Search projects..." style={{ fontSize: '12px' }} />
-                                    </div>
-                                    <div className="filter-pill" style={{ fontSize: '11px' }}>
-                                        <Filter size={10} /> Owner <ChevronDown size={10} />
-                                    </div>
-                                </div>
-
-                                {activeTab === 'Overview' && (
-                                    <>
-                                        {/* Activity Feed */}
-                                <div style={{ marginBottom: '28px' }}>
-                                    <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Activity size={14} /> Activity
-                                    </h3>
-                                    {liveActivity.length === 0 ? (
-                                        <p style={{ fontSize: '13px', color: '#6B778C' }}>No recent activity.</p>
-                                    ) : liveActivity.map((act, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '16px', padding: '12px', background: '#FAFBFC', borderRadius: '10px', border: '1px solid rgba(9,30,66,0.06)' }}>
-                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getAvatarColor(act.user), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>
-                                                {act.user[0]}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{act.user}</span>
-                                                    <span style={{ fontSize: '11px', color: '#6B778C' }}>{act.time}</span>
-                                                </div>
-                                                <p style={{ fontSize: '12px', color: '#42526E', lineHeight: 1.5 }}>
-                                                    {act.action} {act.target && <span style={{ color: '#0052CC', fontWeight: 500 }}>{act.target}</span>}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* My Tasks */}
-                                <div style={{ marginBottom: '28px' }}>
-                                    <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <CheckCircle2 size={14} /> My Tasks
-                                    </h3>
-                                    {liveTasks.length === 0 ? (
-                                        <p style={{ fontSize: '13px', color: '#6B778C' }}>No tasks found for this project.</p>
-                                    ) : liveTasks.map((task: any) => (
-                                        <div key={task.id} className="task-row">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={task.status === 'DONE'} 
-                                                onChange={async (e) => {
-                                                    const newStatus = e.target.checked ? 'DONE' : 'TODO';
-                                                    try {
-                                                        const res = await fetch(`/api/tasks/${task.id}`, {
-                                                            method: 'PATCH',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ status: newStatus })
-                                                        });
-                                                        if (res.ok) {
-                                                            mutateTasks();
-                                                            mutateSelectedProject();
-                                                        }
-                                                    } catch (err) {}
-                                                }}
-                                                style={{ width: '16px', height: '16px', accentColor: '#0052CC', cursor: 'pointer' }} 
-                                            />
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#172B4D', textDecoration: task.status === 'DONE' ? 'line-through' : 'none', opacity: task.status === 'DONE' ? 0.7 : 1 }}>{task.title}</span>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                                    <span style={{ fontSize: '10px', color: '#FF5630' }}>• {task.due}</span>
-                                                </div>
-                                            </div>
-                                            <span className="tag-sm" style={{ background: task.tag === 'UI Revamp' ? '#E6EFFF' : '#F4F5F7', color: task.tag === 'UI Revamp' ? '#0052CC' : '#42526E' }}>{task.tag}</span>
-                                            {task.progress > 0 && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '80px' }}>
-                                                    <div className="progress-mini" style={{ maxWidth: '60px' }}>
-                                                        <div className="progress-mini-fill" style={{ width: `${task.progress}%`, background: '#36B37E' }} />
-                                                    </div>
-                                                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#36B37E' }}>{task.progress}%</span>
-                                                </div>
-                                            )}
-                                            <span style={{ fontSize: '11px', color: '#6B778C' }}>{task.date}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Milestones */}
-                                <div>
-                                    <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Target size={14} /> Upcoming Milestones
-                                    </h3>
-                                    {liveMilestones.length === 0 ? (
-                                        <p style={{ fontSize: '13px', color: '#6B778C' }}>No upcoming milestones.</p>
-                                    ) : liveMilestones.map((ms: any, i: number) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(9,30,66,0.06)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ms.progress > 50 ? '#0052CC' : '#DFE1E6' }} />
-                                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#172B4D' }}>{ms.title}</span>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                {ms.progress > 0 && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <div className="progress-mini" style={{ maxWidth: '40px' }}>
-                                                            <div className="progress-mini-fill" style={{ width: `${ms.progress}%`, background: '#0052CC' }} />
-                                                        </div>
-                                                        <span style={{ fontSize: '10px', color: '#0052CC', fontWeight: 600 }}>{ms.progress}%</span>
-                                                    </div>
-                                                )}
-                                                <span style={{ fontSize: '11px', color: '#6B778C' }}>{ms.dueIn || ms.due}</span>
-                                                <ChevronRight size={12} color="#C1C7D0" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                </>
-                            )}
-
-                            {activeTab === 'AI Insights' && (
-                                <div style={{ marginBottom: '28px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                        <div style={{ background: '#E6EFFF', padding: '8px', borderRadius: '8px', color: '#0052CC' }}>
-                                            <Zap size={16} />
-                                        </div>
-                                        <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#172B4D' }}>Project Intelligence</h3>
-                                    </div>
-                                    
-                                    <div style={{ background: '#FAFBFC', border: '1px solid #DFE1E6', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                                        <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', marginBottom: '8px' }}>Summary</h4>
-                                        <p style={{ fontSize: '13px', color: '#172B4D', lineHeight: 1.6 }}>
-                                            {selectedProject.aiInsights?.summary || `${selectedProject.name} is currently ${selectedProject.health.replace('_', ' ')}. The team is making steady progress, but there are a few areas that require attention.`}
-                                        </p>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                                        <div style={{ background: '#FFF0F0', border: '1px solid #FFEBEB', borderRadius: '12px', padding: '16px' }}>
-                                            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#FF5630', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <AlertTriangle size={12} /> Key Risks
-                                            </h4>
-                                            <ul style={{ paddingLeft: '16px', margin: 0, color: '#172B4D', fontSize: '13px', lineHeight: 1.6 }}>
-                                                {(selectedProject.aiInsights?.risks || ['Dependency bottleneck on Core UX', 'Tight deadline for API Upgrade']).map((risk: string, i: number) => (
-                                                    <li key={i}>{risk}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div style={{ background: '#E3FCEF', border: '1px solid #D3F9E8', borderRadius: '12px', padding: '16px' }}>
-                                            <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#36B37E', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Target size={12} /> Recommendations
-                                            </h4>
-                                            <ul style={{ paddingLeft: '16px', margin: 0, color: '#172B4D', fontSize: '13px', lineHeight: 1.6 }}>
-                                                {(selectedProject.aiInsights?.recommendations || ['Reassign 2 tasks to balance workload', 'Schedule design review by Friday']).map((rec: string, i: number) => (
-                                                    <li key={i}>{rec}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ background: '#FAFBFC', border: '1px solid #DFE1E6', borderRadius: '12px', padding: '16px' }}>
-                                        <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', marginBottom: '12px' }}>Suggested Next Actions</h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            {(selectedProject.aiInsights?.nextActions || ['Review API documentation', 'Update project timeline']).map((action: string, i: number) => (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'white', borderRadius: '8px', border: '1px solid #DFE1E6' }}>
-                                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #C1C7D0' }} />
-                                                    <span style={{ fontSize: '13px', color: '#172B4D' }}>{action}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            </div>
-
-                            {/* Right Sidebar (30%) */}
-                            <div style={{ flex: 3, padding: '20px', overflowY: 'auto', background: '#FAFBFC' }}>
-                                {/* Overview Card */}
-                                <div style={{ marginBottom: '24px' }}>
-                                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Overview</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '12px', color: '#6B778C' }}>Status</span>
-                                            {(() => { const hb = getHealthBadge(selectedProject.health); return (
-                                                <span className="health-badge" style={{ background: hb.bg, color: hb.color, fontSize: '11px' }}>
-                                                    <span className="health-dot" style={{ background: hb.color }} /> {hb.label}
-                                                </span>
-                                            ); })()}
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '12px', color: '#6B778C' }}>Tags</span>
-                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                                {selectedProject.tags.map(t => <span key={t} className="tag-sm">{t}</span>)}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '12px', color: '#6B778C' }}>Deadline</span>
-                                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#172B4D' }}>
-                                                {selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'May 30, 2024'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                <span style={{ fontSize: '12px', color: '#6B778C' }}>Progress</span>
-                                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#0052CC' }}>{selectedProject.progress}%</span>
-                                            </div>
-                                            <div style={{ height: '6px', background: '#EBECF0', borderRadius: '3px', overflow: 'hidden' }}>
-                                                <div style={{ height: '100%', width: `${selectedProject.progress}%`, background: 'linear-gradient(90deg, #0052CC, #4C9AFF)', borderRadius: '3px', transition: 'width 0.5s' }} />
-                                            </div>
-                                        </div>
-                                        <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid #DFE1E6' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '12px', color: '#6B778C' }}>Risk Score</span>
-                                                <span style={{ fontSize: '12px', fontWeight: 700, color: selectedProject.riskScore > 50 ? '#FF5630' : (selectedProject.riskScore > 20 ? '#FFAB00' : '#36B37E') }}>
-                                                    {selectedProject.riskScore}/100
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Team */}
-                                <div style={{ marginBottom: '24px' }}>
-                                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Team</h4>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                        {Array.from({ length: Math.min(selectedProject.teamSize, 5) }).map((_, i) => (
-                                            <div key={i} className="avatar-sm" style={{ background: getAvatarColor(`${selectedProject.name}${i}`), width: '28px', height: '28px', fontSize: '10px', marginLeft: i > 0 ? '-8px' : 0, zIndex: 5 - i }}>
-                                                {String.fromCharCode(65 + i)}
-                                            </div>
-                                        ))}
-                                        {selectedProject.teamSize > 5 && (
-                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#0052CC' }}>+{selectedProject.teamSize - 5}</span>
-                                        )}
-                                    </div>
-                                    <button style={{ fontSize: '11px', fontWeight: 500, color: '#0052CC', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Users size={10} /> Manage Team
-                                    </button>
-                                </div>
-
-                                {/* Key Metrics */}
-                                <div style={{ marginBottom: '24px' }}>
-                                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Key Metrics</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {(() => {
-                                            const tagCounts: Record<string, number> = {};
-                                            liveTasks.forEach((t: any) => {
-                                                const tag = t.tag || 'General';
-                                                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                                            });
-                                            const colors = ['#0052CC', '#36B37E', '#FF5630', '#FFAB00', '#6554C0'];
-                                            return Object.entries(tagCounts).map(([label, count], idx) => {
-                                                const color = colors[idx % colors.length];
-                                                return (
-                                                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <div style={{ width: '6px', height: '6px', borderRadius: '2px', background: color }} />
-                                                            <span style={{ fontSize: '12px', color: '#42526E' }}>{label}</span>
-                                                            <span style={{ fontSize: '10px', background: `${color}10`, color: color, padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>{count}</span>
-                                                        </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#42526E' }}>{count}</span>
-                                                            <ArrowUpRight size={10} color="#6B778C" />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-
-                                {/* Attached Files */}
-                                <div>
-                                    <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Attached Files</h4>
-                                    {liveFiles.map((f: any, i: number) => (
-                                        <div key={i} className="file-row">
-                                            <span style={{ fontSize: '16px' }}>{f.icon}</span>
-                                            <div style={{ flex: 1 }}>
-                                                <span style={{ fontSize: '12px', fontWeight: 500, color: '#172B4D' }}>{f.name}</span>
-                                                <div style={{ fontSize: '10px', color: '#6B778C' }}>{f.size}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button style={{ marginTop: '8px', padding: '6px 12px', borderRadius: '6px', border: '1px dashed #DFE1E6', background: 'transparent', fontSize: '11px', fontWeight: 500, color: '#0052CC', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'center' }}>
-                                        <Upload size={12} /> Upload File
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <div style={{ fontSize: 11, color: '#8A94A6', marginTop: 4 }}>{act.t}</div>
+                      </div>
                     </div>
-                </>
-            )}
-        </main>
-    );
+                  ))}
+                </div>
+              </div>
+
+              {/* Projects Timeline (Gantt Mini) */}
+              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Projects Timeline</h3>
+                  <button className="btn-secondary" style={{ height: 28, fontSize: 11 }}>This Month <ChevronDown size={12} /></button>
+                </div>
+                <div style={{ position: 'relative', height: 160, borderLeft: '1px solid #DFE1E6', borderBottom: '1px solid #DFE1E6' }}>
+                  {/* Grid Lines */}
+                  {[20, 40, 60, 80].map(p => (
+                    <div key={p} style={{ position: 'absolute', left: `${p}%`, top: 0, bottom: 0, borderLeft: '1px dashed #EBECF0' }} />
+                  ))}
+                  {/* Today Line */}
+                  <div style={{ position: 'absolute', left: '45%', top: 0, bottom: 0, borderLeft: '2px solid #0052CC', zIndex: 5 }}>
+                    <div style={{ position: 'absolute', top: -20, left: -20, background: '#0052CC', color: 'white', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>Today</div>
+                  </div>
+                  {/* Bars */}
+                  {[
+                    { n: 'E-Commerce Platform', top: 20, l: 10, w: 40, c: '#0052CC', p: 'Planning' },
+                    { n: 'Mobile Application', top: 60, l: 30, w: 50, c: '#F59E0B', p: 'Development' },
+                    { n: 'CRM Integration', top: 100, l: 20, w: 30, c: '#EF4444', p: 'Integration' },
+                    { n: 'AI Chatbot', top: 140, l: 50, w: 40, c: '#0052CC', p: 'Training' }
+                  ].map((b, i) => (
+                    <div key={i} style={{ position: 'absolute', top: b.top, left: 0, right: 0, height: 24, display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: 120, fontSize: 11, fontWeight: 600, color: '#42526E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{b.n}</div>
+                      <div style={{ position: 'relative', flex: 1, height: '100%' }}>
+                        <div style={{ position: 'absolute', left: `${b.l}%`, width: `${b.w}%`, height: 24, background: b.c, borderRadius: 4, display: 'flex', alignItems: 'center', padding: '0 8px', color: 'white', fontSize: 10, fontWeight: 700 }}>
+                          {b.p}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Health Distribution */}
+              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: '0 0 16px 0', alignSelf: 'flex-start' }}>Health Distribution</h3>
+                <div style={{ position: 'relative', width: 120, height: 120, marginBottom: 16 }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray="42 58" strokeDashoffset="0" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="29 71" strokeDashoffset="-42" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="13 87" strokeDashoffset="-71" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="8 92" strokeDashoffset="-84" />
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8B5CF6" strokeWidth="4" strokeDasharray="8 92" strokeDashoffset="-92" />
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: '#172B4D', lineHeight: 1 }}>24</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#6B778C' }}>Total Projects</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', fontSize: 11, color: '#42526E', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />Good</span><span>10 (42%)</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} />On Track</span><span>7 (29%)</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />At Risk</span><span>3 (13%)</span></div>
+                </div>
+              </div>
+
+              {/* Top Performers */}
+              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Top Performers</h3>
+                  <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { p: 'E-Commerce Platform', s: 86, c: '#0052CC' },
+                    { p: 'Internal Dashboard', s: 82, c: '#10B981' },
+                    { p: 'Performance Opt...', s: 100, c: '#8B5CF6' }
+                  ].map((tp, i) => (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#172B4D', marginBottom: 6 }}>
+                        <span>{tp.p}</span>
+                        <span style={{ color: tp.c }}>{tp.s}%</span>
+                      </div>
+                      <div style={{ width: '100%', height: 6, background: '#EBECF0', borderRadius: 3 }}>
+                        <div style={{ width: `${tp.s}%`, height: '100%', background: tp.c, borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* ── RIGHT SIDEBAR (AI ASSISTANT) ── */}
+          <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+            {/* AI Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Zap size={18} color="#8B5CF6" />
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#172B4D' }}>AI Project Assistant</span>
+              <span style={{ fontSize: 10, background: '#EDE9FE', color: '#8B5CF6', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>Beta</span>
+            </div>
+
+            {/* AI Insights Boxes */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: '#172B4D', margin: '0 0 12px 0' }}>AI Insights</h4>
+
+              <div style={{ background: '#FFF0F0', border: '1px solid #FFEBEB', borderLeft: '3px solid #EF4444', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <AlertTriangle size={14} color="#EF4444" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#BF2600' }}>3 projects are at risk</span>
+                </div>
+                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>Mobile Application, CRM Integration and Data Migration need attention.</p>
+                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View analysis →</a>
+              </div>
+
+              <div style={{ background: '#FFF7E6', border: '1px solid #FFF1C6', borderLeft: '3px solid #F59E0B', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <Clock size={14} color="#F59E0B" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#974F0C' }}>2 projects behind schedule</span>
+                </div>
+                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>They may miss the deadline by 4-7 days.</p>
+                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View details →</a>
+              </div>
+
+              <div style={{ background: '#E3FCEF', border: '1px solid #D3F9E8', borderLeft: '3px solid #10B981', borderRadius: 8, padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <CheckSquare size={14} color="#10B981" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#006644' }}>E-Commerce Platform</span>
+                </div>
+                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>On track to complete ahead of schedule.</p>
+                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View prediction →</a>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: '#172B4D', margin: '0 0 12px 0' }}>Quick Actions</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { l: 'Create Project', i: Folder },
+                  { l: 'Import Project', i: Calendar },
+                  { l: 'Project Templates', i: LayoutGrid },
+                  { l: 'AI Auto Plan', i: Zap, c: '#8B5CF6' },
+                  { l: 'Project Report', i: Activity }
+                ].map(a => (
+                  <div key={a.l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#FAFBFC', borderRadius: 8, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }} className="hover:border-gray-300">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <a.i size={16} color={a.c || "#6B778C"} />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{a.l}</span>
+                    </div>
+                    <ChevronRight size={14} color="#C1C7D0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

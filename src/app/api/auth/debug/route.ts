@@ -15,12 +15,7 @@ export async function GET(request: Request) {
       refreshTokenLength: refreshToken?.length || 0,
       allCookies: Array.from(cookieStore.getAll()).map(c => ({
         name: c.name,
-        value: c.value.substring(0, 20) + '...',
-        httpOnly: c.httpOnly,
-        secure: c.secure,
-        sameSite: c.sameSite,
-        maxAge: c.maxAge,
-        expires: c.expires
+        value: c.value.substring(0, 20) + '...'
       }))
     });
   } catch (error) {

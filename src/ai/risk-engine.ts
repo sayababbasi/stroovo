@@ -63,7 +63,7 @@ async function fetchTaskForRisk(taskId: string) {
           status: true,
         },
       },
-      taskDependencies: {
+      dependencies: {
         select: {
           id: true,
           title: true,
@@ -165,8 +165,8 @@ function buildDeterministicFactors(task: NonNullable<RiskTaskRecord>): Determini
       recommendation: 'Assign an owner to establish accountability',
     });
   } else if (task.assignee) {
-    const activeTasks = task.assignee.tasks.filter((candidate) => candidate.id !== task.id);
-    const weightedWorkload = activeTasks.reduce((total, candidate) => {
+    const activeTasks = task.assignee.tasks.filter((candidate: any) => candidate.id !== task.id);
+    const weightedWorkload = activeTasks.reduce((total: number, candidate: any) => {
       const priorityScore = candidate.priority === 'URGENT' ? 2.5 : candidate.priority === 'HIGH' ? 2 : 1;
       const dueScore = candidate.dueDate ? (daysBetween(now, candidate.dueDate) <= 3 ? 1.5 : 1) : 1;
       return total + priorityScore * dueScore;
@@ -190,10 +190,10 @@ function buildDeterministicFactors(task: NonNullable<RiskTaskRecord>): Determini
   }
 
   const historicalTasks = task.project.tasks.filter(
-    (candidate) => !task.assigneeId || candidate.assigneeId === task.assigneeId
+    (candidate: any) => !task.assigneeId || candidate.assigneeId === task.assigneeId
   );
   if (historicalTasks.length >= 3) {
-    const delayedCount = historicalTasks.filter((candidate) => candidate.dueDate && candidate.updatedAt > candidate.dueDate).length;
+    const delayedCount = historicalTasks.filter((candidate: any) => candidate.dueDate && candidate.updatedAt > candidate.dueDate).length;
     const delayRate = delayedCount / historicalTasks.length;
 
     if (delayRate >= 0.5) {
@@ -213,7 +213,7 @@ function buildDeterministicFactors(task: NonNullable<RiskTaskRecord>): Determini
     }
   }
 
-  const unresolvedDependencies = task.taskDependencies.filter((dependency) => dependency.status !== 'DONE');
+  const unresolvedDependencies = (task as any).dependencies.filter((dependency: any) => dependency.status !== 'DONE');
   if (unresolvedDependencies.length > 0) {
     const dependencyScore = unresolvedDependencies.length >= 3 ? 22 : 14;
     factors.push({
@@ -233,9 +233,9 @@ function buildDeterministicFactors(task: NonNullable<RiskTaskRecord>): Determini
     });
   }
 
-  if (task.subTasks.length > 0 && task.status === 'IN_PROGRESS') {
-    const completed = task.subTasks.filter((item) => item.status === 'DONE').length;
-    const completionRate = completed / task.subTasks.length;
+  if ((task as any).subTasks.length > 0 && task.status === 'IN_PROGRESS') {
+    const completed = (task as any).subTasks.filter((item: any) => item.status === 'DONE').length;
+    const completionRate = completed / (task as any).subTasks.length;
 
     if (completionRate < 0.25) {
       factors.push({
@@ -320,12 +320,12 @@ async function buildAiEnhancement(task: NonNullable<RiskTaskRecord>, baseline: R
         status: task.status,
         priority: task.priority,
         dueDate: task.dueDate,
-        assigneeName: task.assignee?.name,
-        dependencyTitles: task.taskDependencies.map((dependency) => ({
+        assigneeName: (task as any).assignee?.name,
+        dependencyTitles: (task as any).dependencies.map((dependency: any) => ({
           title: dependency.title,
           status: dependency.status,
         })),
-        subtaskCount: task.subTasks.length,
+        subtaskCount: (task as any).subTasks.length,
       })}
 
       Deterministic baseline:

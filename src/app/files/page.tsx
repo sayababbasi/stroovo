@@ -1,530 +1,803 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
+import Link from 'next/link';
 import {
     Search, Upload, FolderPlus, FilePlus, Grid, List, Star, Clock,
     Users, Share2, Download, MoreHorizontal, ChevronDown, ChevronRight,
     Hash, Folder, FileText, Image, Code, FileArchive, File,
-    X, Eye, Pencil, Trash2, Copy, Link, CheckSquare, Flame,
+    X as XIcon, Eye, Pencil, Trash2, Copy, Link as LinkIcon, CheckSquare, Flame,
     BarChart2, Activity, MessageSquare, CheckCircle2, RotateCcw,
-    Plus, Filter, SlidersHorizontal, PanelRight, Heart, Zap, AlertCircle
+    Plus, Filter, SlidersHorizontal, PanelRight, Heart, Zap, AlertCircle,
+    FileVideo, Files, History, ShieldCheck, HardDrive, Sparkles, BrainCircuit,
+    MoreVertical, Pin, Trash, ExternalLink, Tags, UserPlus, Info, Calendar as CalendarIcon
 } from 'lucide-react';
 
-const FILES = [
-    { id:'f1', name:'Design System.fig', type:'fig', tags:['#design','#ui'], size:'12.4 MB', modified:'2 min ago', owner:'Michelle', popular:true, starred:true, tasks:3, chats:0, heat:'hot' },
-    { id:'f2', name:'Project Brief.pdf', type:'pdf', tags:['#docs'], size:'2.1 MB', modified:'1 hour ago', owner:'Alex Johnson', popular:false, starred:false, tasks:1, chats:2, heat:'warm' },
-    { id:'f3', name:'API Documentation.md', type:'md', tags:['#backend','#api'], size:'45 KB', modified:'3 hours ago', owner:'John Smith', popular:false, starred:false, tasks:0, chats:2, heat:'warm' },
-    { id:'f4', name:'Dashboard Mockup.png', type:'img', tags:['#design'], size:'3.2 MB', modified:'Yesterday', owner:'Sara Khan', popular:true, starred:false, tasks:0, chats:0, heat:'hot' },
-    { id:'f5', name:'Database Schema.sql', type:'code', tags:['#backend'], size:'7 KB', modified:'2 days ago', owner:'Alex Johnson', popular:false, starred:false, tasks:0, chats:0, heat:'cold' },
-    { id:'f6', name:'Mobile Screens.sketch', type:'fig', tags:['#design','#mobile'], size:'18.6 MB', modified:'2 days ago', owner:'Michelle', popular:false, starred:true, tasks:0, chats:0, heat:'cold' },
+// --- Types & Interfaces ---
+
+interface FileItem {
+    id: string;
+    name: string;
+    type: string;
+    size: string;
+    owner: string;
+    lastUpdated: string;
+    isStarred?: boolean;
+    isPinned?: boolean;
+    tags?: string[];
+    aiStatus?: 'outdated' | 'recently_modified' | 'high_usage' | 'at_risk' | null;
+    usage?: number; // 0-100 for charts
+    thumbnail?: string;
+    folderId?: string;
+}
+
+interface FolderItem {
+    id: string;
+    name: string;
+    color?: string;
+    parentId?: string;
+    isFavorite?: boolean;
+    itemCount: number;
+}
+
+// --- Mock Data ---
+
+const INITIAL_FILES: FileItem[] = [
+    { id: 'f1', name: 'Project Proposal.pdf', type: 'pdf', size: '12.4 MB', owner: 'Sayab Ali', lastUpdated: '20 days ago', aiStatus: 'outdated', isPinned: true, usage: 85, folderId: 'root' },
+    { id: 'f2', name: 'Budget Planning.xlsx', type: 'excel', size: '8.7 MB', owner: 'Alex Johnson', lastUpdated: '5 hours ago', isPinned: true, usage: 60, folderId: 'root' },
+    { id: 'f3', name: 'Product Requirements.docx', type: 'doc', size: '2.1 MB', owner: 'Sara Khan', lastUpdated: '1 day ago', isPinned: true, usage: 40, folderId: 'root' },
+    { id: 'f4', name: 'Design System.fig', type: 'figma', size: '24.6 MB', owner: 'Michelle', lastUpdated: '1 day ago', aiStatus: 'high_usage', isPinned: true, usage: 95, folderId: 'root' },
+    { id: 'f5', name: 'Sprint 12 Assets', type: 'folder_ref', size: '32 files', owner: 'Sayab Ali', lastUpdated: '1 hour ago', aiStatus: 'recently_modified', usage: 70, folderId: 'root' },
+    { id: 'f6', name: 'User Research Report.pdf', type: 'pdf', size: '5.4 MB', owner: 'John Smith', lastUpdated: '2 hours ago', isStarred: true, usage: 50, folderId: 'root' },
+    { id: 'f7', name: 'Q2 Business Review.pptx', type: 'ppt', size: '16.8 MB', owner: 'Alex Johnson', lastUpdated: '3 hours ago', isStarred: true, usage: 30, folderId: 'root' },
+    { id: 'f8', name: 'IMG_2024_Design.png', type: 'image', size: '1.2 MB', owner: 'Sara Khan', lastUpdated: '5 hours ago', usage: 20, thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=200&fit=crop', folderId: 'root' },
+    { id: 'f9', name: 'Product Demo.mp4', type: 'video', size: '45.2 MB', owner: 'John Smith', lastUpdated: '6 hours ago', usage: 90, folderId: 'root' },
+    { id: 'f10', name: 'Mobile App UI Kit.fig', type: 'figma', size: '18.3 MB', owner: 'Michelle', lastUpdated: '1 day ago', isStarred: true, usage: 75, folderId: 'root' },
+    { id: 'f11', name: 'Meeting Notes.docx', type: 'doc', size: '1.1 MB', owner: 'Sara Khan', lastUpdated: '3 hours ago', usage: 15, folderId: 'root' },
+    { id: 'f12', name: 'Analytics Dashboard.xlsx', type: 'excel', size: '9.3 MB', owner: 'Alex Johnson', lastUpdated: '5 days ago', aiStatus: 'at_risk', usage: 10, folderId: 'root' },
 ];
 
-const LINKED_TASKS = [
-    { title:'Implement Design System', project:'Quantum UI', status:'In Progress', color:'#0052CC' },
-    { title:'Update Component Library', project:'Design Systems', status:'To Do', color:'#FFAB00' },
-    { title:'Fix Button Variants', project:'Mobile App v2', status:'Review', color:'#36B37E' },
+const INITIAL_FOLDERS: FolderItem[] = [
+    { id: 'all', name: 'All Files', itemCount: 2451 },
+    { id: 'projects', name: 'Project Folders', itemCount: 1245 },
+    { id: 'ecommerce', name: 'E-Commerce Platform', parentId: 'projects', itemCount: 342, color: '#FFAB00' },
+    { id: 'mobile', name: 'Mobile Application', parentId: 'projects', itemCount: 198, color: '#0052CC' },
+    { id: 'marketing', name: 'Marketing Campaign', parentId: 'projects', itemCount: 156, color: '#36B37E' },
+    { id: 'personal', name: 'Personal', itemCount: 320 },
+    { id: 'team', name: 'Team Folders', itemCount: 886 },
+    { id: 'shared', name: 'Shared Folders', itemCount: 431 },
+    { id: 'archived', name: 'Archived', itemCount: 112 },
+    { id: 'trash', name: 'Trash', itemCount: 28 },
 ];
 
-const COMMENTS = [
-    { user:'Alex Johnson', time:'2 hours ago', text:'Can you export v2 with the new color tokens?' },
-    { user:'Michelle', time:'1 hour ago', text:'@Alex Johnson Sure! Uploading the updated version now.' },
-    { user:'Sara', time:'30 min ago', text:'Looks great! Approved ✅' },
-];
+// --- Helper Functions ---
 
-const VERSIONS = [
-    { v:'v2.1', note:'Updated colors', user:'Michelle', time:'2h ago', current:true },
-    { v:'v2.0', note:'Added dark mode', user:'Alex Johnson', time:'Yesterday', current:false },
-    { v:'v1.5', note:'Component updates', user:'Sara Khan', time:'3 days ago', current:false },
-];
-
-const ACTIVITY_LOG = [
-    { action:'Viewed by John Smith', time:'5m ago', icon:Eye },
-    { action:'Downloaded by Sara Khan', time:'1 hour ago', icon:Download },
-    { action:'Edited by Michelle', time:'2 hours ago', icon:Pencil },
-    { action:'Viewed by Alex Johnson', time:'3 hours ago', icon:Eye },
-];
-
-const SUGGESTIONS = [
-    { name:'Q1-Design-System.fig', info:'Related to 3 tasks', tags:['#design','#ui','#active'] },
-    { name:'API-Documentation.pdf', info:'Used in Core Development', tags:['#backend','#api'] },
-    { name:'Dashboard-Mockup.sketch', info:'Similar to files you work on', tags:['#design','#dashboard'] },
-];
-
-const getAC = (s:string) => {
-    const c=['#0052CC','#36B37E','#FF5630','#FFAB00','#6554C0','#00B8D9'];
-    let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h);
-    return c[Math.abs(h)%c.length];
+const getFileIcon = (type: string) => {
+    switch (type) {
+        case 'pdf': return <FileText className="text-red-500" />;
+        case 'excel': return <Table className="text-green-600" />;
+        case 'doc': return <FileText className="text-blue-600" />;
+        case 'ppt': return <FileBarChart2 className="text-orange-500" />;
+        case 'image': return <Image className="text-purple-500" />;
+        case 'video': return <FileVideo className="text-indigo-500" />;
+        case 'figma': return <Zap className="text-pink-500" />;
+        case 'folder_ref': return <Folder className="text-yellow-500" />;
+        default: return <File className="text-gray-400" />;
+    }
 };
-const getInit = (n:string) => n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
 
-const typeIcon = (type:string) => {
-    const map: Record<string,{bg:string,color:string,label:string}> = {
-        fig:{bg:'#E6EFFF',color:'#0052CC',label:'F'},
-        pdf:{bg:'#FFF0EB',color:'#FF5630',label:'P'},
-        md:{bg:'#F4F5F7',color:'#42526E',label:'M'},
-        img:{bg:'#E3FCEF',color:'#36B37E',label:'I'},
-        code:{bg:'#EAE6FF',color:'#6554C0',label:'C'},
-        sql:{bg:'#EAE6FF',color:'#6554C0',label:'S'},
-    };
-    return map[type] || {bg:'#F4F5F7',color:'#42526E',label:'?'};
-};
+const Table = ({ className }: { className?: string }) => <div className={className}><Grid size={16} /></div>;
+
+// --- Main Component ---
 
 export default function FilesPage() {
-    const [view, setView] = useState<'grid'|'list'>('grid');
-    const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [files, setFiles] = useState<any[]>([]);
-    const [activeFile, setActiveFile] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [rightOpen, setRightOpen] = useState(true);
-    const [rightTab, setRightTab] = useState('Details');
-    const [ctx, setCtx] = useState<{x:number;y:number;file:any}|null>(null);
-    const [searchQ, setSearchQ] = useState('');
-    const [navSection, setNavSection] = useState('All Files');
-    const [insightsOn, setInsightsOn] = useState(true);
-    const [commentText, setCommentText] = useState('');
+    const [view, setView] = useState<'grid' | 'list' | 'timeline' | 'activity'>('grid');
+    const [tab, setTab] = useState('All Files');
+    const [selectedFile, setSelectedFile] = useState<FileItem | null>(INITIAL_FILES[0]);
+    const [rightPanelTab, setRightPanelTab] = useState<'details' | 'activity' | 'comments' | 'versions'>('details');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
-    useEffect(() => {
-        const fetchFiles = async () => {
-            try {
-                const res = await fetch('/api/files');
-                if (res.ok) {
-                    const data = await res.json();
-                    setFiles(data);
-                    if (data.length > 0) setActiveFile(data[0]);
-                }
-            } catch (err) {
-                console.error('Failed to fetch files:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchFiles();
-    }, []);
+    const filteredFiles = useMemo(() => {
+        let files = INITIAL_FILES.filter(f => 
+            f.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
-    const handleDeleteFile = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this file?')) return;
-        try {
-            const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setFiles(files.filter(f => f.id !== id));
-                if (activeFile?.id === id) setActiveFile(files.find(f => f.id !== id) || null);
-            }
-        } catch (err) {
-            console.error('Failed to delete file:', err);
+        if (tab === 'Documents') {
+            files = files.filter(f => ['doc', 'pdf', 'excel', 'ppt'].includes(f.type));
+        } else if (tab === 'Media') {
+            files = files.filter(f => ['image', 'video'].includes(f.type));
+        } else if (tab === 'Favorites') {
+            files = files.filter(f => f.isStarred);
+        } else if (tab === 'Trash') {
+            files = [INITIAL_FILES[INITIAL_FILES.length - 1]]; // Mock trash
         }
-    };
 
-    const toggleSelect = (id:string) => {
-        const s = new Set(selected);
-        s.has(id) ? s.delete(id) : s.add(id);
-        setSelected(s);
-    };
+        return files;
+    }, [searchQuery, tab]);
+
+
+    const pinnedFiles = filteredFiles.filter(f => f.isPinned);
+    const recentFiles = filteredFiles.filter(f => !f.isPinned);
 
     return (
-        <main style={{display:'flex',minHeight:'100vh',background:'#F4F5F7'}} onClick={()=>setCtx(null)}>
+        <main className="flex min-h-screen bg-[#F8FAFC]">
             <Sidebar />
-            <style>{`
-                .file-card{background:white;border-radius:12px;border:1px solid rgba(9,30,66,0.08);padding:14px;cursor:pointer;transition:all 0.18s;position:relative;}
-                .file-card:hover{border-color:rgba(0,82,204,0.25);transform:translateY(-2px);box-shadow:0 8px 24px rgba(9,30,66,0.08);}
-                .file-card.sel{border-color:#0052CC;background:#F8FAFF;}
-                .fc-actions{display:none;position:absolute;top:10px;right:10px;gap:4px;}
-                .file-card:hover .fc-actions{display:flex;}
-                .fc-btn{width:26px;height:26px;border-radius:6px;border:1px solid #DFE1E6;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6B778C;transition:all 0.15s;}
-                .fc-btn:hover{background:#0052CC;color:white;border-color:#0052CC;}
-                .nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#172B4D;transition:all 0.15s;}
-                .nav-item:hover{background:#EBECF0;}
-                .nav-item.active{background:#E6EFFF;color:#0052CC;font-weight:600;}
-                .filter-pill{padding:5px 10px;border-radius:7px;border:1px solid #DFE1E6;background:white;font-size:12px;font-weight:500;color:#42526E;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-                .filter-pill:hover{background:#F4F5F7;}
-                .rtab{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all 0.15s;}
-                .rtab.a{background:#E6EFFF;color:#0052CC;}
-                .rtab:not(.a){background:transparent;color:#6B778C;}
-                .rtab:not(.a):hover{background:#F4F5F7;}
-                .ctx-menu{position:fixed;background:white;border:1px solid rgba(9,30,66,0.1);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(9,30,66,0.14);z-index:1000;min-width:180px;}
-                .ctx-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#172B4D;transition:background 0.1s;}
-                .ctx-item:hover{background:#F4F5F7;}
-                .ctx-item.danger{color:#FF5630;}
-                .ctx-item.danger:hover{background:#FFF0EB;}
-                .list-row{display:grid;grid-template-columns:2fr 100px 100px 120px 80px 80px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(9,30,66,0.06);font-size:13px;transition:background 0.15s;cursor:pointer;}
-                .list-row:hover{background:#F8FAFF;}
-                .tag-sm{font-size:10px;padding:2px 6px;border-radius:4px;background:#E6EFFF;color:#0052CC;font-weight:600;}
-                .heat-hot{color:#FF5630;font-size:10px;font-weight:700;}
-                .heat-warm{color:#FFAB00;font-size:10px;font-weight:700;}
-                .toggle-sw{width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;position:relative;transition:background 0.2s;}
-                .toggle-sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform 0.2s;}
-                .toggle-sw.on{background:#0052CC;}
-                .toggle-sw.on::after{transform:translateX(16px);}
-                .toggle-sw.off{background:#DFE1E6;}
-            `}</style>
-
-            {/* ── Left Nav ── */}
-            <div style={{width:'220px',background:'white',borderRight:'1px solid #DFE1E6',display:'flex',flexDirection:'column',marginLeft:'240px',minHeight:'100vh',flexShrink:0,overflowY:'auto'}}>
-                <div style={{padding:'18px 12px 10px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:'#8A94A6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Navigation</span>
-                </div>
-                {[{label:'All Files',count:342},{label:'Recent'},{label:'Favorites',icon:Star},{label:'Shared with Me',count:8},{label:'My Uploads'},{label:'Trash',count:12}].map(i=>(
-                    <div key={i.label} className={`nav-item ${navSection===i.label?'active':''}`} onClick={()=>setNavSection(i.label)}>
-                        {i.label==='All Files'&&<FileText size={14}/>}
-                        {i.label==='Recent'&&<Clock size={14}/>}
-                        {i.label==='Favorites'&&<Star size={14}/>}
-                        {i.label==='Shared with Me'&&<Users size={14}/>}
-                        {i.label==='My Uploads'&&<Upload size={14}/>}
-                        {i.label==='Trash'&&<Trash2 size={14}/>}
-                        <span style={{flex:1}}>{i.label}</span>
-                        {i.count&&<span style={{fontSize:'11px',fontWeight:700,background:'#EBECF0',borderRadius:'8px',padding:'1px 6px',color:'#42526E'}}>{i.count}</span>}
-                    </div>
-                ))}
-
-                <div style={{padding:'14px 12px 4px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:'#8A94A6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Teams</span>
-                </div>
-                {['Core Development','Design Systems','Marketing Team'].map(t=>(
-                    <div key={t} style={{display:'flex',alignItems:'center',gap:'8px',padding:'7px 12px',cursor:'pointer',fontSize:'12px',color:'#42526E',borderRadius:'8px',transition:'background 0.15s'}}>
-                        <Folder size={13} color={getAC(t)} fill={getAC(t)} />{t}
-                    </div>
-                ))}
-
-                <div style={{padding:'14px 12px 4px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:'#8A94A6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Projects</span>
-                </div>
-                {[{n:'Quantum UI Redesign',c:'#0052CC'},{n:'Database Migration',c:'#FF5630'},{n:'Mobile App v2.0',c:'#36B37E'}].map(p=>(
-                    <div key={p.n} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 12px',cursor:'pointer',fontSize:'12px',color:'#42526E',borderRadius:'8px',transition:'background 0.15s'}}>
-                        <div style={{width:8,height:8,borderRadius:'50%',background:p.c,flexShrink:0}}/>{p.n}
-                    </div>
-                ))}
-
-                <div style={{padding:'14px 12px 4px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:'#8A94A6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Tags</span>
-                </div>
-                {[{t:'Design',n:24},{t:'Backend',n:18},{t:'Frontend',n:15},{t:'Urgent',n:6}].map(t=>(
-                    <div key={t.t} style={{display:'flex',alignItems:'center',gap:'7px',padding:'5px 12px',cursor:'pointer',fontSize:'12px',color:'#42526E',borderRadius:'6px'}}>
-                        <Hash size={11} color="#0052CC"/><span style={{flex:1}}>#{t.t}</span>
-                        <span style={{fontSize:'10px',color:'#8A94A6',fontWeight:600}}>{t.n}</span>
-                    </div>
-                ))}
-            </div>
-
-            {/* ── Main Area ── */}
-            <div style={{flex:1,display:'flex',flexDirection:'column',minWidth:0,overflow:'hidden'}}>
-                {/* Header */}
-                <div style={{padding:'16px 24px 12px',background:'white',borderBottom:'1px solid #DFE1E6',flexShrink:0}}>
-                    <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'14px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                            <div style={{background:'#E6EFFF',padding:'8px',borderRadius:'8px',color:'#0052CC'}}><File size={18}/></div>
-                            <h1 style={{fontSize:'20px',fontWeight:700,color:'#172B4D'}}>Files Workspace</h1>
+            
+            <div className="flex-1 flex flex-col ml-[240px] transition-all duration-300">
+                {/* 1. TOP BAR */}
+                <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-8 sticky top-0 z-20">
+                    <div className="flex items-center gap-4 flex-1 max-w-2xl">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Search files, folders or content..." 
+                                className="w-full pl-10 pr-12 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                <span className="text-[10px] font-bold text-gray-400 bg-gray-200/50 px-1.5 py-0.5 rounded">⌘ K</span>
+                            </div>
                         </div>
-                        <div style={{flex:1,position:'relative',maxWidth:'360px',marginLeft:'auto'}}>
-                            <Search size={14} style={{position:'absolute',left:'12px',top:'50%',transform:'translateY(-50%)',color:'#8A94A6'}}/>
-                            <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search files, tags, projects... ⌘K" style={{width:'100%',padding:'8px 12px 8px 34px',borderRadius:'8px',border:'1px solid #DFE1E6',fontSize:'13px',outline:'none',background:'#FAFBFC'}}/>
-                        </div>
-                        <div style={{display:'flex',gap:'8px',flexShrink:0}}>
-                            <button style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',borderRadius:'8px',border:'1px solid #DFE1E6',background:'white',fontSize:'12px',fontWeight:600,color:'#42526E',cursor:'pointer'}}><FolderPlus size={14}/> Create Folder</button>
-                            <button style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 16px',borderRadius:'8px',border:'none',background:'#0052CC',fontSize:'13px',fontWeight:600,color:'white',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,82,204,0.22)'}}><Upload size={14}/> Upload File</button>
-                            <button style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',borderRadius:'8px',border:'1px solid #DFE1E6',background:'white',fontSize:'12px',fontWeight:600,color:'#42526E',cursor:'pointer'}}><FilePlus size={14}/> New Doc</button>
+                        <button className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-100 transition-colors border border-purple-100">
+                            <Sparkles size={16} />
+                            <span>AI Search</span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex bg-gray-100 p-1 rounded-lg mr-4">
+                            <button className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors">Upload</button>
+                            <Link href="/documents" className="px-3 py-1.5 bg-white text-xs font-bold text-blue-600 rounded-md shadow-sm border border-gray-200/50 flex items-center gap-1.5">
+                                <FilePlus size={14} /> New Doc
+                            </Link>
                         </div>
                     </div>
-                    {/* Filters */}
-                    <div style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-                        {['File Type','Projects','Teams','Tags','Uploaded by'].map(f=>(
-                            <button key={f} className="filter-pill">{f} <ChevronDown size={10}/></button>
-                        ))}
-                        <div style={{marginLeft:'auto',display:'flex',gap:'6px',alignItems:'center'}}>
-                            <span style={{fontSize:'12px',color:'#6B778C'}}>Sort:</span>
-                            <button className="filter-pill"><Clock size={11}/> Recent <ChevronDown size={10}/></button>
-                            <div style={{width:'1px',height:'18px',background:'#DFE1E6',margin:'0 4px'}}/>
-                            <button className="fc-btn" style={{width:30,height:30}} onClick={()=>setView('grid')} title="Grid View"><Grid size={14} color={view==='grid'?'#0052CC':'#6B778C'}/></button>
-                            <button className="fc-btn" style={{width:30,height:30}} onClick={()=>setView('list')} title="List View"><List size={14} color={view==='list'?'#0052CC':'#6B778C'}/></button>
-                            <button className="fc-btn" style={{width:30,height:30,color:rightOpen?'#0052CC':'#6B778C',background:rightOpen?'#E6EFFF':'white',borderColor:rightOpen?'rgba(0,82,204,0.2)':'#DFE1E6'}} onClick={()=>setRightOpen(p=>!p)}><PanelRight size={14}/></button>
-                        </div>
-                    </div>
+                </header>
+
+                {/* 1.1 SUB TABS */}
+                <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center gap-8 overflow-x-auto no-scrollbar">
+                    {['All Files', 'Documents', 'Media', 'Shared', 'Recent', 'Favorites', 'Trash'].map((t) => (
+                        <button 
+                            key={t}
+                            onClick={() => setTab(t)}
+                            className={`text-sm font-medium whitespace-nowrap pb-2 border-b-2 transition-all ${
+                                tab === t ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'
+                            }`}
+                        >
+                            {t}
+                        </button>
+                    ))}
                 </div>
 
-                <div style={{flex:1,overflowY:'auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:'20px'}}>
-                    {/* Smart Suggestions */}
-                    <div style={{background:'white',borderRadius:'12px',border:'1px solid rgba(9,30,66,0.08)',padding:'16px 20px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'12px'}}>
-                            <Zap size={14} color="#FFAB00"/>
-                            <span style={{fontSize:'13px',fontWeight:700,color:'#172B4D'}}>Smart Suggestions</span>
+                <div className="flex-1 flex overflow-hidden">
+                    {/* 2. MAIN AREA */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-8">
+                        <div className="mb-6">
+                            <h1 className="text-2xl font-bold text-gray-900">Files</h1>
+                            <p className="text-sm text-gray-500 mt-1">All your project files, documents, and assets in one intelligent workspace.</p>
                         </div>
-                        <div style={{display:'flex',gap:'12px'}}>
-                            {SUGGESTIONS.map((s,i)=>(
-                                <div key={i} style={{flex:1,border:'1px solid #DFE1E6',borderRadius:'10px',padding:'12px',cursor:'pointer',transition:'all 0.15s',background:'#FAFBFC'}}>
-                                    <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>
-                                        <div style={{width:32,height:32,borderRadius:'8px',background:typeIcon(i===1?'pdf':'fig').bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:700,color:typeIcon(i===1?'pdf':'fig').color}}>{typeIcon(i===1?'pdf':'fig').label}</div>
-                                        <div><div style={{fontSize:'12px',fontWeight:600,color:'#172B4D'}}>{s.name}</div><div style={{fontSize:'10px',color:'#6B778C'}}>{s.info}</div></div>
+
+                        {/* 3. SMART CARDS */}
+                        <div className="grid grid-cols-5 gap-4 mb-8">
+                            {[
+                                { label: 'Total Files', value: '2,451', trend: '+18% this month', icon: Files, color: 'blue' },
+                                { label: 'Documents', value: '1,128', sub: '46% of total', icon: FileText, color: 'green' },
+                                { label: 'Media', value: '892', sub: '36% of total', icon: Image, color: 'purple' },
+                                { label: 'Shared', value: '431', sub: '17% of total', icon: Users, color: 'orange' },
+                                { label: 'Storage Used', value: '68.4 GB', sub: '/ 200 GB', progress: 34, icon: HardDrive, color: 'slate' },
+                            ].map((card, i) => (
+                                <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className={`p-2 rounded-xl bg-${card.color}-50 text-${card.color}-600 group-hover:scale-110 transition-transform`}>
+                                            <card.icon size={20} />
+                                        </div>
+                                        {card.trend && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{card.trend}</span>}
                                     </div>
-                                    <div style={{display:'flex',gap:'4px',flexWrap:'wrap'}}>{s.tags.map((t,j)=><span key={j} className="tag-sm">{t}</span>)}</div>
+                                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{card.label}</div>
+                                    <div className="text-2xl font-bold text-gray-900 mt-1">{card.value}</div>
+                                    {card.sub && <div className="text-[11px] text-gray-500 mt-1 font-medium">{card.sub}</div>}
+                                    {card.progress && (
+                                        <div className="mt-3">
+                                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${card.progress}%` }} />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
-                    </div>
 
-                    {/* Usage Insights */}
-                    <div style={{background:'white',borderRadius:'12px',border:'1px solid rgba(9,30,66,0.08)',padding:'16px 20px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:insightsOn?'14px':'0'}}>
-                            <BarChart2 size={14} color="#0052CC"/>
-                            <span style={{fontSize:'13px',fontWeight:700,color:'#172B4D'}}>Usage Insights</span>
-                            <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:'8px'}}>
-                                <span style={{fontSize:'12px',color:'#6B778C'}}>Show usage heatmap</span>
-                                <button className={`toggle-sw ${insightsOn?'on':'off'}`} onClick={()=>setInsightsOn(p=>!p)}/>
-                            </div>
-                        </div>
-                        {insightsOn && (
-                            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+                        {/* 4. VIEW SWITCHER & FILTERS */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
                                 {[
-                                    {label:'Most Viewed',name:'Design System.fig',stat:'24 views',color:'#0052CC'},
-                                    {label:'Most Edited',name:'API-Schema.ts',stat:'12 edits',color:'#FFAB00'},
-                                    {label:'Most Shared',name:'Brand-Guidelines.pdf',stat:'8 shares',color:'#FF5630'},
-                                    {label:'Recently Active',name:'Team-Meeting.docx',stat:'Just now',color:'#36B37E'},
-                                ].map((ins,i)=>(
-                                    <div key={i} style={{padding:'12px',borderRadius:'10px',background:'#FAFBFC',border:'1px solid #DFE1E6'}}>
-                                        <div style={{fontSize:'10px',fontWeight:700,color:ins.color,textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:'6px'}}>{ins.label}</div>
-                                        <div style={{fontSize:'12px',fontWeight:600,color:'#172B4D',marginBottom:'4px'}}>{ins.name}</div>
-                                        <div style={{height:'4px',background:'#EBECF0',borderRadius:'2px',overflow:'hidden',marginBottom:'4px'}}>
-                                            <div style={{height:'100%',background:ins.color,borderRadius:'2px',width:`${[80,65,55,40][i]}%`}}/>
-                                        </div>
-                                        <div style={{fontSize:'10px',color:'#6B778C'}}>{ins.stat}</div>
-                                    </div>
+                                    { id: 'grid', icon: Grid, label: 'Grid' },
+                                    { id: 'list', icon: List, label: 'List' },
+                                    { id: 'timeline', icon: CalendarIcon, label: 'Timeline' },
+                                    { id: 'activity', icon: Activity, label: 'Activity' },
+                                ].map((v) => (
+                                    <button
+                                        key={v.id}
+                                        onClick={() => setView(v.id as any)}
+                                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                                            view === v.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                                        }`}
+                                    >
+                                        <v.icon size={16} />
+                                        <span>{v.label}</span>
+                                    </button>
                                 ))}
                             </div>
-                        )}
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
+                                    <span className="text-xs font-semibold text-gray-500">Type:</span>
+                                    <select className="text-xs font-bold text-gray-900 bg-transparent outline-none cursor-pointer">
+                                        <option>All</option>
+                                        <option>Documents</option>
+                                        <option>Media</option>
+                                        <option>Code</option>
+                                    </select>
+                                </div>
+                                <button className="p-2 border border-gray-200 rounded-lg bg-white text-gray-500 hover:text-blue-600 transition-colors">
+                                    <SlidersHorizontal size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+                                    className={`p-2 border border-gray-200 rounded-lg bg-white transition-colors ${isRightPanelOpen ? 'text-blue-600 border-blue-100 bg-blue-50' : 'text-gray-500 hover:text-blue-600'}`}
+                                >
+                                    <PanelRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 5. CONTENT AREA BY VIEW */}
+                        <div className="flex gap-8">
+                            {/* LEFT SIDEBAR (Internal) */}
+                            <div className="w-64 flex-shrink-0 flex flex-col gap-8">
+                                <div>
+                                    <div className="flex items-center justify-between mb-4 px-2">
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">My Folders</span>
+                                        <button className="text-gray-400 hover:text-blue-600 transition-colors"><Plus size={16}/></button>
+                                    </div>
+                                    <div className="space-y-1">
+                                        {INITIAL_FOLDERS.filter(f => !f.parentId).map(folder => (
+                                            <FolderNavItem key={folder.id} folder={folder} active={folder.id === 'all'} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-4 px-2">
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Filters</span>
+                                        <button className="text-[10px] font-bold text-blue-600 hover:underline transition-colors uppercase">Clear All</button>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                        <span className="text-xs font-bold text-gray-600 block mb-3">File Type</span>
+                                        <div className="grid grid-cols-4 gap-3 mb-6">
+                                            {[
+                                                { icon: Files, color: 'blue', label: 'All' },
+                                                { icon: FileText, color: 'blue', label: 'Docs' },
+                                                { icon: Table, color: 'green', label: 'Sheets' },
+                                                { icon: FileBarChart2, color: 'orange', label: 'Slides' },
+                                                { icon: FileText, color: 'red', label: 'PDF' },
+                                                { icon: Image, color: 'purple', label: 'Images' },
+                                                { icon: FileVideo, color: 'indigo', label: 'Videos' },
+                                                { icon: MoreHorizontal, color: 'slate', label: 'Others' },
+                                            ].map((f, i) => (
+                                                <div key={i} className="flex flex-col items-center gap-1 group cursor-pointer">
+                                                    <div className={`p-2 rounded-lg bg-${f.color}-50 text-${f.color}-600 group-hover:scale-110 transition-transform`}>
+                                                        <f.icon size={14} />
+                                                    </div>
+                                                    <span className="text-[9px] font-bold text-gray-500 uppercase">{f.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <span className="text-xs font-bold text-gray-600 block mb-3">Tags</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Design', 'Development', 'Research', 'Marketing', 'Finance', 'Product'].map(tag => (
+                                                <span key={tag} className="px-2 py-1 bg-gray-50 text-[10px] font-bold text-gray-500 rounded-md border border-gray-100 hover:border-blue-200 hover:text-blue-600 cursor-pointer transition-all">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <button className="w-full text-center text-[10px] font-bold text-blue-600 mt-4 hover:underline">More filters</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MAIN GRID/LIST/ETC */}
+                            <div className="flex-1 min-w-0">
+                                {view === 'grid' && (
+                                    <div className="space-y-10">
+                                        {/* Pinned Files */}
+                                        {pinnedFiles.length > 0 && (
+                                            <section>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="text-sm font-bold text-gray-900">Pinned Files</h3>
+                                                        <div className="h-1 w-1 bg-gray-300 rounded-full" />
+                                                        <Pin size={14} className="text-blue-500" />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-6">
+                                                    {pinnedFiles.map(file => (
+                                                        <FileCard key={file.id} file={file} isSelected={selectedFile?.id === file.id} onClick={() => setSelectedFile(file)} />
+                                                    ))}
+                                                </div>
+                                            </section>
+                                        )}
+
+                                        {/* Recent Files */}
+                                        <section>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-sm font-bold text-gray-900">
+                                                    {tab === 'All Files' ? 'Recent Files' : `${tab}`}
+                                                </h3>
+                                                <button className="text-[11px] font-bold text-blue-600 hover:underline">View all</button>
+                                            </div>
+                                            {recentFiles.length > 0 ? (
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    {recentFiles.map(file => (
+                                                        <FileCard key={file.id} file={file} isSelected={selectedFile?.id === file.id} onClick={() => setSelectedFile(file)} />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="py-20 flex flex-col items-center justify-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                                    <File size={48} className="text-gray-300 mb-4" />
+                                                    <p className="text-sm font-bold text-gray-900">No files found</p>
+                                                    <p className="text-xs text-gray-500 mt-1">Try adjusting your filters or search query.</p>
+                                                </div>
+                                            )}
+                                        </section>
+
+                                        {/* File Insights Dashboard (Mini) */}
+                                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-12">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <h3 className="text-sm font-bold text-gray-900">Files Insights</h3>
+                                                <button className="text-[11px] font-bold text-blue-600 hover:underline">View all insights</button>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-6">
+                                                {[
+                                                    { label: 'Most Accessed', name: 'User Research Report.pdf', stat: 'Accessed 26 times', trend: '↑ 32%', icon: Eye, color: 'blue' },
+                                                    { label: 'Recently Updated', name: '8 files updated today', stat: 'Last update: 5m ago', trend: '↑ 14% vs yesterday', icon: RotateCcw, color: 'green' },
+                                                    { label: 'Large Files', name: '5 files over 100MB', stat: 'Total: 2.3 GB', icon: HardDrive, color: 'purple' },
+                                                    { label: 'Unused Files', name: '12 files not accessed', stat: 'In 30+ days', icon: AlertCircle, color: 'red' },
+                                                ].map((ins, i) => (
+                                                    <div key={i} className="flex gap-4 group">
+                                                        <div className={`w-10 h-10 rounded-xl bg-${ins.color}-50 flex-shrink-0 flex items-center justify-center text-${ins.color}-600 group-hover:scale-110 transition-transform`}>
+                                                            <ins.icon size={20} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{ins.label}</div>
+                                                            <div className="text-xs font-bold text-gray-900 truncate mb-1">{ins.name}</div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[10px] text-gray-500">{ins.stat}</span>
+                                                                {ins.trend && <span className="text-[10px] font-bold text-green-600">{ins.trend}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </section> section
+                                    </div>
+                                )}
+
+                                {view === 'list' && (
+                                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                        <table className="w-full border-collapse">
+                                            <thead className="bg-gray-50/50">
+                                                <tr className="text-left">
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Name</th>
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Type</th>
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Owner</th>
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Size</th>
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Last Updated</th>
+                                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {filteredFiles.map(file => (
+                                                    <tr 
+                                                        key={file.id} 
+                                                        onClick={() => setSelectedFile(file)}
+                                                        className={`hover:bg-blue-50/30 transition-colors cursor-pointer ${selectedFile?.id === file.id ? 'bg-blue-50/50' : ''}`}
+                                                    >
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
+                                                                    {getFileIcon(file.type)}
+                                                                </div>
+                                                                <span className="text-sm font-semibold text-gray-900">{file.name}</span>
+                                                                {file.isPinned && <Pin size={12} className="text-blue-500" />}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{file.type}</td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                                                                    {file.owner.substring(0,2)}
+                                                                </div>
+                                                                <span className="text-xs font-medium text-gray-700">{file.owner}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-xs text-gray-500">{file.size}</td>
+                                                        <td className="px-6 py-4 text-xs text-gray-500">{file.lastUpdated}</td>
+                                                        <td className="px-6 py-4">
+                                                            {file.aiStatus ? (
+                                                                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                                                    file.aiStatus === 'outdated' ? 'bg-amber-100 text-amber-700' :
+                                                                    file.aiStatus === 'high_usage' ? 'bg-blue-100 text-blue-700' :
+                                                                    file.aiStatus === 'recently_modified' ? 'bg-green-100 text-green-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                    {file.aiStatus.replace('_', ' ')}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Normal</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                                
+                                {(view === 'timeline' || view === 'activity') && (
+                                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                                        <Activity size={48} className="text-gray-300 mb-4" />
+                                        <h3 className="text-lg font-bold text-gray-900">{view.charAt(0).toUpperCase() + view.slice(1)} View</h3>
+                                        <p className="text-sm text-gray-500 mt-1 max-w-sm text-center">This feature is part of the Enterprise expansion. Activity bursts and timeline plots will appear here.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Files Section */}
-                    <div>
-                        <div style={{display:'flex',alignItems:'center',marginBottom:'14px'}}>
-                            <span style={{fontSize:'14px',fontWeight:700,color:'#172B4D'}}>Files <span style={{fontSize:'12px',color:'#6B778C',fontWeight:400}}>({files.length} items)</span></span>
-                            {selected.size>0&&(
-                                <div style={{marginLeft:'16px',display:'flex',gap:'6px'}}>
-                                    <span style={{fontSize:'12px',color:'#0052CC',fontWeight:600}}>{selected.size} selected</span>
-                                    <button style={{fontSize:'11px',color:'#6B778C',background:'none',border:'none',cursor:'pointer'}} onClick={()=>setSelected(new Set())}>Clear</button>
-                                    <button className="fc-btn" style={{width:'auto',padding:'0 8px',fontSize:'11px',fontWeight:600,color:'#FF5630',borderColor:'rgba(255,86,48,0.2)'}}>Delete</button>
-                                    <button className="fc-btn" style={{width:'auto',padding:'0 8px',fontSize:'11px',fontWeight:600}}>Move</button>
-                                    <button className="fc-btn" style={{width:'auto',padding:'0 8px',fontSize:'11px',fontWeight:600}}>Tag</button>
+                    {/* 6. RIGHT PANEL (CONTEXT PANEL) */}
+                    {isRightPanelOpen && (
+                        <aside className="w-[320px] bg-white border-l border-gray-200 overflow-y-auto no-scrollbar flex flex-col sticky top-0 h-full animate-in slide-in-from-right duration-300">
+                            {selectedFile ? (
+                                <>
+                                    {/* Panel Tabs */}
+                                    <div className="flex border-b border-gray-100 p-2">
+                                        {['details', 'activity', 'comments', 'versions'].map((t) => (
+                                            <button 
+                                                key={t}
+                                                onClick={() => setRightPanelTab(t as any)}
+                                                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all rounded-md ${
+                                                    rightPanelTab === t ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {t} {t === 'comments' && <span className="ml-1 opacity-50">6</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Preview Area */}
+                                    <div className="p-6 border-b border-gray-100 flex flex-col items-center text-center">
+                                        <div className="w-full aspect-[4/3] bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden group mb-4">
+                                            {selectedFile.thumbnail ? (
+                                                <img src={selectedFile.thumbnail} className="w-full h-full object-cover" alt="" />
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="text-5xl mb-2">{getFileIcon(selectedFile.type)}</div>
+                                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedFile.type}</div>
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                                <button className="p-2 bg-white rounded-full text-gray-900 hover:scale-110 transition-transform"><Eye size={20}/></button>
+                                                <button className="p-2 bg-white rounded-full text-gray-900 hover:scale-110 transition-transform"><Download size={20}/></button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 justify-center w-full">
+                                            <h2 className="text-base font-bold text-gray-900 truncate">{selectedFile.name}</h2>
+                                            <button className="text-gray-400 hover:text-yellow-500"><Star size={16} fill={selectedFile.isStarred ? 'currentColor' : 'none'} /></button>
+                                        </div>
+                                        <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-wider">{selectedFile.type.toUpperCase()} DOCUMENT • {selectedFile.size}</p>
+                                    </div>
+
+                                    {/* Details Content */}
+                                    <div className="p-6 space-y-8">
+                                        {rightPanelTab === 'details' && (
+                                            <>
+                                                <div className="space-y-4">
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-gray-400 uppercase">Location</span>
+                                                        <span className="font-semibold text-gray-700 truncate max-w-[160px]">/Project Folders/E-Commerce</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-gray-400 uppercase">Owner</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[8px] font-bold text-white">{selectedFile.owner.substring(0,2)}</div>
+                                                            <span className="font-semibold text-gray-700">{selectedFile.owner}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-gray-400 uppercase">Created</span>
+                                                        <span className="font-semibold text-gray-700">May 20, 2024, 10:30 AM</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="font-bold text-gray-400 uppercase">Updated</span>
+                                                        <span className="font-semibold text-gray-700">May 25, 2024, 2:45 PM</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* AI INSIGHTS */}
+                                                <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="p-1.5 bg-purple-100 text-purple-600 rounded-lg">
+                                                            <Sparkles size={14} />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-purple-900 uppercase tracking-wider">AI Insights</span>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-700 uppercase mb-1">
+                                                                <MessageSquare size={10} /> Summary
+                                                            </div>
+                                                            <p className="text-[11px] text-purple-800/80 leading-relaxed">
+                                                                This proposal outlines the complete plan for the e-commerce platform including core features, tech stack, timeline and budget.
+                                                            </p>
+                                                        </div>
+
+                                                        <div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-700 uppercase mb-1">
+                                                                <Search size={10} /> Key Points
+                                                            </div>
+                                                            <ul className="text-[11px] text-purple-800/80 space-y-1 ml-4 list-disc">
+                                                                <li>Timeline: 12 weeks</li>
+                                                                <li>Budget: $120,000</li>
+                                                                <li>Team: 8 members</li>
+                                                                <li>Priority: High</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <button className="w-full flex items-center justify-center gap-2 py-2 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-lg border border-purple-200/50 hover:bg-purple-200 transition-colors">
+                                                            <BrainCircuit size={12} />
+                                                            Ask AI about this file
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* LINKED TO */}
+                                                <div>
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3">Linked To</span>
+                                                    <div className="space-y-2">
+                                                        {[
+                                                            { label: 'E-Commerce Platform', type: 'Project', icon: FolderKanban, color: 'blue' },
+                                                            { label: 'Sprint 12', type: 'Sprint', icon: Zap, color: 'amber' },
+                                                            { label: 'Design System', type: 'Task', icon: CheckSquare, color: 'rose' },
+                                                        ].map((link, i) => (
+                                                            <div key={i} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
+                                                                <div className={`w-8 h-8 rounded-lg bg-${link.color}-50 text-${link.color}-600 flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                                                                    <link.icon size={16} />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="text-[11px] font-bold text-gray-900 truncate">{link.label}</div>
+                                                                    <div className="text-[9px] font-bold text-gray-400 uppercase">{link.type}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {rightPanelTab === 'activity' && (
+                                            <div className="space-y-6">
+                                                {[
+                                                    { user: 'Sayab Ali', action: 'uploaded v2.4', time: '1 hour ago', icon: Upload },
+                                                    { user: 'Alex Johnson', action: 'added a comment', time: '3 hours ago', icon: MessageSquare },
+                                                    { user: 'Sara Khan', action: 'viewed the file', time: '5 hours ago', icon: Eye },
+                                                    { user: 'Michelle', action: 'renamed the file', time: '1 day ago', icon: Pencil },
+                                                ].map((act, i) => (
+                                                    <div key={i} className="flex gap-3">
+                                                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                            <act.icon size={12} className="text-gray-500" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[11px] text-gray-900 leading-tight">
+                                                                <span className="font-bold">{act.user}</span> {act.action}
+                                                            </p>
+                                                            <p className="text-[10px] text-gray-400 mt-0.5">{act.time}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {rightPanelTab === 'comments' && (
+                                            <div className="space-y-4">
+                                                <div className="flex gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0" />
+                                                    <div className="flex-1 bg-gray-50 p-3 rounded-2xl rounded-tl-none">
+                                                        <p className="text-[11px] font-bold text-gray-900 mb-1">Sayab Ali</p>
+                                                        <p className="text-[11px] text-gray-600 leading-relaxed">Can we update the budget section in the proposal? Some costs have changed.</p>
+                                                        <p className="text-[9px] text-gray-400 mt-2">2:30 PM</p>
+                                                    </div>
+                                                </div>
+                                                <div className="relative mt-8">
+                                                    <textarea 
+                                                        placeholder="Write a comment..." 
+                                                        className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none"
+                                                    />
+                                                    <button className="absolute bottom-3 right-3 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-blue-700">Post</button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {rightPanelTab === 'versions' && (
+                                            <div className="space-y-3">
+                                                {[
+                                                    { v: 'v2.4', date: 'May 25, 2024', owner: 'Sayab Ali', current: true },
+                                                    { v: 'v2.3', date: 'May 23, 2024', owner: 'Alex Johnson' },
+                                                    { v: 'v2.0', date: 'May 20, 2024', owner: 'Sayab Ali' },
+                                                    { v: 'v1.0', date: 'May 15, 2024', owner: 'System' },
+                                                ].map((v, i) => (
+                                                    <div key={i} className={`p-3 rounded-xl border transition-all cursor-pointer group ${v.current ? 'bg-blue-50 border-blue-100 shadow-sm' : 'border-gray-100 hover:border-gray-200'}`}>
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-gray-900">{v.v}</span>
+                                                                {v.current && <span className="text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded uppercase">Current</span>}
+                                                            </div>
+                                                            <button className="p-1 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"><RotateCcw size={14}/></button>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-[10px] text-gray-500 font-medium">
+                                                            <span>{v.date}</span>
+                                                            <span>by {v.owner}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center opacity-50">
+                                    <Info size={40} className="text-gray-300 mb-4" />
+                                    <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Select a file</p>
+                                    <p className="text-[11px] text-gray-500 mt-2">Choose a file to view details, insights and activity timeline.</p>
                                 </div>
                             )}
-                            <div style={{marginLeft:'auto',fontSize:'12px',color:'#6B778C'}}>Sort by: Recent</div>
-                        </div>
-
-                        {/* Drag & Drop Zone */}
-                        <div style={{border:'2px dashed #DFE1E6',borderRadius:'12px',padding:'20px',textAlign:'center',marginBottom:'16px',color:'#6B778C',background:'#FAFBFC',cursor:'pointer',transition:'all 0.2s'}}>
-                            <Upload size={20} style={{margin:'0 auto 8px',color:'#8A94A6'}}/>
-                            <div style={{fontSize:'13px',fontWeight:600,color:'#172B4D',marginBottom:'2px'}}>Drop files here to upload!</div>
-                            <div style={{fontSize:'11px'}}>Supports PDF, DOC, Images, ZIP, Code files • Max 100MB per file</div>
-                        </div>
-
-                        {view==='grid' ? (
-                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
-                                {files.map(f=>{
-                                    const ti = typeIcon(f.type.split('/')[1] || f.type.toLowerCase());
-                                    return (
-                                        <div key={f.id} className={`file-card ${selected.has(f.id)?'sel':''}`}
-                                            onClick={()=>{setActiveFile(f);setSelected(new Set());}}
-                                            onContextMenu={e=>{e.preventDefault();setCtx({x:e.clientX,y:e.clientY,file:f});}}>
-                                            <input type="checkbox" checked={selected.has(f.id)} onChange={()=>toggleSelect(f.id)}
-                                                onClick={e=>e.stopPropagation()}
-                                                style={{position:'absolute',top:10,left:10,accentColor:'#0052CC'}}/>
-                                            {f.starred&&<Star size={12} fill="#FFAB00" color="#FFAB00" style={{position:'absolute',top:10,right:10}}/>}
-                                            <div style={{width:'100%',height:'80px',borderRadius:'8px',background:ti.bg,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'10px',fontSize:'24px',fontWeight:700,color:ti.color}}>{ti.label}</div>
-                                            <div style={{fontSize:'13px',fontWeight:600,color:'#172B4D',marginBottom:'6px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.name}</div>
-                                            <div style={{display:'flex',gap:'3px',flexWrap:'wrap',marginBottom:'8px'}}>
-                                                {f.task?.project?.name ? <span className="tag-sm">{f.task.project.name}</span> : null}
-                                                <span className="tag-sm">{f.type}</span>
-                                            </div>
-                                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                                <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner || 'System'),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner || 'System')}</div>
-                                                <span style={{fontSize:'10px',color:'#6B778C',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.owner || 'System'}</span>
-                                            </div>
-                                            <div style={{fontSize:'10px',color:'#8A94A6',marginTop:'6px'}}>{Math.round(f.size / 1024)} KB • {new Date(f.createdAt).toLocaleDateString()}</div>
-                                            <div className="fc-actions">
-                                                <button className="fc-btn" onClick={e=>{e.stopPropagation(); window.open(f.url, '_blank')}} title="View"><Eye size={12}/></button>
-                                                <button className="fc-btn" onClick={e=>{e.stopPropagation(); handleDeleteFile(f.id)}} title="Delete"><Trash2 size={12}/></button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div style={{background:'white',borderRadius:'12px',border:'1px solid rgba(9,30,66,0.08)',overflow:'hidden'}}>
-                                <div className="list-row" style={{fontSize:'10px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',background:'#FAFBFC',borderBottom:'1px solid #DFE1E6'}}>
-                                    <div>Name</div><div>Tags</div><div>Owner</div><div>Modified</div><div>Size</div><div>Actions</div>
-                                </div>
-                                {files.map(f=>(
-                                    <div key={f.id} className="list-row" onClick={()=>setActiveFile(f)} onContextMenu={e=>{e.preventDefault();setCtx({x:e.clientX,y:e.clientY,file:f});}}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                                            <div style={{width:28,height:28,borderRadius:'6px',background:typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:700,color:typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).color}}>{typeIcon(f.type.split('/')[1] || f.type.toLowerCase()).label}</div>
-                                            <span style={{fontWeight:600,color:'#172B4D'}}>{f.name}</span>
-                                            {f.starred&&<Star size={10} fill="#FFAB00" color="#FFAB00"/>}
-                                        </div>
-                                        <div style={{display:'flex',gap:'3px'}}>{f.task?.project?.name ? <span className="tag-sm">{f.task.project.name}</span> : null}</div>
-                                        <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                                            <div style={{width:20,height:20,borderRadius:'50%',background:getAC(f.owner || 'System'),color:'white',fontSize:'7px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{getInit(f.owner || 'System')}</div>
-                                            <span style={{fontSize:'12px',color:'#42526E'}}>{(f.owner || 'System').split(' ')[0]}</span>
-                                        </div>
-                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{new Date(f.createdAt).toLocaleDateString()}</div>
-                                        <div style={{fontSize:'12px',color:'#6B778C'}}>{Math.round(f.size / 1024)} KB</div>
-                                        <div style={{display:'flex',gap:'3px'}}>
-                                            <button className="fc-btn" style={{width:24,height:24}} onClick={e=>{e.stopPropagation(); window.open(f.url, '_blank')}} title="View"><Eye size={11}/></button>
-                                            <button className="fc-btn" style={{width:24,height:24}} onClick={e=>{e.stopPropagation(); handleDeleteFile(f.id)}} title="Delete"><Trash2 size={11}/></button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Shortcuts bar */}
-                <div style={{padding:'8px 24px',background:'white',borderTop:'1px solid #DFE1E6',display:'flex',gap:'20px',fontSize:'11px',color:'#8A94A6'}}>
-                    <span>⌘K Quick actions</span>
-                    <span>Drag to move</span>
-                    <span>Right-click for menu</span>
-                    <span>Space to preview</span>
+                        </aside>
+                    )}
                 </div>
             </div>
 
-            {/* ── Right Panel ── */}
-            {rightOpen && activeFile && (
-                <div style={{width:'268px',background:'white',borderLeft:'1px solid #DFE1E6',display:'flex',flexDirection:'column',flexShrink:0,overflowY:'auto'}}>
-                    {/* File header */}
-                    <div style={{padding:'14px 16px',borderBottom:'1px solid #DFE1E6'}}>
-                        <div style={{display:'flex',gap:'4px',marginBottom:'12px',flexWrap:'wrap'}}>
-                            {['Details','Activity','Versions'].map(t=>(
-                                <button key={t} className={`rtab ${rightTab===t?'a':''}`} onClick={()=>setRightTab(t)}>{t}</button>
-                            ))}
-                        </div>
-                        <div style={{display:'flex',gap:'10px',alignItems:'center',marginBottom:'8px'}}>
-                            <div style={{width:40,height:40,borderRadius:'10px',background:typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:700,color:typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).color}}>{typeIcon(activeFile.type.split('/')[1] || activeFile.type.toLowerCase()).label}</div>
-                            <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:'13px',fontWeight:700,color:'#172B4D',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeFile.name}</div>
-                                <div style={{fontSize:'10px',color:'#6B778C'}}>{Math.round(activeFile.size / 1024)} KB</div>
-                            </div>
-                        </div>
-                        <div style={{display:'flex',gap:'5px'}}>
-                            {activeFile.starred&&<span style={{fontSize:'10px',fontWeight:700,background:'#FFF7E6',color:'#FFAB00',padding:'2px 6px',borderRadius:'4px',display:'flex',alignItems:'center',gap:'3px'}}><Star size={9} fill="#FFAB00" color="#FFAB00"/> Starred</span>}
-                            <span className="tag-sm">{activeFile.type}</span>
-                            {activeFile.task?.project?.name ? <span className="tag-sm">{activeFile.task.project.name}</span> : null}
-                        </div>
-                    </div>
-
-                    <div style={{flex:1,overflowY:'auto',padding:'14px 16px',display:'flex',flexDirection:'column',gap:'20px'}}>
-                        {/* Action buttons */}
-                        <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
-                            <button style={{padding:'8px',borderRadius:'8px',border:'none',background:'#0052CC',color:'white',fontSize:'12px',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}><CheckSquare size={13}/> Create Task from File</button>
-                            <button style={{padding:'8px',borderRadius:'8px',border:'1px solid #DFE1E6',background:'white',color:'#42526E',fontSize:'12px',fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}><Link size={13}/> Attach to Existing Task</button>
-                        </div>
-
-                        {rightTab==='Details' && <>
-                            {/* File Details */}
-                            <div>
-                                <div style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'10px'}}>File Details</div>
-                                {[
-                                    {label:'Uploaded by', val:activeFile.owner || 'System'},
-                                    {label:'Date', val:new Date(activeFile.createdAt).toLocaleString()},
-                                    {label:'Task', val:activeFile.task?.title || 'None'},
-                                    {label:'Size', val:`${Math.round(activeFile.size / 1024)} KB`},
-                                ].map((d,i)=>(
-                                    <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid rgba(9,30,66,0.05)',fontSize:'12px'}}>
-                                        <span style={{color:'#6B778C'}}>{d.label}</span>
-                                        <span style={{color:'#172B4D',fontWeight:500,textAlign:'right',maxWidth:'140px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.val}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Linked Task */}
-                            {activeFile.task ? (
-                                <div>
-                                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'10px'}}>
-                                        <span style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em'}}>Linked Task</span>
-                                    </div>
-                                    <div style={{display:'flex',gap:'8px',padding:'8px',borderRadius:'8px',border:'1px solid #DFE1E6',marginBottom:'6px',cursor:'pointer',transition:'background 0.15s'}}>
-                                        <div style={{width:6,height:6,borderRadius:'50%',background:'#0052CC',marginTop:'5px',flexShrink:0}}/>
-                                        <div style={{flex:1}}>
-                                            <div style={{fontSize:'12px',fontWeight:600,color:'#172B4D'}}>{activeFile.task.title}</div>
-                                            <div style={{fontSize:'10px',color:'#6B778C'}}>{activeFile.task.project?.name} • <span style={{color:'#0052CC',fontWeight:600}}>{activeFile.task.status}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            {/* Comments */}
-                            <div>
-                                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'10px'}}>
-                                    <span style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em'}}>Comments ({COMMENTS.length})</span>
-                                    <button style={{background:'none',border:'none',fontSize:'11px',color:'#0052CC',cursor:'pointer',fontWeight:600}}>+ Add</button>
-                                </div>
-                                {COMMENTS.map((c,i)=>(
-                                    <div key={i} style={{display:'flex',gap:'8px',marginBottom:'10px'}}>
-                                        <div style={{width:24,height:24,borderRadius:'50%',background:getAC(c.user),color:'white',fontSize:'8px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{getInit(c.user)}</div>
-                                        <div>
-                                            <div style={{fontSize:'11px',fontWeight:700,color:'#172B4D'}}>{c.user} <span style={{fontWeight:400,color:'#8A94A6'}}>{c.time}</span></div>
-                                            <div style={{fontSize:'12px',color:'#42526E',lineHeight:1.5}}>{c.text}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div style={{display:'flex',gap:'6px'}}>
-                                    <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:'6px 10px',borderRadius:'6px',border:'1px solid #DFE1E6',fontSize:'12px',outline:'none'}}/>
-                                    <button style={{padding:'6px 10px',borderRadius:'6px',border:'none',background:'#0052CC',color:'white',fontSize:'12px',cursor:'pointer',fontWeight:600}}>Send</button>
-                                </div>
-                            </div>
-                        </>}
-
-                        {rightTab==='Versions' && (
-                            <div>
-                                <div style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'10px'}}>Version History</div>
-                                {VERSIONS.map((v,i)=>(
-                                    <div key={i} style={{display:'flex',gap:'10px',padding:'10px',borderRadius:'8px',border:'1px solid #DFE1E6',marginBottom:'6px',background:v.current?'#F8FAFF':'white'}}>
-                                        <div>
-                                            <div style={{fontSize:'12px',fontWeight:700,color:'#172B4D',display:'flex',gap:'6px',alignItems:'center'}}>
-                                                {v.v}
-                                                {v.current&&<span style={{fontSize:'10px',background:'#36B37E',color:'white',padding:'1px 5px',borderRadius:'4px',fontWeight:600}}>Current</span>}
-                                            </div>
-                                            <div style={{fontSize:'11px',color:'#6B778C'}}>{v.note}</div>
-                                            <div style={{fontSize:'10px',color:'#8A94A6'}}>{v.user} • {v.time}</div>
-                                        </div>
-                                        {!v.current&&<button style={{marginLeft:'auto',background:'none',border:'1px solid #DFE1E6',borderRadius:'6px',padding:'4px 8px',fontSize:'11px',cursor:'pointer',color:'#0052CC',fontWeight:600,alignSelf:'center',flexShrink:0}}>Restore</button>}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {rightTab==='Activity' && (
-                            <div>
-                                <div style={{fontSize:'11px',fontWeight:700,color:'#6B778C',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'10px'}}>Activity Timeline</div>
-                                {ACTIVITY_LOG.map((a,i)=>(
-                                    <div key={i} style={{display:'flex',gap:'8px',alignItems:'center',padding:'7px 0',borderBottom:i<ACTIVITY_LOG.length-1?'1px solid rgba(9,30,66,0.06)':'none'}}>
-                                        <a.icon size={12} color="#6B778C"/>
-                                        <span style={{fontSize:'12px',color:'#42526E',flex:1}}>{a.action}</span>
-                                        <span style={{fontSize:'10px',color:'#8A94A6',flexShrink:0}}>{a.time}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Context Menu ── */}
-            {ctx && (
-                <div className="ctx-menu" style={{top:ctx.y,left:ctx.x}} onClick={e=>e.stopPropagation()}>
-                    <div style={{padding:'6px 12px 4px',fontSize:'11px',fontWeight:700,color:'#6B778C'}}>{ctx.file.name}</div>
-                    {[
-                        {icon:Eye,label:'Open'},
-                        {icon:Eye,label:'Preview'},
-                        {icon:Pencil,label:'Rename'},
-                        {icon:Folder,label:'Move'},
-                        {icon:Share2,label:'Share'},
-                        {icon:CheckSquare,label:'Create Task'},
-                        {icon:Link,label:'Copy Link'},
-                    ].map((item,i)=>(
-                        <div key={i} className="ctx-item" onClick={()=>setCtx(null)}>
-                            <item.icon size={13} color="#6B778C"/>{item.label}
-                        </div>
-                    ))}
-                    <div style={{height:'1px',background:'#DFE1E6',margin:'4px 0'}}/>
-                    <div className="ctx-item danger" onClick={()=>setCtx(null)}><Trash2 size={13}/> Delete</div>
-                </div>
-            )}
+            <style jsx global>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
         </main>
     );
 }
+
+// --- Sub-Components ---
+
+function FolderNavItem({ folder, active = false }: { folder: FolderItem; active?: boolean }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const hasChildren = INITIAL_FOLDERS.some(f => f.parentId === folder.id);
+    const children = INITIAL_FOLDERS.filter(f => f.parentId === folder.id);
+
+    return (
+        <div>
+            <div 
+                onClick={() => hasChildren && setIsOpen(!isOpen)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all ${
+                    active ? 'bg-blue-50 text-blue-600 font-bold shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+            >
+                {hasChildren ? (
+                    <ChevronDown size={14} className={`transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                ) : (
+                    <div className="w-3.5 h-3.5" />
+                )}
+                <div className={`p-1.5 rounded-lg ${active ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                    <Folder size={14} fill={folder.color || 'currentColor'} className={folder.color ? '' : 'text-gray-500'} />
+                </div>
+                <span className="text-sm flex-1 truncate">{folder.name}</span>
+                {folder.itemCount && (
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100/50 px-1.5 py-0.5 rounded-lg group-hover:bg-white transition-colors">
+                        {folder.itemCount.toLocaleString()}
+                    </span>
+                )}
+            </div>
+            
+            {hasChildren && isOpen && (
+                <div className="ml-6 mt-1 space-y-1">
+                    {children.map(child => (
+                        <div key={child.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: child.color || '#CBD5E1' }} />
+                            <span className="text-xs truncate">{child.name}</span>
+                            <span className="text-[9px] font-bold opacity-50 ml-auto">{child.itemCount}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function FileCard({ file, isSelected, onClick }: { file: FileItem; isSelected: boolean; onClick: () => void }) {
+    return (
+        <div 
+            onClick={onClick}
+            className={`group relative bg-white p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-xl hover:translate-y-[-4px] ${
+                isSelected ? 'border-blue-500 ring-4 ring-blue-500/10 shadow-lg' : 'border-gray-100 shadow-sm'
+            }`}
+        >
+            <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+                    {getFileIcon(file.type)}
+                </div>
+                <div className="flex items-center gap-1.5">
+                    {file.aiStatus && (
+                        <div className={`p-1 rounded-md bg-opacity-10 ${
+                            file.aiStatus === 'outdated' ? 'bg-amber-500 text-amber-600' :
+                            file.aiStatus === 'high_usage' ? 'bg-blue-500 text-blue-600' :
+                            file.aiStatus === 'recently_modified' ? 'bg-green-500 text-green-600' :
+                            'bg-red-500 text-red-600'
+                        }`}>
+                            {file.aiStatus === 'outdated' ? <AlertCircle size={14} /> : 
+                             file.aiStatus === 'high_usage' ? <Flame size={14} /> : 
+                             file.aiStatus === 'recently_modified' ? <RotateCcw size={14} /> :
+                             <ShieldCheck size={14} />}
+                        </div>
+                    )}
+                    <button className="p-1.5 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-all">
+                        <MoreVertical size={16} />
+                    </button>
+                </div>
+            </div>
+
+            {file.thumbnail && (
+                <div className="w-full aspect-video rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-inner">
+                    <img src={file.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+            )}
+
+            <div className="min-w-0">
+                <h4 className="text-sm font-bold text-gray-900 truncate mb-1 group-hover:text-blue-600 transition-colors">{file.name}</h4>
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{file.type}</span>
+                    <div className="h-1 w-1 bg-gray-300 rounded-full" />
+                    <span className="text-[10px] font-bold text-gray-400">{file.size}</span>
+                </div>
+                
+                <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[8px] font-bold text-white uppercase shadow-sm">
+                            {file.owner.substring(0,2)}
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-600">{file.owner}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-gray-400">Updated {file.lastUpdated}</span>
+                </div>
+            </div>
+
+            {/* AI Status Badge (Floating) */}
+            {file.aiStatus && (
+                <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider shadow-sm border ${
+                    file.aiStatus === 'outdated' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                    file.aiStatus === 'high_usage' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                    file.aiStatus === 'recently_modified' ? 'bg-green-50 text-green-700 border-green-100' :
+                    'bg-red-50 text-red-700 border-red-100'
+                }`}>
+                    {file.aiStatus.replace('_', ' ')}
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+const Settings = ({ size, className }: { size?: number, className?: string }) => <MoreHorizontal size={size} className={className} />;
+const FolderTree = ({ size, className }: { size?: number, className?: string }) => <div className={className}><Folder size={size} /></div>;
+const FolderKanban = ({ size, className }: { size?: number, className?: string }) => <FolderTree size={size} className={className} />;
+const FileBarChart2 = ({ size, className }: { size?: number, className?: string }) => <BarChart2 size={size} className={className} />;

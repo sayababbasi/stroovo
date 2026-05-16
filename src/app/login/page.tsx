@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -9,7 +10,7 @@ import { Mail, Eye, EyeOff, Github, Slack, Layers, Database, Cpu, Share2, CheckC
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const redirect = searchParams.get('redirect') || '/';
+    const redirect = searchParams?.get('redirect') || '/dashboard';
     const { login: authLogin } = useAuth();
 
     const [email, setEmail] = useState('');
@@ -33,10 +34,10 @@ function LoginForm() {
                 if (result.error) {
                     if (typeof result.error === 'string') {
                         errorMessage = result.error;
-                    } else if (result.error.message) {
-                        errorMessage = result.error.message;
-                    } else if (result.error.code) {
-                        errorMessage = `Authentication failed (${result.error.code})`;
+                    } else if ((result.error as any).message) {
+                        errorMessage = (result.error as any).message;
+                    } else if ((result.error as any).code) {
+                        errorMessage = `Authentication failed (${(result.error as any).code})`;
                     }
                 }
                 setError(errorMessage);
@@ -81,14 +82,23 @@ function LoginForm() {
                 boxSizing: 'border-box'
             }} className="desktop-only">
                 {/* Branding at Top Left */}
-                <div style={{ position: 'absolute', top: '50px', left: '50px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{
-                        width: '40px', height: '40px', background: 'white', borderRadius: '10px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                        <Layers size={24} color="#4B6A78" strokeWidth={2.5} />
-                    </div>
-                    <span style={{ fontWeight: 900, fontSize: '26px', color: 'white', letterSpacing: '1px' }}>WORKFLOW</span>
+                <div style={{ 
+                    position: 'absolute', 
+                    top: '40px', 
+                    left: '40px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    background: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '16px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                    zIndex: 100
+                }}>
+                    <img 
+                        src="/logo.png" 
+                        alt="Stroovo Logo" 
+                        style={{ height: '44px', width: 'auto', display: 'block' }} 
+                    />
                 </div>
 
                 <div style={{ width: '100%', maxWidth: '580px', display: 'flex', justifyContent: 'center', zIndex: 1, position: 'relative' }}>

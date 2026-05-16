@@ -237,9 +237,9 @@ export class MFAService {
       }
 
       // Verify backup code if provided
-      if (backupCode && user.mfaSettings?.[0]) {
+      if (backupCode && user.mfaSettings) {
         const isValidBackup = this.verifyBackupCode(
-          user.mfaSettings[0].backupCodes,
+          user.mfaSettings.backupCodes,
           backupCode
         );
         if (!isValidBackup) {

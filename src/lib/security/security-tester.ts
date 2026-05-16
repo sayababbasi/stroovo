@@ -41,16 +41,17 @@ export class SecurityTester {
       this.testTokenSecurity()
     ]);
 
-    const vulnerabilities = tests.filter(t => t.status === 'FAIL');
-    const warnings = tests.filter(t => t.status === 'WARNING');
+    const flatTests = tests.flat();
+    const vulnerabilities = flatTests.filter(t => t.status === 'FAIL');
+    const warnings = flatTests.filter(t => t.status === 'WARNING');
     
-    const score = this.calculateSecurityScore(tests);
+    const score = this.calculateSecurityScore(flatTests);
     const recommendations = this.generateRecommendations(vulnerabilities, warnings);
 
     return {
       timestamp: new Date(),
       overallScore: score,
-      tests,
+      tests: flatTests,
       vulnerabilities,
       recommendations,
       systemStatus: score >= 90 ? 'SECURE' : score >= 70 ? 'VULNERABLE' : 'CRITICAL'
@@ -827,7 +828,6 @@ export class SecurityTester {
       // Test if CSRF tokens are required for state-changing operations
       const response = await fetch(`${this.baseUrl}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: 'test@example.com',
           password: 'test'

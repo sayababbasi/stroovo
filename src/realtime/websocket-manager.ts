@@ -382,7 +382,7 @@ export class WebSocketManager {
   /**
    * Broadcast task updates to relevant users
    */
-  private broadcastTaskUpdate(
+  public broadcastTaskUpdate(
     type: string, 
     taskId: string, 
     data: any, 
@@ -409,7 +409,7 @@ export class WebSocketManager {
   /**
    * Broadcast risk analysis updates
    */
-  private broadcastRiskUpdate(taskId: string, data: any, tenantId?: string): void {
+  public broadcastRiskUpdate(taskId: string, data: any, tenantId?: string): void {
     const message: RiskUpdateMessage = {
       type: 'RISK_UPDATED',
       payload: { taskId, ...data },
@@ -430,7 +430,7 @@ export class WebSocketManager {
   /**
    * Broadcast workload updates
    */
-  private broadcastWorkloadUpdate(userId: string, data: any, tenantId?: string): void {
+  public broadcastWorkloadUpdate(userId: string, data: any, tenantId?: string): void {
     const message: WorkloadUpdateMessage = {
       type: 'WORKLOAD_UPDATED',
       payload: { userId, ...data },
@@ -447,14 +447,14 @@ export class WebSocketManager {
   /**
    * Send notification to specific user
    */
-  private sendNotificationToUser(
+  public sendNotificationToUser(
     userId: string, 
-    notification: Omit<NotificationMessage, 'payload'> & { payload: NotificationMessage['payload'] },
+    payload: NotificationMessage['payload'],
     tenantId?: string
   ): void {
     const message: NotificationMessage = {
       type: 'NOTIFICATION',
-      payload: notification,
+      payload: payload,
       timestamp: new Date(),
       userId: 'system',
       tenantId: tenantId || 'default',
@@ -529,7 +529,7 @@ export class WebSocketManager {
   // Helper methods
   private validateToken(token: string): boolean {
     // Simplified token validation - would use proper JWT verification
-    return token && token.length > 10;
+    return !!(token && token.length > 10);
   }
 
   private getUserTenant(userId: string): string {

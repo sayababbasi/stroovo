@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { systemHealthMonitor } from '@/lib/monitoring/system-health';
 
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
       }),
       
       // Notification metrics
-      prisma.notification.groupBy({
+      prisma.notificationLog.groupBy({
         by: ['status'],
         where: {
           createdAt: { gte: timeStart }

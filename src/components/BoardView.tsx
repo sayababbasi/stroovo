@@ -11,7 +11,7 @@ interface BoardViewProps {
 export default function BoardView({ tasks, onTaskUpdate }: BoardViewProps) {
     return (
         <KanbanBoard
-            tasks={tasks}
+            tasks={tasks as any}
             onTaskUpdate={async (taskId, newStatus) => {
                 onTaskUpdate(taskId, newStatus);
             }}

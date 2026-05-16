@@ -121,9 +121,9 @@ export default function MyTeamPage() {
     const avgWorkload = Math.round(MEMBERS.reduce((a, m) => a + m.workload, 0) / MEMBERS.length);
 
     return (
-        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F8F9FA' }}>
+        <main style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#F8F9FA' }}>
             <Sidebar />
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <style>{`
                     body { overflow: hidden !important; margin: 0; }
                     .mt-card { background: white; border-radius: 12px; border: 1px solid rgba(9,30,66,0.08); transition: all 0.2s cubic-bezier(0.2,0,0,1); }

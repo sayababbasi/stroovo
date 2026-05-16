@@ -93,7 +93,7 @@ export default function AutomationsPage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFBFC' }}>
       <Sidebar />
 
-      <main style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column' }}>
         <GlobalHeader />
 
         <div style={{ padding: '24px 32px', flex: 1 }}>

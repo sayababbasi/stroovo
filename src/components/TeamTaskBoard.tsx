@@ -506,10 +506,10 @@ const TeamTaskBoard: React.FC<TeamTaskBoardProps> = ({
                               </div>
                             )}
 
-                            {task.comments > 0 && (
+                            {task.comments.length > 0 && (
                               <div className="flex items-center gap-1 text-gray-500">
                                 <MessageSquare className="w-3 h-3" />
-                                <span>{task.comments}</span>
+                                <span>{task.comments.length}</span>
                               </div>
                             )}
 

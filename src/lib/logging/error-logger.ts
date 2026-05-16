@@ -340,38 +340,38 @@ export class ErrorLogger {
       const key = error.message;
       acc[key] = (acc[key] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     const errorsByCategory: Record<string, number> = errors.reduce((acc, error) => {
-      const category = error.metadata?.category || 'UNKNOWN';
+      const category = (error.metadata as any)?.category || 'UNKNOWN';
       acc[category] = (acc[category] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     const errorsByService: Record<string, number> = errors.reduce((acc, error) => {
-      const service = error.metadata?.service || 'unknown';
+      const service = (error.metadata as any)?.service || 'unknown';
       acc[service] = (acc[service] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     const criticalErrors = errors.filter(error => 
-      error.metadata?.severity === 'CRITICAL'
+      (error.metadata as any)?.severity === 'CRITICAL'
     ).length;
 
     const resolvedErrors = errors.filter(error => 
-      error.metadata?.resolved === true
+      (error.metadata as any)?.resolved === true
     ).length;
 
     // Calculate average resolution time
     const resolvedErrorsWithTime = errors.filter(error => 
-      error.metadata?.resolved === true && 
-      error.metadata?.resolvedAt
+      (error.metadata as any)?.resolved === true && 
+      (error.metadata as any)?.resolvedAt
     );
 
     const averageResolutionTime = resolvedErrorsWithTime.length > 0
       ? resolvedErrorsWithTime.reduce((sum, error) => {
           const createdAt = error.createdAt.getTime();
-          const resolvedAt = new Date(error.metadata.resolvedAt).getTime();
+          const resolvedAt = new Date((error.metadata as any).resolvedAt).getTime();
           return sum + (resolvedAt - createdAt);
         }, 0) / resolvedErrorsWithTime.length
       : 0;
@@ -387,7 +387,7 @@ export class ErrorLogger {
       errorsByLevel: errors.reduce((acc, error) => {
         acc[error.level] = (acc[error.level] || 0) + 1;
         return acc;
-      }, {}),
+      }, {} as Record<string, number>),
       errorsByCategory,
       errorsByService,
       criticalErrors,
@@ -399,15 +399,6 @@ export class ErrorLogger {
 
   async resolveError(errorId: string, resolvedBy: string): Promise<void> {
     try {
-      const topErrors = Object.entries(errorCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([message, count]) => ({
-        message,
-        count,
-        severity: 'MEDIUM', // Would need to get from actual error
-        category: 'SYSTEM' // Would need to get from actual error
-      }));
 
       await this.prisma.errorLog.update({
         where: { id: errorId },
@@ -435,7 +426,8 @@ export class ErrorLogger {
       const errors = await this.prisma.errorLog.findMany({
         where: severity ? {
           metadata: {
-            severity
+            path: ['severity'],
+            equals: severity
           }
         } : undefined,
         orderBy: { createdAt: 'desc' },
@@ -445,9 +437,9 @@ export class ErrorLogger {
       return errors.map(error => ({
         id: error.id,
         timestamp: error.createdAt,
-        level: error.level,
+        level: error.level as ErrorLogEntry['level'],
         message: error.message,
-        stack: error.stack,
+        stack: error.stack || undefined,
         context: error.context as any,
         metadata: error.metadata as any,
         sanitized: error.sanitized

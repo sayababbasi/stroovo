@@ -73,11 +73,11 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  project: string | { id?: string; name: string };
+  project?: string | { id?: string; name: string };
   status: TaskStatus;
   priority: Priority;
   progress: number;
-  assignee: string | { id?: string; name: string; image?: string };
+  assignee?: string | { id?: string; name: string; image?: string | null };
   dueDate: string;
   tags?: string[];
   health?: HealthStatus;

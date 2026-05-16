@@ -144,7 +144,7 @@ export class ComprehensiveTestRunner {
   }
 
   private calculateSummary(reports: any) {
-    const allTests = Object.values(reports).filter(Boolean).flatMap(report => {
+    const allTests = Object.values(reports).filter(Boolean).flatMap((report: any) => {
       if (report.tests) return report.tests;
       if (report.checks) return report.checks;
       return [];
@@ -165,7 +165,7 @@ export class ComprehensiveTestRunner {
   }
 
   private calculateOverallScore(reports: any): number {
-    const scores = Object.values(reports).filter(Boolean).map(report => {
+    const scores = Object.values(reports).filter(Boolean).map((report: any) => {
       if (report.overallScore) return report.overallScore;
       if (report.score) return report.score;
       return 0;
@@ -184,7 +184,7 @@ export class ComprehensiveTestRunner {
   }
 
   private generateRecommendations(reports: any): string[] {
-    const allRecommendations = Object.values(reports).filter(Boolean).flatMap(report => {
+    const allRecommendations = Object.values(reports).filter(Boolean).flatMap((report: any) => {
       if (report.recommendations) return report.recommendations;
       return [];
     });
@@ -196,7 +196,7 @@ export class ComprehensiveTestRunner {
     let score = 100;
     
     // Deduct points for critical issues
-    const criticalIssues = Object.values(reports).filter(Boolean).flatMap(report => {
+    const criticalIssues = Object.values(reports).filter(Boolean).flatMap((report: any) => {
       if (report.vulnerabilities) return report.vulnerabilities.filter((v: any) => v.severity === 'CRITICAL');
       if (report.failures) return report.failures.filter((f: any) => f.severity === 'CRITICAL');
       return [];
@@ -205,7 +205,7 @@ export class ComprehensiveTestRunner {
     score -= criticalIssues.length * 20;
 
     // Deduct points for high issues
-    const highIssues = Object.values(reports).filter(Boolean).flatMap(report => {
+    const highIssues = Object.values(reports).filter(Boolean).flatMap((report: any) => {
       if (report.vulnerabilities) return report.vulnerabilities.filter((v: any) => v.severity === 'HIGH');
       if (report.failures) return report.failures.filter((f: any) => f.severity === 'HIGH');
       return [];
@@ -214,7 +214,7 @@ export class ComprehensiveTestRunner {
     score -= highIssues.length * 10;
 
     // Deduct points for medium issues
-    const mediumIssues = Object.values(reports).filter(Boolean).flatMap(report => {
+    const mediumIssues = Object.values(reports).filter(Boolean).flatMap((report: any) => {
       if (report.vulnerabilities) return report.vulnerabilities.filter((v: any) => v.severity === 'MEDIUM');
       if (report.failures) return report.failures.filter((f: any) => f.severity === 'MEDIUM');
       return [];
@@ -223,7 +223,7 @@ export class ComprehensiveTestRunner {
     score -= mediumIssues.length * 5;
 
     // Bonus points for excellent performance
-    const excellentReports = Object.values(reports).filter(report => 
+    const excellentReports = Object.values(reports).filter((report: any) => 
       report && report.overallScore >= 90
     );
     
@@ -249,7 +249,7 @@ export class ComprehensiveTestRunner {
           lowIssues: report.summary.lowIssues,
           duration: duration,
           metadata: {
-            report: report,
+            report: report as any,
             timestamp: report.timestamp,
             baseUrl: this.baseUrl
           }

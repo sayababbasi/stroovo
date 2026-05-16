@@ -118,10 +118,7 @@ export async function apiGet<T = any>(
   options?: ApiOptions
 ): Promise<ApiResponse<T>> {
   try {
-    // Add default headers for development
     const headers = {
-      'x-tenant-id': 'default-tenant',
-      'x-user-id': 'admin@revoticai.com',
       ...options?.headers,
     };
 
@@ -154,10 +151,7 @@ export async function apiPost<T = any>(
   options?: ApiOptions
 ): Promise<ApiResponse<T>> {
   try {
-    // Add default headers for development
     const headers = {
-      'x-tenant-id': 'default-tenant',
-      'x-user-id': 'admin@revoticai.com',
       ...options?.headers,
     };
 
@@ -195,10 +189,7 @@ export async function apiPut<T = any>(
   options?: ApiOptions
 ): Promise<ApiResponse<T>> {
   try {
-    // Add default headers for development
     const headers = {
-      'x-tenant-id': 'default-tenant',
-      'x-user-id': 'admin@revoticai.com',
       ...options?.headers,
     };
 
@@ -235,10 +226,7 @@ export async function apiDelete<T = any>(
   options?: ApiOptions
 ): Promise<ApiResponse<T>> {
   try {
-    // Add default headers for development
     const headers = {
-      'x-tenant-id': 'default-tenant',
-      'x-user-id': 'admin@revoticai.com',
       ...options?.headers,
     };
 
@@ -271,10 +259,7 @@ export async function apiPatch<T = any>(
   options?: ApiOptions
 ): Promise<ApiResponse<T>> {
   try {
-    // Add default headers for development
     const headers = {
-      'x-tenant-id': 'default-tenant',
-      'x-user-id': 'admin@revoticai.com',
       ...options?.headers,
     };
 

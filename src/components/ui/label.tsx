@@ -8,8 +8,13 @@ const labelVariants = cva(
   "text-sm font-medium leading-none peer-disabled:cursor-not-allowed",
   {
     variants: {
-      default: "text-foreground",
-      destructive: "text-destructive",
+      variant: {
+        default: "text-foreground",
+        destructive: "text-destructive",
+      }
+    },
+    defaultVariants: {
+      variant: "default",
     }
   }
 )

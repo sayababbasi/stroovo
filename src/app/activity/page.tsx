@@ -1,383 +1,622 @@
 "use client";
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import {
-    Search, SlidersHorizontal, ChevronDown, ChevronRight, ChevronLeft,
-    CheckCircle2, FileText, MessageSquare, Calendar, Folder, Hash,
-    MoreHorizontal, Filter, Save, File, Image as ImageIcon, AtSign,
-    TrendingUp, ExternalLink, CornerUpRight, Paperclip, CheckSquare, List
+    Search, Filter, Download, Plus, Sparkles, Activity, Users, 
+    Zap, AlertCircle, TrendingUp, Clock, Calendar, ChevronDown,
+    MoreHorizontal, CheckCircle2, MessageSquare, Shield, Lock,
+    FileText, Layout, Target, Settings, Info, User, Layers,
+    ArrowRight, Share2, Eye, Trash2, Database, ShieldCheck,
+    BarChart3, PieChart, Timer, AlertTriangle, Play, BrainCircuit,
+    Terminal, History, ExternalLink, RefreshCw, PanelRight,
+    UserPlus, Mail, Flag, Trash, Pin, MoreVertical
 } from 'lucide-react';
 
-/* ─── Mock Data ─────────────────────── */
-const ACTIVITIES = [
+// --- Types & Interfaces ---
+
+type ActivityType = 'task' | 'goal' | 'file' | 'ai' | 'automation' | 'security' | 'audit' | 'message';
+type ImpactLevel = 'low' | 'medium' | 'high' | 'critical';
+
+interface ActivityEvent {
+    id: string;
+    type: ActivityType;
+    user: {
+        name: string;
+        avatar?: string;
+        role: string;
+    };
+    action: string;
+    target: string;
+    module: string;
+    project?: string;
+    timestamp: string;
+    impact: ImpactLevel;
+    details?: string;
+    aiInsight?: string;
+    automationRule?: string;
+    isAudit?: boolean;
+}
+
+interface ActivityStat {
+    label: string;
+    value: string | number;
+    trend?: string;
+    trendUp?: boolean;
+    icon: any;
+    color: string;
+}
+
+// --- Mock Data ---
+
+const ACTIVITY_STATS: ActivityStat[] = [
+    { label: 'Live Events', value: 127, trend: '+23% vs yesterday', trendUp: true, icon: Activity, color: 'blue' },
+    { label: 'Active Members', value: 24, trend: 'Online now', icon: Users, color: 'green' },
+    { label: 'AI Actions', value: 18, trend: '+12% vs yesterday', trendUp: true, icon: BrainCircuit, color: 'purple' },
+    { label: 'Automations', value: 34, trend: 'Executed today', icon: Zap, color: 'amber' },
+    { label: 'Risks Detected', value: 7, trend: 'Requires attention', icon: AlertTriangle, color: 'red' },
+    { label: 'Productivity Score', value: '87/100', trend: '+5% this week', trendUp: true, icon: TrendingUp, color: 'indigo' },
+];
+
+const RECENT_ACTIVITIES: ActivityEvent[] = [
     {
-        id: 'streak-1', type: 'streak', user: 'Alex Johnson', time: '1 hour', count: 4, action: 'completed', entity: 'tasks',
-        items: [
-            { icon: CheckCircle2, text: 'Created Sprint Review', color: '#0052CC' },
-            { icon: FileText, text: 'Updated Type Validation Logic', color: '#0052CC' },
-            { icon: File, text: 'Imported API Documentation.md', color: '#0052CC' },
-            { icon: CheckSquare, text: 'Pushed UI Changes', color: '#0052CC' },
-        ],
+        id: '1',
+        type: 'ai',
+        user: { name: 'Stroovo AI', role: 'Operational Intelligence' },
+        action: 'detected potential sprint risk',
+        target: 'Sprint 12',
+        module: 'Sprint Planning',
+        timestamp: '12m ago',
+        impact: 'high',
+        aiInsight: '4 tasks are behind schedule in Sprint 12. Team capacity is at 94%. Recommended: Reassign 2 non-critical tasks.',
     },
     {
-        id: 'a1', type: 'file_upload', user: 'Corey Stein', time: '24 minutes ago', project: 'Quantum UI Redesign', action: 'uploaded',
-        file: { name: 'Dashboard Mockup.png', type: 'img', size: '3.2 MB' }
+        id: '2',
+        type: 'task',
+        user: { name: 'Ali Raza', role: 'Product Lead' },
+        action: 'reassigned task "API Integration"',
+        target: 'Mobile App Redesign',
+        module: 'Tasks',
+        project: 'Mobile App',
+        timestamp: '2m ago',
+        impact: 'medium',
     },
     {
-        id: 'a2', type: 'task_move', user: 'Anna Williams', time: '1 hour ago', project: 'Database Migration', action: 'moved',
-        task: { name: 'Sprint Review', from: 'In Progress', to: 'Completed', color: '#36B37E' }
+        id: '3',
+        type: 'automation',
+        user: { name: 'Task Automation', role: 'System Rule' },
+        action: 'executed: Overdue Task Reminder',
+        target: '12 tasks notified',
+        module: 'Automation',
+        timestamp: '18m ago',
+        impact: 'low',
+        automationRule: 'IF task_overdue > notify_assignee',
     },
     {
-        id: 'a3', type: 'mention', user: 'Chris Lee', time: '1 hr ago',
-        content: <><span style={{fontWeight:600}}>@Revotic AI CEO</span> We should align on the next steps for the <b>Database Migration</b> project. Let's set up a meeting to discuss. 🤝</>,
-        replies: 5
+        id: '4',
+        type: 'file',
+        user: { name: 'Sara Khan', role: 'Senior Designer' },
+        action: 'uploaded v2.4 of',
+        target: 'Q2 Marketing Strategy.pdf',
+        module: 'Files',
+        project: 'Marketing Campaign',
+        timestamp: '32m ago',
+        impact: 'medium',
     },
     {
-        id: 'a4', type: 'file_upload', user: 'Adam Brown', time: '2 hours ago', project: 'Database Migration', action: 'uploaded',
-        file: { name: 'Database Schema.sql', type: 'code', size: '14 KB' }
+        id: '5',
+        type: 'security',
+        user: { name: 'Admin', role: 'System Admin' },
+        action: 'changed permissions for',
+        target: 'Marketing Team',
+        module: 'Audit Logs',
+        timestamp: '1h ago',
+        impact: 'high',
+        isAudit: true,
     },
     {
-        id: 'a5', type: 'task_assign', user: 'Patrick', time: '3 hours ago', project: 'Filter API Update', action: 'assigned',
-        task: { name: 'Create API Endpoints', assignee: 'Alex Johnson', color: '#36B37E', status: 'In Progress' }
+        id: '6',
+        type: 'goal',
+        user: { name: 'Ahmed Hassan', role: 'CEO' },
+        action: 'updated Key Result progress',
+        target: 'Increase Customer Satisfaction',
+        module: 'Goals',
+        timestamp: '2h ago',
+        impact: 'high',
     },
     {
-        id: 'a6', type: 'comment', user: 'Michelle', time: '5 hours ago', action: 'commented on', target: 'Design System.fig',
-        content: 'Uploading the updated version now 🚀', replies: 4, attached: true
+        id: '7',
+        type: 'ai',
+        user: { name: 'Stroovo AI', role: 'Operational Intelligence' },
+        action: 'generated weekly performance report',
+        target: 'Engineering Team',
+        module: 'Reports',
+        timestamp: '3h ago',
+        impact: 'low',
     }
 ];
 
-const PROJECTS = [
-    { name: 'Quantum UI Redesign', checked: false },
-    { name: 'Database Migration', checked: true },
-    { name: 'Mobile App v2', checked: true },
-    { name: 'Mobile Website', checked: false },
-];
+// --- Sub-Components ---
 
-const ACTIVITY_TYPES = [
-    { name: 'Tasks', checked: true },
-    { name: 'Comments', checked: true },
-    { name: 'Files', checked: true },
-    { name: 'Calendar Events', checked: false },
-];
-
-/* ─── Helpers ────────────────────────── */
-const getAC = (s: string) => {
-    const c = ['#0052CC','#36B37E','#FF5630','#FFAB00','#6554C0','#00B8D9'];
-    let h = 0; for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
-    return c[Math.abs(h) % c.length];
-};
-const getInit = (n: string) => n.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-
-/* ─── Components ─────────────────────── */
-function Avatar({ name, size = 36, showOnline = true }: { name: string, size?: number, showOnline?: boolean }) {
-    return (
-        <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: getAC(name), color: 'white', fontSize: size*0.4, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{getInit(name)}</div>
-            {showOnline && <div style={{ position: 'absolute', bottom: -1, right: -1, width: size*0.28, height: size*0.28, borderRadius: '50%', background: '#36B37E', border: '2px solid white' }} />}
+const StatCard = ({ stat }: { stat: ActivityStat }) => (
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+        <div className="flex items-center justify-between mb-4">
+            <div className={`p-2.5 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-300`}>
+                <stat.icon size={22} />
+            </div>
+            {stat.trend && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    stat.trendUp ? 'bg-green-50 text-green-600' : 
+                    stat.color === 'red' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'
+                }`}>
+                    {stat.trend}
+                </span>
+            )}
         </div>
-    );
-}
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+        <div className="text-2xl font-bold text-gray-900 mt-1">{stat.value.toLocaleString()}</div>
+    </div>
+);
 
-export default function ActivityCenterPage() {
-    const [activeTab, setActiveTab] = useState('All');
-    const [viewMode, setViewMode] = useState<'Feed'|'Table'>('Feed');
+const ActivityCard = ({ event }: { event: ActivityEvent }) => {
+    const getImpactColor = (impact: ImpactLevel) => {
+        switch (impact) {
+            case 'critical': return 'bg-red-100 text-red-700 border-red-200';
+            case 'high': return 'bg-amber-100 text-amber-700 border-amber-200';
+            case 'medium': return 'bg-blue-100 text-blue-700 border-blue-200';
+            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
+    const getIcon = (type: ActivityType) => {
+        switch (type) {
+            case 'task': return <CheckCircle2 size={16} className="text-blue-600" />;
+            case 'goal': return <Target size={16} className="text-purple-600" />;
+            case 'file': return <FileText size={16} className="text-emerald-600" />;
+            case 'ai': return <BrainCircuit size={16} className="text-indigo-600" />;
+            case 'automation': return <Zap size={16} className="text-amber-600" />;
+            case 'security': return <Shield size={16} className="text-rose-600" />;
+            case 'audit': return <History size={16} className="text-slate-600" />;
+            default: return <Activity size={16} className="text-gray-600" />;
+        }
+    };
 
     return (
-        <main style={{ display: 'flex', minHeight: '100vh', background: '#FAFBFC' }}>
-            <Sidebar />
-            
-            <style>{`
-                .tab-btn { padding:6px 14px; border-radius:6px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all 0.15s; color:#42526E; background:transparent; }
-                .tab-btn.a { background:#0052CC; color:white; }
-                .tab-btn:not(.a):hover { background:#F4F5F7; }
+        <div className={`relative bg-white p-5 rounded-2xl border transition-all hover:shadow-lg hover:translate-x-1 border-gray-100 group`}>
+            <div className="flex gap-4">
+                <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100">
+                        {event.user.avatar ? (
+                            <img src={event.user.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-sm font-bold text-gray-400">{event.user.name.substring(0,2).toUpperCase()}</span>
+                        )}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 p-1 bg-white rounded-lg shadow-sm">
+                        {getIcon(event.type)}
+                    </div>
+                </div>
                 
-                .vm-btn { padding:6px 16px; font-size:13px; font-weight:600; cursor:pointer; background:transparent; border:none; color:#6B778C; transition:all 0.1s; }
-                .vm-btn.a { background:#0052CC; color:white; }
-                
-                .act-card { padding:20px 24px; border-bottom:1px solid #DFE1E6; background:white; position:relative; }
-                .act-card:hover { background:#FAFBFC; }
-                .act-actions { display:none; position:absolute; right:20px; top:20px; }
-                .act-card:hover .act-actions { display:block; }
-                
-                .c-btn { background:none; border:none; padding:6px; border-radius:6px; cursor:pointer; color:#6B778C; }
-                .c-btn:hover { background:#F4F5F7; color:#172B4D; }
-
-                .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center; font-size:12px; }
-                .cal-day { padding:6px 0; border-radius:6px; cursor:pointer; color:#172B4D; }
-                .cal-day.out { color:#C1C7D0; }
-                .cal-day:hover:not(.sel) { background:#F4F5F7; }
-                .cal-day.sel { background:#0052CC; color:white; font-weight:700; }
-                .cal-day.wk { color:#6B778C; font-weight:600; font-size:11px; margin-bottom:4px; }
-            `}</style>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '240px' }}>
-                {/* Header */}
-                <div style={{ padding: '24px 32px 16px', background: 'white', borderBottom: '1px solid #DFE1E6' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                        <div>
-                            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#172B4D', marginBottom: '4px' }}>Activity Center</h1>
-                            <p style={{ fontSize: '13px', color: '#6B778C' }}>Track everything across your workspace</p>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900 hover:text-blue-600 cursor-pointer">{event.user.name}</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-1.5 py-0.5 rounded">{event.user.role}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <div style={{ position: 'relative', width: '320px' }}>
-                                <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
-                                <input placeholder="Search activity..." style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '8px', border: '1px solid #DFE1E6', background: '#FAFBFC', fontSize: '13px', outline: 'none' }} />
-                            </div>
-                            <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#0052CC', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,82,204,0.2)' }}>
-                                <FileText size={15} /> Export
-                            </button>
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                                <Clock size={10} /> {event.timestamp}
+                            </span>
+                            <button className="text-gray-300 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100"><MoreHorizontal size={16}/></button>
                         </div>
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                            {['All', 'Mentions @', 'Tasks Only', 'Files Only'].map(t => (
-                                <button key={t} className={`tab-btn ${activeTab === t ? 'a' : ''}`} onClick={() => setActiveTab(t)}>
-                                    {t} {t !== 'All' && <ChevronDown size={14} style={{ marginLeft: 4, display: 'inline-block', verticalAlign: 'middle' }} />}
-                                </button>
-                            ))}
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                        <span className="text-gray-500">{event.action}</span>{' '}
+                        <span className="font-bold text-gray-900 hover:underline cursor-pointer">{event.target}</span>
+                    </p>
+
+                    <div className="flex items-center gap-4 mt-3">
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md border border-gray-100">
+                            <Layers size={10} className="text-gray-400" />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">{event.module}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #DFE1E6', borderRadius: '8px', overflow: 'hidden' }}>
-                            <button className={`vm-btn ${viewMode === 'Feed' ? 'a' : ''}`} onClick={() => setViewMode('Feed')}>Feed</button>
-                            <button className={`vm-btn ${viewMode === 'Table' ? 'a' : ''}`} style={{ borderLeft: '1px solid #DFE1E6' }} onClick={() => setViewMode('Table')}><List size={14} style={{ marginRight:5, verticalAlign:'middle' }}/> Table</button>
+                        {event.project && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50/50 rounded-md border border-blue-100/50">
+                                <Layout size={10} className="text-blue-400" />
+                                <span className="text-[10px] font-bold text-blue-500 uppercase">{event.project}</span>
+                            </div>
+                        )}
+                        <div className={`px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider ${getImpactColor(event.impact)}`}>
+                            {event.impact} Impact
                         </div>
+                    </div>
+
+                    {event.aiInsight && (
+                        <div className="mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 relative overflow-hidden group/ai">
+                            <div className="flex items-start gap-3 relative z-10">
+                                <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
+                                    <Sparkles size={12} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-[10px] font-bold text-indigo-700 uppercase mb-1 tracking-wider">AI Analysis</div>
+                                    <p className="text-xs text-indigo-900/80 leading-relaxed font-medium">
+                                        {event.aiInsight}
+                                    </p>
+                                    <button className="mt-2 text-[10px] font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                                        View suggested reassignments <ArrowRight size={10} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover/ai:opacity-10 transition-opacity">
+                                <BrainCircuit size={48} />
+                            </div>
+                        </div>
+                    )}
+
+                    {event.automationRule && (
+                        <div className="mt-3 flex items-center gap-2 p-2 bg-amber-50/50 rounded-lg border border-amber-100/50">
+                            <Zap size={10} className="text-amber-500" />
+                            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-tight">Rule Triggered:</span>
+                            <code className="text-[10px] font-medium text-amber-900/60">{event.automationRule}</code>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Main Component ---
+
+export default function ActivityPage() {
+    const [tab, setTab] = useState('All Activity');
+    const [isAuditMode, setIsAuditMode] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+
+    const [activeView, setActiveView] = useState<'feed' | 'timeline' | 'heatmap'>('feed');
+
+    const filteredActivities = useMemo(() => {
+        return RECENT_ACTIVITIES.filter(act => {
+            const matchesSearch = act.target.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                act.user.name.toLowerCase().includes(searchQuery.toLowerCase());
+            if (!matchesSearch) return false;
+            
+            if (tab === 'AI Events') return act.type === 'ai';
+            if (tab === 'Automation') return act.type === 'automation';
+            if (tab === 'Audit Logs') return act.isAudit;
+            return true;
+        });
+    }, [searchQuery, tab]);
+
+    return (
+        <main className={`flex min-h-screen ${isAuditMode ? 'bg-[#0F172A]' : 'bg-[#F8FAFC]'} transition-colors duration-500`}>
+            <Sidebar />
+            
+            <div className="flex-1 flex flex-col ml-[240px] transition-all duration-300">
+                {/* 1. TOP BAR */}
+                <header className={`h-16 border-b ${isAuditMode ? 'bg-[#1E293B] border-slate-700' : 'bg-white border-gray-200'} flex items-center justify-between px-8 sticky top-0 z-20 transition-colors`}>
+                    <div className="flex items-center gap-6 flex-1 max-w-2xl">
+                        <div className="flex items-center gap-2">
+                            <h1 className={`text-xl font-bold ${isAuditMode ? 'text-white' : 'text-gray-900'}`}>Activity</h1>
+                            <div className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-bold rounded-full flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                LIVE
+                            </div>
+                        </div>
+                        
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Search events, users, tasks..." 
+                                className={`w-full pl-10 pr-12 py-2 ${isAuditMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-gray-50 border-gray-200 text-gray-900'} border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button className={`p-2 rounded-lg ${isAuditMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'} transition-colors`}>
+                            <RefreshCw size={18} />
+                        </button>
+                        <button className={`px-4 py-2 ${isAuditMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} rounded-lg text-sm font-semibold transition-all flex items-center gap-2`}>
+                            <Download size={16} /> Export Logs
+                        </button>
+                        <button 
+                            onClick={() => setIsAuditMode(!isAuditMode)}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                                isAuditMode ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <Shield size={16} /> {isAuditMode ? 'Audit Mode Active' : 'Enter Audit Mode'}
+                        </button>
+                    </div>
+                </header>
+
+                {/* 1.1 SUB TABS */}
+                <div className={`${isAuditMode ? 'bg-[#1E293B] border-slate-700' : 'bg-white border-gray-200'} border-b px-8 py-2 flex items-center justify-between transition-colors`}>
+                    <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+                        {['All Activity', 'Team Activity', 'Project Activity', 'Automation', 'AI Events', 'Audit Logs'].map((t) => (
+                            <button 
+                                key={t}
+                                onClick={() => setTab(t)}
+                                className={`text-sm font-bold whitespace-nowrap pb-2 border-b-2 transition-all ${
+                                    tab === t 
+                                        ? 'text-blue-500 border-blue-500' 
+                                        : isAuditMode ? 'text-slate-500 border-transparent hover:text-slate-300' : 'text-gray-400 border-transparent hover:text-gray-800'
+                                }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isAuditMode ? 'text-slate-500' : 'text-gray-400'}`}>Real-time update:</span>
+                        <span className="text-[10px] font-extrabold text-blue-500 uppercase">Every 5 Seconds</span>
                     </div>
                 </div>
 
-                {/* Main Feed Content */}
-                <div style={{ flex: 1, display: 'flex' }}>
-                    {/* Activity Feed */}
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {ACTIVITIES.map((act) => (
-                            <div key={act.id} className="act-card">
-                                <div className="act-actions"><button className="c-btn"><MoreHorizontal size={14} /></button></div>
-                                
-                                {act.type === 'streak' && (
-                                    <div style={{ background: '#F0F5FF', border: '1px solid #DEEBFF', borderRadius: '12px', padding: '20px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                                            <Avatar name={act.user} size={48} />
-                                            <div>
-                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0052CC', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>🔥 Nice streak!</div>
-                                                <div style={{ fontSize: '15px', color: '#172B4D' }}>
-                                                    <span style={{ fontWeight: 700 }}>{act.user}</span> {act.action} <span style={{ fontWeight: 700 }}>{act.count} {act.entity}</span> in {act.time}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '64px' }}>
-                                            {act.items?.map((item, i) => (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#42526E' }}>
-                                                    <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(9,30,66,0.08)' }}>
-                                                        <item.icon size={13} color={item.color} />
-                                                    </div>
-                                                    {item.text}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* 2. MAIN FEED AREA */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-8">
+                        {/* 2.1 SMART CARDS (CONTROL BAR) */}
+                        <div className="grid grid-cols-6 gap-4 mb-8">
+                            {ACTIVITY_STATS.map((stat, i) => (
+                                <StatCard key={i} stat={stat} />
+                            ))}
+                        </div>
 
-                                {act.type === 'file_upload' && act.file && (
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <Avatar name={act.user} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '14px', color: '#42526E' }}>
-                                                    <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user}</span> {act.action}{' '}
-                                                    <span style={{ fontWeight: 600, color: '#172B4D' }}>{act.file.name}</span> to <span style={{ fontWeight: 600 }}>{act.project}</span>
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8A94A6' }}>{act.time}</span>
-                                            </div>
-                                            <div style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: '1px solid #DFE1E6', borderRadius: '8px', background: '#FAFBFC', cursor: 'pointer' }}>
-                                                <div style={{ width: 32, height: 32, background: act.file.type==='img'?'#E3FCEF':'#EAE6FF', color: act.file.type==='img'?'#36B37E':'#6554C0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>{act.file.type==='img'?'IMG':'SQL'}</div>
-                                                <div>
-                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{act.file.name}</div>
-                                                    <div style={{ fontSize: '11px', color: '#6B778C' }}>{act.file.size} • <span style={{ color: '#0052CC', cursor: 'pointer' }}>Preview</span></div>
-                                                </div>
-                                            </div>
-                                            <div style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
-                                                <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, color: '#6B778C', cursor: 'pointer' }}><MessageSquare size={13} /> Reply</button>
-                                                <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, color: '#6B778C', cursor: 'pointer' }}><CheckCircle2 size={13} /> Mark Unread</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                        {/* 2.2 FILTER BAR */}
+                        <div className={`mb-8 p-4 rounded-2xl border ${isAuditMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-100'} flex items-center justify-between transition-colors shadow-sm`}>
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-3">
+                                    <Filter size={16} className="text-gray-400" />
+                                    <span className={`text-xs font-bold uppercase tracking-wider ${isAuditMode ? 'text-slate-400' : 'text-gray-500'}`}>Quick Filters:</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {['Users', 'Modules', 'Event Type', 'Impact'].map((f) => (
+                                        <button key={f} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
+                                            isAuditMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                                        }`}>
+                                            {f}: All <ChevronDown size={14} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <button className="text-[11px] font-bold text-blue-500 hover:underline uppercase tracking-widest">Clear Filters</button>
+                        </div>
 
-                                {act.type === 'task_move' && act.task && (
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <Avatar name={act.user} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontSize: '14px', color: '#42526E' }}>
-                                                    <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user}</span> {act.action} <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.task.name}</span> to <span style={{ fontWeight: 600, color: act.task.color }}>{act.task.to}</span>
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8A94A6' }}>{act.time}</span>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B778C' }}>
-                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0052CC' }} /> {act.project}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                        {/* 2.3 FEED HEADER */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <h2 className={`text-lg font-bold ${isAuditMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {activeView === 'feed' ? 'Live Operational Feed' : activeView === 'timeline' ? 'Operational Timeline' : 'Activity Heatmap'}
+                                </h2>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isAuditMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-500'}`}>
+                                    {filteredActivities.length} Events Total
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className={`flex rounded-lg p-1 ${isAuditMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                                    <button 
+                                        onClick={() => setActiveView('feed')}
+                                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${activeView === 'feed' ? 'bg-white text-blue-600 shadow-sm shadow-blue-500/10' : 'text-gray-500 hover:text-gray-900'}`}>Feed</button>
+                                    <button 
+                                        onClick={() => setActiveView('timeline')}
+                                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${activeView === 'timeline' ? 'bg-white text-blue-600 shadow-sm shadow-blue-500/10' : 'text-gray-500 hover:text-gray-900'}`}>Timeline</button>
+                                    <button 
+                                        onClick={() => setActiveView('heatmap')}
+                                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${activeView === 'heatmap' ? 'bg-white text-blue-600 shadow-sm shadow-blue-500/10' : 'text-gray-500 hover:text-gray-900'}`}>Heatmap</button>
+                                </div>
+                            </div>
+                        </div>
 
-                                {act.type === 'mention' && (
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <Avatar name={act.user} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '14px', color: '#42526E' }}>
-                                                    <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user}</span> mentioned <span style={{ fontWeight: 700, color: '#0052CC' }}>@Revotic AI CEO</span>
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8A94A6' }}>{act.time}</span>
-                                            </div>
-                                            <div style={{ marginTop: '8px', padding: '12px 16px', background: '#F8FAFF', border: '1px solid rgba(0,82,204,0.15)', borderRadius: '8px', fontSize: '14px', color: '#172B4D', lineHeight: 1.5 }}>
-                                                {act.content}
-                                            </div>
-                                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#F4F5F7', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#42526E' }}>
-                                                    <MessageSquare size={13} /> {act.replies} replies
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                        {/* 2.4 MAIN FEED CONTENT */}
+                        {activeView === 'feed' && (
+                            <div className="space-y-4">
+                                {filteredActivities.map((event) => (
+                                    <ActivityCard key={event.id} event={event} />
+                                ))}
+                                <button className={`w-full py-4 text-xs font-bold uppercase tracking-widest border border-dashed rounded-2xl transition-all ${
+                                    isAuditMode ? 'border-slate-700 text-slate-500 hover:text-slate-300' : 'border-gray-200 text-gray-400 hover:text-gray-900'
+                                }`}>
+                                    Load more activity history
+                                </button>
+                            </div>
+                        )}
 
-                                {act.type === 'task_assign' && act.task && (
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <Avatar name={act.user} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontSize: '14px', color: '#42526E' }}>
-                                                    <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user}</span> assigned <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.task.name}</span> to <span style={{ fontWeight: 600, color: '#0052CC' }}>{act.task.assignee}</span>
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8A94A6' }}>{act.time}</span>
-                                            </div>
-                                            <div style={{ border: '1px solid #DFE1E6', borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <Avatar name={act.task.assignee || 'Unknown User'} size={28} showOnline={false} />
-                                                    <div>
-                                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{act.task.name}</div>
-                                                        <div style={{ fontSize: '11px', color: '#6B778C' }}>Project: {act.project}</div>
-                                                    </div>
-                                                </div>
-                                                <span style={{ fontSize: '11px', fontWeight: 600, background: '#E3FCEF', color: '#36B37E', padding: '2px 8px', borderRadius: '12px' }}>{act.task.status}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {act.type === 'comment' && (
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <Avatar name={act.user} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontSize: '14px', color: '#42526E' }}>
-                                                    <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user}</span> {act.action} <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.target}</span>
-                                                </span>
-                                                <span style={{ fontSize: '12px', color: '#8A94A6' }}>{act.time}</span>
-                                            </div>
-                                            
-                                            <div style={{ borderLeft: '2px solid #DFE1E6', paddingLeft: '16px', marginLeft: '4px' }}>
-                                                <div style={{ fontSize: '14px', color: '#172B4D', marginBottom: '12px' }}>{act.content}</div>
-                                                {act.attached && (
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#FAFBFC', border: '1px solid #DFE1E6', borderRadius: '6px' }}>
-                                                        <div style={{ width: 24, height: 24, background: '#E6EFFF', color: '#0052CC', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700 }}>F</div>
-                                                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>Design System.fig</span>
+                        {activeView === 'timeline' && (
+                            <div className={`p-8 rounded-3xl border ${isAuditMode ? 'bg-slate-800/30 border-slate-700' : 'bg-white border-gray-100'} min-h-[600px] relative`}>
+                                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-200 border-dashed border-l" />
+                                <div className="space-y-16 relative z-10">
+                                    {[
+                                        { time: 'Now', label: 'LIVE', color: 'green', events: ['AI Analysis Generated', 'Risk Detected: Sprint 12'] },
+                                        { time: '11:00 AM', label: 'MORNING SYNC', color: 'blue', events: ['12 Tasks Created', '3 Goals Updated'] },
+                                        { time: '09:00 AM', label: 'DAILY START', color: 'purple', events: ['All Members Online', 'Automation Executed'] },
+                                        { time: 'Yesterday', label: 'SYSTEM SCAN', color: 'slate', events: ['Audit Logs Cleared', 'Permissions Validated'] },
+                                    ].map((milestone, i) => (
+                                        <div key={i} className={`flex items-center gap-8 ${i % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
+                                            <div className="flex-1 text-right">
+                                                {i % 2 === 0 && (
+                                                    <div className="space-y-2">
+                                                        <div className={`text-[10px] font-bold text-${milestone.color}-500 uppercase`}>{milestone.label}</div>
+                                                        <div className={`text-sm font-bold ${isAuditMode ? 'text-white' : 'text-gray-900'}`}>{milestone.time}</div>
                                                     </div>
                                                 )}
                                             </div>
+                                            <div className={`w-12 h-12 rounded-full bg-${milestone.color}-500 border-4 border-white flex items-center justify-center shadow-lg relative z-20`}>
+                                                <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                                            </div>
+                                            <div className="flex-1">
+                                                {i % 2 !== 0 && (
+                                                    <div className="space-y-2">
+                                                        <div className={`text-[10px] font-bold text-${milestone.color}-500 uppercase`}>{milestone.label}</div>
+                                                        <div className={`text-sm font-bold ${isAuditMode ? 'text-white' : 'text-gray-900'}`}>{milestone.time}</div>
+                                                    </div>
+                                                )}
+                                                <div className="mt-4 space-y-2">
+                                                    {milestone.events.map((e, ei) => (
+                                                        <div key={ei} className={`px-3 py-2 rounded-lg text-[11px] font-medium ${isAuditMode ? 'bg-slate-800 text-slate-300' : 'bg-gray-50 text-gray-600'}`}>
+                                                            {e}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeView === 'heatmap' && (
+                            <div className={`p-8 rounded-3xl border ${isAuditMode ? 'bg-slate-800/30 border-slate-700' : 'bg-white border-gray-100'} min-h-[400px]`}>
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                                        <span className={`text-xs font-bold ${isAuditMode ? 'text-slate-400' : 'text-gray-500'}`}>Activity Intensity</span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[10px] text-gray-400">Less</span>
+                                            {[1, 2, 3, 4, 5].map(v => <div key={v} className={`w-3 h-3 rounded-sm bg-blue-500 opacity-${v * 20}`} />)}
+                                            <span className="text-[10px] text-gray-400">More</span>
                                         </div>
                                     </div>
-                                )}
-
-                            </div>
-                        ))}
-                        
-                        <div style={{ padding: '24px', textAlign: 'center', color: '#8A94A6', fontSize: '13px' }}>
-                            You've caught up on all recent activity.
-                        </div>
-                    </div>
-
-                    {/* Right Filter Panel */}
-                    <div style={{ width: '320px', background: 'white', borderLeft: '1px solid #DFE1E6', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowY: 'auto' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #DFE1E6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D' }}>Filter Activity</span>
-                            <ChevronDown size={14} color="#6B778C" />
-                        </div>
-
-                        <div style={{ padding: '24px' }}>
-                            {/* Calendar Mock */}
-                            <div style={{ border: '1px solid #DFE1E6', borderRadius: '12px', padding: '16px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(9,30,66,0.04)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', fontWeight: 600, color: '#172B4D', fontSize: '14px' }}>
-                                    <ChevronLeft size={16} /><span style={{ flex: 1, textAlign: 'center' }}>April 2024</span><ChevronRight size={16} />
                                 </div>
-                                <div className="cal-grid">
-                                    {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="cal-day wk">{d}</div>)}
-                                    {[25,26,27,28,29,30].map(d => <div key={`p${d}`} className="cal-day out">{d}</div>)}
-                                    {[1,2,3,4,5,6,7].map(d => <div key={`c1${d}`} className={`cal-day ${d===7?'sel':''}`}>{d}</div>)}
-                                    {[8,9,10,11,12,13,14].map(d => <div key={`c2${d}`} className="cal-day">{d}</div>)}
-                                    {[15,16,17,18,19,20,21].map(d => <div key={`c3${d}`} className="cal-day">{d}</div>)}
-                                </div>
-                                <button style={{ width: '100%', marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#0052CC', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                    + RECENT EVENTS
-                                </button>
-                            </div>
-
-                            {/* Projects Filter */}
-                            <div style={{ marginBottom: '24px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6B778C', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Folder size={12} /> PROJECTS</span>
-                                    <ChevronDown size={12} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {PROJECTS.map((p, i) => (
-                                        <label key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '13px', color: '#172B4D' }}>
-                                            {p.name}
-                                            <input type="checkbox" defaultChecked={p.checked} style={{ accentColor: '#0052CC', width: 14, height: 14 }} />
-                                        </label>
+                                <div className="grid grid-cols-7 gap-2">
+                                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                                        <div key={day} className={`text-[10px] font-bold text-center mb-2 uppercase ${isAuditMode ? 'text-slate-500' : 'text-gray-400'}`}>{day}</div>
+                                    ))}
+                                    {Array.from({ length: 28 }).map((_, i) => (
+                                        <div key={i} className={`aspect-square rounded-md transition-all hover:scale-110 cursor-pointer bg-blue-500 opacity-${Math.floor(Math.random() * 5 + 1) * 20}`} />
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Activity Types Filter */}
-                            <div style={{ marginBottom: '24px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6B778C', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><SlidersHorizontal size={12} /> ACTIVITY TYPES</span>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {ACTIVITY_TYPES.map((t, i) => (
-                                        <label key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '13px', color: '#172B4D' }}>
-                                            {t.name}
-                                            <input type="checkbox" defaultChecked={t.checked} style={{ accentColor: '#0052CC', width: 14, height: 14 }} />
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Saved Filters */}
-                            <div style={{ borderTop: '1px solid #DFE1E6', paddingTop: '20px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6B778C', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Save size={12} /> SAVED FILTERS</span>
-                                    <ChevronDown size={12} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFF', border: '1px solid rgba(0,82,204,0.2)', borderRadius: '6px', cursor: 'pointer', color: '#0052CC', fontSize: '13px', fontWeight: 600 }}>
-                                        All Activity <ChevronRight size={14} />
-                                    </button>
-                                    <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'transparent', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer', color: '#42526E', fontSize: '13px', fontWeight: 500 }}>
-                                        My Activity <ChevronRight size={14} color="#C1C7D0" />
-                                    </button>
-                                </div>
-                                
-                                <button style={{ width: '100%', padding: '10px', marginTop: '16px', background: 'white', border: '1px solid #DFE1E6', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: '#172B4D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 1px 2px rgba(9,30,66,0.05)' }}>
-                                    <Save size={14} color="#6B778C" /> Save Filter
-                                </button>
-                            </div>
-
-                        </div>
+                        )}
                     </div>
+
+                    {/* 3. RIGHT PANEL (AI INSIGHTS & ANALYTICS) */}
+                    {isRightPanelOpen && (
+                        <aside className={`w-[400px] border-l flex flex-col overflow-y-auto no-scrollbar transition-all duration-500 ${
+                            isAuditMode ? 'bg-[#0F172A] border-slate-700' : 'bg-white border-gray-200'
+                        }`}>
+                            <div className="p-6 space-y-8">
+                                {/* AI SUMMARY CARD */}
+                                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <Sparkles size={20} className="text-indigo-200" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">AI Intelligence Summary</span>
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">Workspace Health: Strong</h3>
+                                        <p className="text-sm text-indigo-100/80 leading-relaxed mb-6 font-medium">
+                                            Productivity is up 12% across 8 modules. 3 risks detected in Sprint Planning need your attention.
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+                                                <div className="text-[10px] font-bold text-indigo-200 uppercase mb-1">Risk Level</div>
+                                                <div className="text-lg font-bold">Medium</div>
+                                            </div>
+                                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+                                                <div className="text-[10px] font-bold text-indigo-200 uppercase mb-1">Efficiency</div>
+                                                <div className="text-lg font-bold">94.2%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none transform translate-x-4 -translate-y-4">
+                                        <Activity size={120} />
+                                    </div>
+                                </div>
+
+                                {/* OPERATIONAL RISKS */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className={`text-xs font-bold uppercase tracking-widest ${isAuditMode ? 'text-slate-400' : 'text-gray-400'}`}>Operational Risks</h3>
+                                        <button className="text-[10px] font-bold text-blue-500 hover:underline uppercase">View All</button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {[
+                                            { title: 'Sprint 12 Delay', risk: 'High', color: 'red', desc: '4 tasks overdue by 48h+' },
+                                            { title: 'Team Overload', risk: 'Medium', color: 'amber', desc: 'Design team at 112% capacity' },
+                                            { title: 'API Integration Blocked', risk: 'Medium', color: 'amber', desc: 'Waiting for Backend approval' },
+                                        ].map((risk, i) => (
+                                            <div key={i} className={`p-4 rounded-xl border transition-all hover:scale-[1.02] ${
+                                                isAuditMode ? 'bg-slate-800 border-slate-700 hover:border-slate-500' : 'bg-gray-50 border-gray-100 hover:shadow-md'
+                                            }`}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`text-sm font-bold ${isAuditMode ? 'text-white' : 'text-gray-900'}`}>{risk.title}</span>
+                                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                                                        risk.color === 'red' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'
+                                                    }`}>
+                                                        {risk.risk} Risk
+                                                    </span>
+                                                </div>
+                                                <p className={`text-[11px] ${isAuditMode ? 'text-slate-400' : 'text-gray-500'}`}>{risk.desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* TEAM PERFORMANCE */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className={`text-xs font-bold uppercase tracking-widest ${isAuditMode ? 'text-slate-400' : 'text-gray-400'}`}>Performance Pulse</h3>
+                                        <BarChart3 size={16} className="text-gray-400" />
+                                    </div>
+                                    <div className="space-y-4">
+                                        {[
+                                            { name: 'Ali Raza', actions: 124, score: 96, avatar: null },
+                                            { name: 'Sara Khan', actions: 89, score: 92, avatar: null },
+                                            { name: 'Ahmed Hassan', actions: 56, score: 88, avatar: null },
+                                        ].map((user, i) => (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-lg bg-${i === 0 ? 'blue' : i === 1 ? 'emerald' : 'amber'}-500/10 text-${i === 0 ? 'blue' : i === 1 ? 'emerald' : 'amber'}-500 flex items-center justify-center text-[10px] font-bold uppercase`}>
+                                                    {user.name.substring(0,2)}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className={`text-xs font-bold ${isAuditMode ? 'text-slate-200' : 'text-gray-900'}`}>{user.name}</span>
+                                                        <span className="text-[10px] font-bold text-blue-500">{user.score}%</span>
+                                                    </div>
+                                                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${user.score}%` }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* RECOMMENDATIONS */}
+                                <div className={`p-5 rounded-2xl border-2 border-dashed ${isAuditMode ? 'bg-slate-800/20 border-slate-700/50' : 'bg-blue-50/20 border-blue-100/50'}`}>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Info size={16} className="text-blue-500" />
+                                        <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">AI Recommendation</span>
+                                    </div>
+                                    <p className={`text-xs font-medium leading-relaxed ${isAuditMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                                        "Sprint 12 is at risk of delay. Reassign 3 frontend tasks from Usman (overloaded) to Sara Khan to stabilize timeline."
+                                    </p>
+                                    <button className="mt-4 w-full py-2 bg-blue-600 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
+                                        Optimize Sprint Capacity
+                                    </button>
+                                </div>
+                            </div>
+                        </aside>
+                    )}
                 </div>
             </div>
+
+            <style jsx global>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                @keyframes pulse {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+                }
+            `}</style>
         </main>
     );
 }

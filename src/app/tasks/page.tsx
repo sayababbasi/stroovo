@@ -40,7 +40,7 @@ function isDueToday(t: Task): boolean {
 }
 
 export default function TasksPage() {
-    const { user } = useAuth();
+    const { user, accessToken } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [socket, setSocket] = useState<Socket | null>(null);
     const [loading, setLoading] = useState(true);
@@ -60,7 +60,7 @@ export default function TasksPage() {
         try {
             setError(null);
             if (!isSilent) setLoading(true);
-            const response = await apiGet('/api/tasks', null, { timeout: 30000 });
+            const response = await apiGet('/api/tasks', accessToken, { timeout: 30000 });
             
             if (response.success && response.data) {
                 setTasks(Array.isArray(response.data) ? response.data : []);
@@ -349,7 +349,7 @@ export default function TasksPage() {
                 .t-head { font-size:11px; font-weight:700; color:#8A94A6; text-transform:uppercase; padding:10px 10px; letter-spacing:0.03em; }
             `}</style>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '240px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '260px' }}>
                 {/* Header */}
                 <div style={{ padding: '24px 32px 16px', background: 'white', borderBottom: '1px solid #E8EAED' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

@@ -184,8 +184,8 @@ export class FinalReportGenerator {
 
     try {
       // Run comprehensive tests
-      const testRunner = comprehensiveTestRunner(this.prisma, this.baseUrl);
-      const testReport = await testRunner.runAllTests();
+      const testRunner = comprehensiveTestRunner(this.prisma);
+      const testReport = await testRunner.runAllTests() as any;
 
       // Get system health
       const healthMonitor = systemHealthMonitor(this.prisma);
@@ -448,8 +448,8 @@ export class FinalReportGenerator {
       return acc;
     }, {} as Record<string, number>);
 
-    const topErrors = Object.entries(errorCounts)
-      .sort(([,a]: [string, number], [,b]: [string, number]) => b - a)
+    const topErrors = (Object.entries(errorCounts) as [string, number][])
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([message, count]) => ({
         message,
@@ -631,7 +631,7 @@ export class FinalReportGenerator {
           lowIssues: report.securityAssessment.vulnerabilities.low,
           duration: duration,
           metadata: {
-            report: report,
+            report: report as any,
             timestamp: report.timestamp,
             version: report.reportVersion
           }

@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { TeamRole } from '@/lib/rbac';
-
-const prisma = new PrismaClient();
 
 // GET /api/team-members/[id] - Get specific team member
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const member = await prisma.teamMember.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -44,8 +43,9 @@ export async function GET(
 // PATCH /api/team-members/[id] - Update team member
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { role } = await request.json();
 
@@ -54,7 +54,7 @@ export async function PATCH(
     }
 
     const member = await prisma.teamMember.update({
-      where: { id: params.id },
+      where: { id },
       data: { role },
       include: {
         user: {
@@ -87,12 +87,13 @@ export async function PATCH(
 // DELETE /api/team-members/[id] - Remove team member
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check if member exists
     const existingMember = await prisma.teamMember.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         team: true
       }
@@ -120,7 +121,7 @@ export async function DELETE(
 
     // Remove team member
     await prisma.teamMember.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     // TODO: Emit WebSocket event for real-time updates

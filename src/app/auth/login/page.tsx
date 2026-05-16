@@ -15,7 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Eye, EyeOff, AlertTriangle, Lock, Smartphone, Mail } from "lucide-react";
 import { validatePasswordStrength } from "@/lib/auth/security";
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, signup, isAuthenticated } = useAuth();
@@ -35,7 +37,7 @@ export default function LoginPage() {
   // Check if user is already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const redirect = searchParams.get("redirect") || "/dashboard";
+      const redirect = searchParams?.get("redirect") || "/dashboard";
       router.push(redirect);
     }
   }, [isAuthenticated, router, searchParams]);
@@ -79,7 +81,7 @@ export default function LoginPage() {
           setError(result.error || "Login failed");
         }
       } else {
-        const redirect = searchParams.get("redirect") || "/dashboard";
+        const redirect = searchParams?.get("redirect") || "/dashboard";
         router.push(redirect);
       }
     } catch (err) {
@@ -110,7 +112,7 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (response.ok) {
-        const redirect = searchParams.get("redirect") || "/dashboard";
+        const redirect = searchParams?.get("redirect") || "/dashboard";
         router.push(redirect);
       } else {
         setError(data.error || "MFA verification failed");
@@ -337,5 +339,20 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-blue-600 animate-pulse mx-auto mb-4" />
+          <p className="text-gray-600">Loading secure login...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

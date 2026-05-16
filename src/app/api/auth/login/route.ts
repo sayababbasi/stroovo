@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import AuthenticationService from '@/lib/auth/auth-service';
 import { 
   createSecureHandler, 
-  validators, 
+  schemas, 
   rateLimiters,
   APIError,
   addSecurityHeaders
@@ -18,7 +18,7 @@ export async function OPTIONS() {
 }
 
 export const POST = createSecureHandler({
-  schema: validators.login.schema,
+  schema: schemas.auth.login,
   rateLimitKey: 'auth/login',
   handler: async (data, request) => {
     const { email, password, mfaToken, sessionId } = data;

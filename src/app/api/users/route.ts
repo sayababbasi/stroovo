@@ -80,7 +80,7 @@ export async function POST(request: Request) {
             data: {
                 email,
                 name,
-                password,
+                passwordHash: password,
                 role: (role as any) || 'USER',
                 tenantId
             }

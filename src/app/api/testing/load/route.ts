@@ -26,11 +26,11 @@ export async function POST(request: Request) {
         peakMemoryUsage: Math.round(report.systemMetrics.peakMemoryUsage),
         peakCpuUsage: Math.round(report.systemMetrics.peakCpuUsage),
         throughput: Math.round(report.systemMetrics.throughput),
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           report: report,
           timestamp: report.timestamp,
           baseUrl: baseUrl || 'default'
-        }
+        }))
       }
     });
 

@@ -136,14 +136,14 @@ export class AuditLogger {
       return {
         logs: logs.map(log => ({
           id: log.id,
-          userId: log.userId,
+          userId: log.userId || undefined,
           action: log.action,
-          ipAddress: log.ipAddress,
-          device: log.device,
-          userAgent: log.userAgent,
+          ipAddress: log.ipAddress || '',
+          device: log.device || undefined,
+          userAgent: log.userAgent || '',
           status: log.status,
-          details: log.details,
-          metadata: log.metadata,
+          details: log.details || undefined,
+          metadata: log.metadata || undefined,
           createdAt: log.createdAt,
         })),
         total,
@@ -326,7 +326,7 @@ export class AuditLogger {
           type: 'BRUTE_FORCE' as const,
           severity: 'HIGH' as const,
           message: `Brute force attack detected from ${attempt.ipAddress}`,
-          ipAddress: attempt.ipAddress,
+          ipAddress: attempt.ipAddress || '',
           createdAt: new Date(),
           metadata: { attempts: attempt._count.ipAddress }
         });
@@ -346,10 +346,10 @@ export class AuditLogger {
           type: 'SUSPICIOUS_LOGIN' as const,
           severity: 'MEDIUM' as const,
           message: `Suspicious login detected for ${login.user?.email || 'unknown user'}`,
-          userId: login.userId,
-          ipAddress: login.ipAddress,
+          userId: login.userId || undefined,
+          ipAddress: login.ipAddress || '',
           createdAt: login.createdAt,
-          metadata: login.metadata
+          metadata: login.metadata as any
         });
       }
 
@@ -373,7 +373,7 @@ export class AuditLogger {
             type: 'MULTIPLE_FAILURES' as const,
             severity: 'MEDIUM' as const,
             message: `Multiple failed login attempts for user`,
-            userId: failure.userId,
+            userId: failure.userId || undefined,
             ipAddress: 'multiple',
             createdAt: new Date(),
             metadata: { failures: failure._count.userId }
@@ -465,9 +465,9 @@ export class AuditLogger {
           // Log suspicious activity
           await this.prisma.authLog.create({
             data: {
-              userId,
+              userId: userId || null,
               action: 'SUSPICIOUS_LOGIN' as any,
-              ipAddress,
+              ipAddress: ipAddress || null,
               userAgent: 'system',
               status: 'SUSPICIOUS' as any,
               details: 'Rapid failed login attempts detected',
@@ -495,13 +495,13 @@ export class AuditLogger {
           distinct: ['ipAddress']
         });
 
-        const previousIPs = new Set(previousLogins.map(l => l.ipAddress));
-        if (previousIPs.size > 0 && !previousIPs.has(ipAddress)) {
+        const previousIPs = new Set(previousLogins.map(l => l.ipAddress).filter(Boolean) as string[]);
+        if (previousIPs.size > 0 && ipAddress && !previousIPs.has(ipAddress)) {
           await this.prisma.authLog.create({
             data: {
-              userId,
+              userId: userId || null,
               action: 'SUSPICIOUS_LOGIN' as any,
-              ipAddress,
+              ipAddress: ipAddress || null,
               userAgent: 'system',
               status: 'SUSPICIOUS' as any,
               details: 'Login from new IP address',

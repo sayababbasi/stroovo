@@ -36,6 +36,14 @@
   "exclude": [
     "node_modules",
     "src/app_restored/**/*",
-    "src/ai/risk-old.ts"
+    "src/ai/risk-old.ts",
+    "prisma/seed-sample-simple.ts",
+    "migrate-to-neon.ts",
+    "fix-tenant.ts",
+    "setup-ai.ts",
+    "temp-seed-rbac.ts",
+    "test-prisma-models.ts",
+    "test-prisma.ts",
+    "scripts/**/*"
   ]
 }

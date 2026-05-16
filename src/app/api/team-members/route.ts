@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { TeamRole } from '@/lib/rbac';
 
-const prisma = new PrismaClient();
 
 // GET /api/team-members - Get team members
 export async function GET(request: NextRequest) {

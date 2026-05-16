@@ -8,12 +8,12 @@ import { requirePermission } from '@/lib/authorization';
  */
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const authResult = await requirePermission('tasks.update.own')(request as any);
     if (!authResult.success) return authResult.response;
 
-    const { id } = params;
     try {
         const { dependencyId } = await request.json();
 
@@ -26,21 +26,21 @@ export async function POST(
         }
 
         // Add to taskDependencies (this task depends on dependencyId)
-        const task = await prisma.task.update({
+        const task = await (prisma.task as any).update({
             where: { id },
             data: {
-                taskDependencies: {
+                dependencies: {
                     connect: { id: dependencyId }
                 }
             },
             include: {
-                taskDependencies: {
+                dependencies: {
                     select: { id: true, title: true, status: true }
                 }
             }
         });
 
-        return NextResponse.json(task.taskDependencies);
+        return NextResponse.json(task.dependencies);
     } catch (error) {
         console.error('Failed to link dependency:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -53,12 +53,12 @@ export async function POST(
  */
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const authResult = await requirePermission('tasks.update.own')(request as any);
     if (!authResult.success) return authResult.response;
 
-    const { id } = params;
     const { searchParams } = new URL(request.url);
     const dependencyId = searchParams.get('dependencyId');
 
@@ -67,21 +67,21 @@ export async function DELETE(
     }
 
     try {
-        const task = await prisma.task.update({
+        const task = await (prisma.task as any).update({
             where: { id },
             data: {
-                taskDependencies: {
+                dependencies: {
                     disconnect: { id: dependencyId }
                 }
             },
             include: {
-                taskDependencies: {
+                dependencies: {
                     select: { id: true, title: true, status: true }
                 }
             }
         });
 
-        return NextResponse.json(task.taskDependencies);
+        return NextResponse.json(task.dependencies);
     } catch (error) {
         console.error('Failed to unlink dependency:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

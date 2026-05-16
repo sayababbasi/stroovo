@@ -75,6 +75,61 @@ const ITEM_HEIGHT = 120; // Height of each task item
 const CONTAINER_HEIGHT = 600; // Height of the visible container
 const OVERSCAN = 5; // Number of items to render outside visible area
 
+// Sub-component for virtualized columns to follow Rules of Hooks
+const VirtualizedColumn = ({ 
+  groupKey, 
+  tasks, 
+  renderTaskItem,
+  containerHeight,
+  itemHeight,
+  overscan
+}: { 
+  groupKey: string; 
+  tasks: any[]; 
+  renderTaskItem: (task: any, style: React.CSSProperties) => React.ReactNode;
+  containerHeight: number;
+  itemHeight: number;
+  overscan: number;
+}) => {
+  const {
+    virtualizedItems,
+    totalHeight,
+    scrollElementRef,
+    handleScroll
+  } = useVirtualization(tasks, {
+    itemHeight,
+    containerHeight,
+    overscan
+  });
+
+  return (
+    <div className="flex-1 min-w-[300px] flex flex-col">
+      <div className="bg-gray-50 rounded-t-lg p-3 border border-gray-200 border-b-0">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700">{groupKey}</h3>
+          <span className="text-xs text-gray-500">{tasks.length}</span>
+        </div>
+      </div>
+
+      <div
+        ref={scrollElementRef}
+        onScroll={handleScroll}
+        className="bg-gray-50 rounded-b-lg border border-gray-200 overflow-hidden"
+        style={{ height: containerHeight }}
+      >
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          {virtualizedItems.map(({ index, key, style }) => {
+            const task = tasks[index];
+            if (!task) return null;
+            return renderTaskItem(task, style);
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const OptimizedTaskBoard: React.FC<OptimizedTaskBoardProps> = ({
   teamId,
   spaceId,
@@ -163,7 +218,13 @@ const OptimizedTaskBoard: React.FC<OptimizedTaskBoardProps> = ({
   // Filter and sort tasks (memoized)
   const filteredAndSortedTasks = useMemo(() => {
     const filterAndSortFn = () => {
-      let filtered = optimizedTasks;
+      // Deduplicate by id first
+      const seen = new Set<string>();
+      let filtered = optimizedTasks.filter(task => {
+        if (seen.has(task.id)) return false;
+        seen.add(task.id);
+        return true;
+      });
 
       // Apply filters
       if (statusFilter !== 'all') {
@@ -247,30 +308,7 @@ const OptimizedTaskBoard: React.FC<OptimizedTaskBoardProps> = ({
     return measureFunction(groupTasksFn, 'groupTasks')();
   }, [filteredAndSortedTasks, groupBy, measureFunction]);
 
-  // Virtualization for each group
-  const virtualizedGroups = useMemo(() => {
-    return Object.entries(groupedTasks).map(([groupKey, groupTasks]) => {
-      const {
-        virtualizedItems,
-        totalHeight,
-        scrollElementRef,
-        handleScroll
-      } = useVirtualization(groupTasks, {
-        itemHeight: ITEM_HEIGHT,
-        containerHeight: CONTAINER_HEIGHT,
-        overscan: OVERSCAN
-      });
 
-      return {
-        groupKey,
-        tasks: groupTasks,
-        virtualizedItems,
-        totalHeight,
-        scrollElementRef,
-        handleScroll
-      };
-    });
-  }, [groupedTasks]);
 
   // Event handlers
   const handleTaskToggle = useCallback((taskId: string) => {
@@ -638,31 +676,19 @@ const OptimizedTaskBoard: React.FC<OptimizedTaskBoardProps> = ({
           </div>
         ) : (
           <div className="flex gap-4 overflow-x-auto">
-            {virtualizedGroups.map(({ groupKey, tasks, virtualizedItems, totalHeight, scrollElementRef, handleScroll }) => (
-              <div key={groupKey} className="flex-1 min-w-[300px]">
-                <div className="bg-gray-50 rounded-t-lg p-3 border border-gray-200 border-b-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-700">{groupKey}</h3>
-                    <span className="text-xs text-gray-500">{tasks.length}</span>
-                  </div>
-                </div>
-
-                <div
-                  ref={scrollElementRef}
-                  onScroll={handleScroll}
-                  className="bg-gray-50 rounded-b-lg border border-gray-200 overflow-hidden"
-                  style={{ height: CONTAINER_HEIGHT }}
-                >
-                  <div style={{ height: totalHeight, position: 'relative' }}>
-                    {virtualizedItems.map(({ index, key, style }) => {
-                      const task = tasks[index];
-                      return renderTaskItem(task, style);
-                    })}
-                  </div>
-                </div>
-              </div>
+            {Object.entries(groupedTasks).map(([groupKey, tasks]) => (
+              <VirtualizedColumn
+                key={groupKey}
+                groupKey={groupKey}
+                tasks={tasks}
+                renderTaskItem={renderTaskItem}
+                containerHeight={CONTAINER_HEIGHT}
+                itemHeight={ITEM_HEIGHT}
+                overscan={OVERSCAN}
+              />
             ))}
           </div>
+
         )}
 
         {/* Load More Trigger */}

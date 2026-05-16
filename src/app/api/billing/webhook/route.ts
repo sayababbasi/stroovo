@@ -34,8 +34,7 @@ export async function POST(request: Request) {
                 stripeSubscriptionId: subscriptionId,
                 stripeCustomerId: customerId,
                 stripePriceId: stripeSubscription.items.data[0].price.id,
-                status: 'ACTIVE',
-                plan: 'PRO'
+                status: 'ACTIVE'
             }
         });
     }
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
         const subscriptionId = session.id;
         await prisma.subscription.update({
             where: { stripeSubscriptionId: subscriptionId },
-            data: { status: 'CANCELED', plan: 'FREE' }
+            data: { status: 'CANCELED' }
         });
     }
 

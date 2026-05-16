@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-// DB Sync: 2026-04-26-18-53
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
@@ -10,28 +10,31 @@ if (!connectionString) {
 }
 
 const globalForPrisma = globalThis as unknown as {
-  prisma2: PrismaClient | undefined;
-  prismaPool2: Pool | undefined;
+  prisma_final: PrismaClient | undefined;
+  prismaPool_final: Pool | undefined;
 };
 
 const pool =
-  globalForPrisma.prismaPool2 ||
+  globalForPrisma.prismaPool_final ||
   new Pool({
     connectionString,
+    ssl: {
+      rejectUnauthorized: false // Common setting for Neon when using pg driver in some environments
+    }
   });
 
 const adapter = new PrismaPg(pool as any);
 
 export const prisma =
-  globalForPrisma.prisma2 ||
+  globalForPrisma.prisma_final ||
   new PrismaClient({
     adapter,
     log: ['error', 'warn'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma2 = prisma;
-  globalForPrisma.prismaPool2 = pool;
+  globalForPrisma.prisma_final = prisma;
+  globalForPrisma.prismaPool_final = pool;
 }
 
 export default prisma;

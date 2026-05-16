@@ -210,7 +210,7 @@ export default function MyTasksPage() {
             <div style={{ display: 'flex', minHeight: '100vh' }}>
                 <Sidebar />
 
-                <main style={{ flex: 1, marginLeft: '240px', background: '#FFFFFF' }}>
+                <main style={{ flex: 1, marginLeft: '260px', background: '#FFFFFF' }}>
                     {/* Header */}
                     <div style={{
                         padding: '24px 32px',

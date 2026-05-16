@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         const accessToken = cookieStore.get('accessToken')?.value;
 
         // Use enterprise authentication service for secure logout
-        await authService.logout(accessToken, request);
+        await authService.logout(accessToken || null, request);
 
         // Create response
         const response = NextResponse.json(

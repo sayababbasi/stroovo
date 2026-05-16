@@ -38,7 +38,10 @@ import {
     Settings,
     LogOut,
     Bot,
-    CreditCard
+    CreditCard,
+    Users,
+    Radio,
+    Database
 } from 'lucide-react';
 import { Project } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -129,7 +132,7 @@ export default function Sidebar() {
         {
             title: 'Stroovo',
             items: [
-                { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+                { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
                 { name: 'My Tasks', href: '/tasks', icon: CheckSquare },
                 { name: 'Board', href: '/board', icon: Trello },
                 { name: 'Timeline', href: '/timeline', icon: BarChart2 },
@@ -194,12 +197,16 @@ export default function Sidebar() {
             ]
         },
         {
-            title: 'AI & Automation',
+            title: 'AI Workspace',
             items: [
-                { name: 'Stroovo AI', href: '/ai/assistant', icon: Bot, badge: 'Beta' },
-                { name: 'Smart Suggestions', href: '/ai/suggestions', icon: Zap },
-                { name: 'Risk Alerts', href: '/ai/alerts', icon: ShieldAlert },
-                { name: 'Automations', href: '/automations', icon: Settings },
+                { name: 'AI Assistant', href: '/ai/assistant', icon: Bot },
+                { name: 'AI Suggestions', href: '/ai/suggestions', icon: Sparkles, badge: 'Alpha' },
+                { name: 'AI Insights', href: '/ai/insights', icon: BrainCircuit },
+                { name: 'AI Agents', href: '/ai/agents', icon: Users },
+                { name: 'AI Workflows', href: '/ai/workflows', icon: Network },
+                { name: 'AI Automations', href: '/ai/automations', icon: Radio },
+                { name: 'AI Memory', href: '/ai/memory', icon: Database },
+                { name: 'AI History', href: '/ai/history', icon: History },
             ]
         },
     ];
@@ -280,16 +287,9 @@ export default function Sidebar() {
     return (
         <aside className={styles.sidebar} style={{ borderRight: `1px solid ${branding.primaryColor}22` }}>
             <div className={styles.logo}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div className={styles.logoIcon} style={{ background: branding.primaryColor }}>
-                        {branding.logoUrl ? (
-                            <img src={branding.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '4px' }} />
-                        ) : (
-                            <CheckSquare size={18} color="white" />
-                        )}
-                    </div>
-                    <span className={styles.logoText}>Stroovo</span>
-                </div>
+                <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '8px 16px', borderRadius: '12px', textDecoration: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <img src="/logo.png" alt="Stroovo" style={{ height: '32px', objectFit: 'contain' }} />
+                </Link>
                 <NotificationBell />
             </div>
 

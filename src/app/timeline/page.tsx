@@ -467,7 +467,7 @@ export function TimelineView({
     };
 
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', overflowX: 'hidden', position: 'relative' }}>
                 <style>{`
                     .timeline-container::-webkit-scrollbar { width: 8px; height: 8px; }
                     .timeline-container::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -478,8 +478,9 @@ export function TimelineView({
                     .gantt-row:hover { background: #F8F9FA; }
                     .group-header { background: #F4F5F7; height: 40px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid #EBECF0; }
                     
-                    .sticky-col { position: sticky; left: 0; z-index: 100; background: inherit; border-right: 1px solid #DFE1E6; }
+                    .sticky-col { position: sticky; left: 0; z-index: 160; background: #FFFFFF; border-right: 1px solid #DFE1E6; }
                     .sticky-header { position: sticky; top: 0; z-index: 200; background: #FFFFFF; border-bottom: 2px solid #DFE1E6; }
+                    .sticky-header .sticky-col { z-index: 210; }
                     
                     .gantt-bar { 
                         position: absolute; 
@@ -495,11 +496,21 @@ export function TimelineView({
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                         backdrop-filter: blur(12px);
                         user-select: none;
-                        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, filter 0.2s;
+                        transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
                         border: 1px solid rgba(255, 255, 255, 0.1);
                     }
-                    .gantt-bar:hover { transform: translateY(-1px) scale(1.02); z-index: 161; filter: brightness(1.15) contrast(1.1); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+                    .gantt-bar:hover { transform: translateY(-1px) scale(1.02); z-index: 161; filter: brightness(1.1); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
                     .gantt-bar:active { cursor: grabbing; transform: scale(0.98); }
+                    .sticky-col::after {
+                        content: '';
+                        position: absolute;
+                        right: -10px;
+                        top: 0;
+                        bottom: 0;
+                        width: 10px;
+                        background: linear-gradient(to right, rgba(0,0,0,0.03), transparent);
+                        pointer-events: none;
+                    }
                     
                     .tooltip {
                         position: absolute;
@@ -545,12 +556,11 @@ export function TimelineView({
 
                 {/* Toolbar */}
                 <div style={{ 
-                    padding: hideHeader ? '12px 24px' : '24px 40px', 
-                    background: 'rgba(255, 255, 255, 0.8)', 
-                    backdropFilter: 'blur(20px)', 
+                    padding: hideHeader ? '16px 24px' : '20px 40px', 
+                    background: '#FFFFFF', 
                     borderBottom: '1px solid #DFE1E6', 
                     zIndex: 300, 
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)' 
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
@@ -668,7 +678,7 @@ export function TimelineView({
 
                         {/* Header */}
                         <div className="sticky-header" style={{ display: 'flex', height: '70px' }}>
-                            <div className="sticky-col" style={{ width: '320px', minWidth: '320px', background: '#FFFFFF', padding: '0 24px', display: 'flex', alignItems: 'center' }}>
+                            <div className="sticky-col" style={{ width: '320px', minWidth: '320px', background: '#FFFFFF', padding: '0 24px', display: 'flex', alignItems: 'center', zIndex: 210 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Filter size={14} color="#6B778C" />
                                     <span style={{ fontSize: '11px', fontWeight: 800, color: '#6B778C', letterSpacing: '0.08em' }}>HIERARCHY</span>
@@ -846,9 +856,9 @@ export function TimelineView({
 
 export default function TimelinePage() {
     return (
-        <main style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#F4F5F7' }}>
+        <main style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#F4F5F7' }}>
             <Sidebar />
-            <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <TimelineView />
             </div>
         </main>

@@ -124,7 +124,12 @@ export function useLazyLoad<T>({
       if (newItems.length === 0) {
         setHasMore(false);
       } else {
-        setItems(prev => [...prev, ...newItems]);
+        setItems(prev => {
+          // Deduplicate by id to prevent duplicate keys
+          const existingIds = new Set(prev.map((item: any) => item.id));
+          const uniqueNew = newItems.filter((item: any) => !existingIds.has(item.id));
+          return [...prev, ...uniqueNew];
+        });
         setPage(prev => prev + 1);
       }
     } catch (err) {
@@ -307,6 +312,12 @@ export function useOptimisticUpdate<T>(
   const [optimisticData, setOptimisticData] = useState<T[]>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync with initial data when it changes
+  useEffect(() => {
+    setData(initialData);
+    setOptimisticData(initialData);
+  }, [initialData]);
 
   const update = useCallback(async (updater: (current: T[]) => T[]) => {
     setLoading(true);

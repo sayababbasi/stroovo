@@ -22,9 +22,15 @@ model Tenant {
   smtpHost             String?               @default("smtp.gmail.com")
   smtpPort             Int?                  @default(587)
   smtpSecure           Boolean?              @default(false)
+  aiDecisions          AIDecision[]
+  aiHistories          AIHistory[]
+  aiMemories           AIMemory[]
   activityLogs         ActivityLog[]
+  automations          Automation[]
   automationRules      AutomationRule[]
   cycles               Cycle[]
+  dashboardMetrics     DashboardMetric[]
+  executiveInsights    ExecutiveInsight[]
   goals                Goal[]
   notifications        Notification[]
   notificationChannels NotificationChannel[]
@@ -37,23 +43,23 @@ model Tenant {
 }
 
 model Team {
-  id          String          @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
-  slug        String?         @unique
+  slug        String?          @unique
   description String?
   avatar      String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   tenantId    String
   createdBy   String?
-  autoMode    String          @default("OFF")
+  autoMode    String           @default("OFF")
   autoLogs    AutoActionLog[]
-  tasks       Task[]          @relation("TeamTasks")
-  tenant      Tenant          @relation(fields: [tenantId], references: [id])
-  members     TeamMember[]
-  spaces      TeamSpace[]
+  tasks       Task[]           @relation("TeamTasks")
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
   invitations TeamInvitation[]
+  members     TeamMember[]
   messages    TeamMessage[]
+  spaces      TeamSpace[]
 }
 
 model TeamMember {
@@ -71,28 +77,28 @@ model TeamMember {
 }
 
 model TeamSpace {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   teamId      String
   name        String
-  icon        String?  // emoji or icon name
-  color       String?  // hex color
+  icon        String?
+  color       String?
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   lists       TeamList[]
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
 }
 
 model TeamList {
-  id          String   @id @default(cuid())
-  spaceId     String
-  name        String
-  type        String   @default("TASKS") // TASKS, DOCS, ASSETS
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  space       TeamSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  spaceId   String
+  name      String
+  type      String    @default("TASKS")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  space     TeamSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
   @@index([spaceId])
 }
@@ -103,14 +109,13 @@ model TeamInvitation {
   userId    String
   role      String   @default("MEMBER")
   invitedBy String
-  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, EXPIRED
+  status    String   @default("PENDING")
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  team    Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user    User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inviter User @relation("InvitedBy", fields: [invitedBy], references: [id])
+  inviter   User     @relation("InvitedBy", fields: [invitedBy], references: [id])
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([teamId])
@@ -146,8 +151,11 @@ model User {
   passwordResetToken     String?
   twoFactorEnabled       Boolean               @default(false)
   twoFactorSecret        String?
+  roleId                 String?
+  aiMemories             AIMemory[]
   activityLogs           ActivityLog[]
   authLogs               AuthLog[]
+  automations            Automation[]
   comments               Comment[]
   goals                  Goal[]                @relation("GoalOwner")
   mfaSettings            MFASetting?
@@ -161,45 +169,39 @@ model User {
   sessions               Session[]
   tasks                  Task[]                @relation("TaskAssignee")
   taskAssignments        TaskAssignment[]
-  teamMembers            TeamMember[]
+  invitedUsers           TeamInvitation[]      @relation("InvitedBy")
   teamInvitations        TeamInvitation[]
-  invitedUsers          TeamInvitation[]      @relation("InvitedBy")
-  tenant                 Tenant?               @relation(fields: [tenantId], references: [id])
-  
-  roleId                 String?
+  teamMembers            TeamMember[]
+  teamMessages           TeamMessage[]
   systemRole             Role?                 @relation(fields: [roleId], references: [id])
-  teamMessages          TeamMessage[]
+  tenant                 Tenant?               @relation(fields: [tenantId], references: [id])
 }
 
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String           @id @default(cuid())
+  name        String           @unique
   description String?
-  isSystem    Boolean  @default(false)
-
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   permissions RolePermission[]
   users       User[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Permission {
-  id          String   @id @default(cuid())
-  module      String   // e.g. "TASKS", "USERS"
-  action      String   // CREATE, READ, UPDATE, DELETE, EXECUTE
-  key         String   @unique // e.g. "tasks.create"
+  id          String           @id @default(cuid())
+  module      String
+  action      String
+  key         String           @unique
   description String?
-
   roles       RolePermission[]
 }
 
 model RolePermission {
   roleId       String
   permissionId String
-
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
@@ -255,80 +257,91 @@ model KeyResult {
 }
 
 model Project {
-  id              String    @id @default(cuid())
-  name            String
-  description     String?
-  startDate       DateTime  @default(now())
-  endDate         DateTime? // mapped as 'deadline'
-  status          String    @default("ACTIVE") // ACTIVE | AT_RISK | DELAYED | COMPLETED
-  progress        Int       @default(0)
-  priority        String    @default("MEDIUM")
-  isStarred       Boolean   @default(false)
-  riskScore       Int       @default(0)
-  healthStatus    String    @default("ON_TRACK")
-  aiInsights      Json?
-  predictedDelay  Int       @default(0)
-  tags            String[]  @default([])
-  teamIds         String[]  @default([])
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  tenantId        String?
-  managerId       String    // ownerId
-  goalId          String?
-  
-  // Soft Delete
-  isDeleted       Boolean   @default(false)
-  deletedAt       DateTime?
-  
-  goal            Goal?     @relation(fields: [goalId], references: [id])
-  manager         User      @relation("ProjectManager", fields: [managerId], references: [id])
-  tenant          Tenant?   @relation(fields: [tenantId], references: [id])
-  tasks           Task[]
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  status         String    @default("ACTIVE")
+  progress       Int       @default(0)
+  priority       String    @default("MEDIUM")
+  isStarred      Boolean   @default(false)
+  riskScore      Int       @default(0)
+  healthStatus   String    @default("ON_TRACK")
+  aiInsights     Json?
+  predictedDelay Int       @default(0)
+  tags           String[]  @default([])
+  teamIds        String[]  @default([])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tenantId       String?
+  managerId      String
+  goalId         String?
+  isDeleted      Boolean   @default(false)
+  deletedAt      DateTime?
+  goal           Goal?     @relation(fields: [goalId], references: [id])
+  manager        User      @relation("ProjectManager", fields: [managerId], references: [id])
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id])
+  risks          Risk[]
+  tasks          Task[]
 }
 
 model Task {
-  id                      String                  @id @default(cuid())
-  title                   String
-  description             String?
-  status                  TaskStatus              @default(TODO)
-  priority                TaskPriority            @default(MEDIUM)
-  type                    String                  @default("TASK")
-  startDate               DateTime?               @default(now())
-  dueDate                 DateTime?
-  progress                Int                     @default(0)
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-  tenantId                String?
-  projectId               String
-  assigneeId              String?
-  parentId                String?
-  createdBy               String?
-  tags                    String[]                @default([])
-  complexity              String?                 @default("MEDIUM")
-  estimatedHours          Float?                  @default(0)
-  aiInsights              Json?
-  delayProbability        Int                     @default(0)
-  riskScore               Int                     @default(0)
-  teamId                  String?
-  spaceId                 String?
-  listId                  String?
-  comments                Comment[]
-  subtasks                SubTask[]
-  assignee                User?                   @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  parent                  Task?                   @relation("SubTasks", fields: [parentId], references: [id])
-  subTasks                Task[]                  @relation("SubTasks")
-  project                 Project                 @relation(fields: [projectId], references: [id])
-  team                    Team?                   @relation("TeamTasks", fields: [teamId], references: [id])
-  tenant                  Tenant?                 @relation(fields: [tenantId], references: [id])
-  assignments             TaskAssignment[]
-  assignmentHistory       TaskAssignmentHistory[]
-  files                   TaskFile[]
-  taskDependencies        Task[]                  @relation("TaskDeps")
-  taskDependentOn         Task[]                  @relation("TaskDeps")
+  id                String                  @id @default(cuid())
+  title             String
+  description       String?
+  status            TaskStatus              @default(TODO)
+  priority          TaskPriority            @default(MEDIUM)
+  type              String                  @default("TASK")
+  startDate         DateTime?               @default(now())
+  dueDate           DateTime?
+  progress          Int                     @default(0)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  tenantId          String?
+  projectId         String
+  assigneeId        String?
+  parentId          String?
+  createdBy         String?
+  tags              String[]                @default([])
+  complexity        String?                 @default("MEDIUM")
+  estimatedHours    Float?                  @default(0)
+  aiInsights        Json?
+  delayProbability  Int                     @default(0)
+  riskScore         Int                     @default(0)
+  teamId            String?
+  spaceId           String?
+  listId            String?
+  comments          Comment[]
+  subtasks          SubTask[]
+  assignee          User?                   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  parent            Task?                   @relation("SubTasks", fields: [parentId], references: [id])
+  subTasks          Task[]                  @relation("SubTasks")
+  project           Project                 @relation(fields: [projectId], references: [id])
+  team              Team?                   @relation("TeamTasks", fields: [teamId], references: [id])
+  tenant            Tenant?                 @relation(fields: [tenantId], references: [id])
+  assignments       TaskAssignment[]
+  assignmentHistory TaskAssignmentHistory[]
+  files             TaskFile[]
+  dependencies      Task[]                  @relation("TaskDeps")
+  dependedBy        Task[]                  @relation("TaskDeps")
 
   @@index([spaceId])
   @@index([listId])
+}
+
+model Risk {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  impact      String
+  probability String
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model SubTask {
@@ -420,17 +433,72 @@ model ActivityLog {
 
 model Subscription {
   id                   String    @id @default(cuid())
-  plan                 String    @default("FREE")
+  planId               String?
   status               String    @default("ACTIVE")
+  billingCycle         String    @default("MONTHLY")
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   stripePriceId        String?
-  startDate            DateTime  @default(now())
-  endDate              DateTime?
+  startedAt            DateTime  @default(now())
+  expiresAt            DateTime?
+  canceledAt           DateTime?
+  trialEndsAt          DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   tenantId             String    @unique
+  plan                 Plan?     @relation(fields: [planId], references: [id])
   tenant               Tenant    @relation(fields: [tenantId], references: [id])
+}
+
+model Plan {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  priceMonthly  Float
+  priceYearly   Float
+  features      Json
+  limits        Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  tenantId    String
+  amount      Float
+  currency    String    @default("USD")
+  status      String    @default("UNPAID")
+  invoiceUrl  String?
+  paidAt      DateTime?
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  provider      String   @default("STRIPE")
+  transactionId String   @unique
+  amount        Float
+  status        String   @default("SUCCESS")
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model UsageTracking {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  tasksUsed       Int      @default(0)
+  storageUsed     BigInt   @default(0)
+  aiCreditsUsed   Int      @default(0)
+  automationsUsed Int      @default(0)
+  seatsUsed       Int      @default(0)
+  updatedAt       DateTime @updatedAt
 }
 
 model Notification {
@@ -838,6 +906,312 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+model TeamMessage {
+  id        String   @id @default(cuid())
+  content   String
+  type      String   @default("TEXT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  teamId    String
+  userId    String
+  threadId  String?
+  replyToId String?
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Automation {
+  id             String                 @id @default(cuid())
+  name           String
+  description    String?
+  status         String                 @default("DRAFT")
+  type           String                 @default("OPERATIONAL")
+  healthScore    Int                    @default(100)
+  reliability    Float                  @default(100.0)
+  executionCount Int                    @default(0)
+  successRate    Float                  @default(100.0)
+  lastExecuted   DateTime?
+  ownerId        String
+  tenantId       String
+  aiConfidence   Float                  @default(0.0)
+  isAutonomous   Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  owner          User                   @relation(fields: [ownerId], references: [id])
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id])
+  aiActions      AutomationAIAction[]
+  analytics      AutomationAnalytics?
+  edges          AutomationEdge[]
+  executions     AutomationExecution[]
+  logs           AutomationLog[]
+  nodes          AutomationNode[]
+  predictions    AutomationPrediction[]
+  versions       AutomationVersion[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
+
+model AutomationNode {
+  id           String     @id @default(cuid())
+  automationId String
+  type         String
+  subType      String?
+  config       Json
+  positionX    Float
+  positionY    Float
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+}
+
+model AutomationEdge {
+  id           String     @id @default(cuid())
+  automationId String
+  sourceNodeId String
+  targetNodeId String
+  sourceHandle String?
+  targetHandle String?
+  config       Json?
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+}
+
+model AutomationExecution {
+  id           String          @id @default(cuid())
+  automationId String
+  status       String
+  startTime    DateTime        @default(now())
+  endTime      DateTime?
+  duration     Int?
+  triggeredBy  String?
+  error        String?
+  automation   Automation      @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  logs         AutomationLog[]
+
+  @@index([automationId])
+}
+
+model AutomationLog {
+  id           String              @id @default(cuid())
+  executionId  String
+  automationId String
+  nodeId       String?
+  level        String              @default("INFO")
+  message      String
+  details      Json?
+  timestamp    DateTime            @default(now())
+  automation   Automation          @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  execution    AutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@index([automationId])
+}
+
+model AutomationPrediction {
+  id            String     @id @default(cuid())
+  automationId  String
+  type          String
+  confidence    Float
+  prediction    String
+  actualOutcome String?
+  isCorrect     Boolean?
+  timestamp     DateTime   @default(now())
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+}
+
+model AutomationAIAction {
+  id           String     @id @default(cuid())
+  automationId String
+  actionType   String
+  reason       String
+  confidence   Float
+  impact       String?
+  wasApproved  Boolean    @default(true)
+  timestamp    DateTime   @default(now())
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+}
+
+model AutomationVersion {
+  id            String     @id @default(cuid())
+  automationId  String
+  versionNumber Int
+  config        Json
+  description   String?
+  createdBy     String
+  createdAt     DateTime   @default(now())
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+}
+
+model AutomationTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String
+  config      Json
+  icon        String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model AutomationAnalytics {
+  id                  String     @id @default(cuid())
+  automationId        String     @unique
+  timeSavedTotal      Float      @default(0.0)
+  efficiencyGain      Float      @default(0.0)
+  operationalAutonomy Float      @default(0.0)
+  lastCalculated      DateTime   @default(now())
+  automation          Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+}
+
+model AIMemory {
+  id            String                 @id @default(cuid())
+  title         String
+  content       String?
+  type          String
+  importance    String                 @default("MEDIUM")
+  confidence    Float                  @default(0.0)
+  metadata      Json?
+  tenantId      String
+  userId        String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id])
+  user          User?                  @relation(fields: [userId], references: [id])
+  events        AIMemoryEvent[]
+  patterns      AIMemoryPattern[]
+  relationships AIMemoryRelationship[]
+
+  @@index([tenantId])
+  @@index([type])
+}
+
+model AIMemoryRelationship {
+  id               String   @id @default(cuid())
+  memoryId         String
+  targetType       String
+  targetId         String
+  relationshipType String
+  strength         Float    @default(1.0)
+  memory           AIMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+  @@index([targetId])
+}
+
+model AIMemoryPattern {
+  id          String   @id @default(cuid())
+  memoryId    String
+  patternType String
+  description String
+  signals     Json?
+  confidence  Float
+  impact      String?
+  memory      AIMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+}
+
+model AIMemoryEvent {
+  id          String   @id @default(cuid())
+  memoryId    String
+  eventType   String
+  description String
+  timestamp   DateTime @default(now())
+  memory      AIMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+}
+
+model AIHistory {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?
+  impact     String?
+  tenantId   String
+  userId     String?
+  timestamp  DateTime @default(now())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([timestamp])
+}
+
+model AIDecision {
+  id             String            @id @default(cuid())
+  action         String
+  reasoning      String
+  signals        Json?
+  confidence     Float
+  prediction     String?
+  outcome        String?
+  tenantId       String
+  userId         String?
+  createdAt      DateTime          @default(now())
+  tenant         Tenant            @relation(fields: [tenantId], references: [id])
+  timelineEvents AITimelineEvent[]
+
+  @@index([tenantId])
+}
+
+model AITimelineEvent {
+  id          String      @id @default(cuid())
+  type        String
+  title       String
+  description String?
+  status      String      @default("COMPLETED")
+  severity    String      @default("INFO")
+  decisionId  String?
+  tenantId    String
+  timestamp   DateTime    @default(now())
+  decision    AIDecision? @relation(fields: [decisionId], references: [id])
+
+  @@index([tenantId])
+  @@index([timestamp])
+}
+
+model DashboardMetric {
+  id        String   @id @default(cuid())
+  name      String
+  value     Float
+  previous  Float?
+  trend     Float?
+  type      String
+  category  String
+  metadata  Json?
+  timestamp DateTime @default(now())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model ExecutiveInsight {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  impact      String
+  category    String
+  status      String   @default("ACTIVE")
+  actionTaken Boolean  @default(false)
+  confidence  Float
+  dataPoints  Json?
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
 enum UserRole {
   ADMIN
   PROJECT_MANAGER
@@ -908,22 +1282,3 @@ enum TaskPriority {
   HIGH
   URGENT
 }
-
-
-model TeamMessage {
-  id        String   @id @default(cuid())
-  content   String
-  type      String   @default("TEXT")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  teamId    String
-  userId    String
-  threadId  String?
-  replyToId String?
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@index([userId])
-}
-

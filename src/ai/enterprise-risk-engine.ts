@@ -155,14 +155,13 @@ export class EnterpriseRiskEngine {
           assigneeId: task.assigneeId,
           status: 'DONE',
           dueDate: { not: null },
-          completedAt: { not: null }
         },
-        select: { dueDate: true, completedAt: true }
+        select: { dueDate: true, updatedAt: true }
       });
 
       if (completedTasks.length > 0) {
         const delayedTasks = completedTasks.filter(t => 
-          t.completedAt && t.dueDate && t.completedAt > t.dueDate
+          t.updatedAt && t.dueDate && t.updatedAt > t.dueDate
         );
         historicalDelays = delayedTasks.length / completedTasks.length;
       }
@@ -170,11 +169,11 @@ export class EnterpriseRiskEngine {
 
     // 5. Dependencies (0-1)
     let dependencies = 0;
-    if (task.taskDependencies && task.taskDependencies.length > 0) {
-      const incompleteDeps = task.taskDependencies.filter((dep: any) => 
+    if (task.dependencies && task.dependencies.length > 0) {
+      const incompleteDeps = task.dependencies.filter((dep: any) => 
         dep.status !== 'DONE'
       ).length;
-      dependencies = incompleteDeps / task.taskDependencies.length;
+      dependencies = incompleteDeps / task.dependencies.length;
     }
 
     return {
@@ -300,7 +299,7 @@ Priority: ${task.priority}
 Due Date: ${task.dueDate || 'Not set'}
 Assignee Workload: ${(factors.workload * 100).toFixed(0)}%
 Historical Delay Rate: ${(factors.historicalDelays * 100).toFixed(0)}%
-Dependencies: ${task.taskDependencies?.length || 0}
+Dependencies: ${task.dependencies?.length || 0}
 
 Current Risk Factors:
 - Deadline Proximity: ${(factors.deadlineProximity * 100).toFixed(0)}%
@@ -316,10 +315,7 @@ Provide JSON response:
   "recommendations": ["rec1", "rec2"]
 }`;
 
-      const response = await aiService.complete(prompt, {
-        temperature: 0.3,
-        maxTokens: 500
-      });
+      const response = await aiService.complete(prompt);
 
       if (response && response.content) {
         try {
@@ -357,7 +353,7 @@ Provide JSON response:
       where: { id: taskId },
       include: {
         assignee: { select: { id: true, name: true } },
-        taskDependencies: {
+        dependencies: {
           select: { id: true, title: true, status: true, dueDate: true }
         },
         subTasks: {
@@ -397,7 +393,9 @@ Provide JSON response:
       });
 
       if (task?.aiInsights) {
-        const analysis = JSON.parse(task.aiInsights) as RiskAnalysis;
+        const analysis = (typeof task.aiInsights === 'string' 
+          ? JSON.parse(task.aiInsights) 
+          : task.aiInsights) as RiskAnalysis;
         if (analysis.lastAnalyzed) {
           analysis.lastAnalyzed = new Date(analysis.lastAnalyzed);
         }

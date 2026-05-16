@@ -26,11 +26,11 @@ export async function POST(request: Request) {
         whatsappFailed: report.channelMetrics.whatsapp.failed,
         pushSuccess: report.channelMetrics.push.success,
         pushFailed: report.channelMetrics.push.failed,
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           report: report,
           timestamp: report.timestamp,
           baseUrl: baseUrl || 'default'
-        }
+        }))
       }
     });
 

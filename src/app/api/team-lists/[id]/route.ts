@@ -10,11 +10,12 @@ const updateListSchema = z.object({
 // GET /api/team-lists/[id] - Get a specific list
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const list = await prisma.teamList.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         space: {
           select: {
@@ -45,14 +46,15 @@ export async function GET(
 // PUT /api/team-lists/[id] - Update a list
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     const validatedData = updateListSchema.parse(body);
 
     const list = await prisma.teamList.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       include: {
         space: {
@@ -83,11 +85,12 @@ export async function PUT(
 // DELETE /api/team-lists/[id] - Delete a list
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await prisma.teamList.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'List deleted successfully' });
