@@ -6,11 +6,14 @@ interface ApiOptions extends RequestInit {
   retryDelay?: number;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const BASE_URL = RAW_BASE_URL.replace(/\/api\/?$/, '');
 
 function getFullUrl(url: string): string {
   if (url.startsWith('http')) return url;
-  return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  // Ensure we don't end up with /api/api if url already starts with /api
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${BASE_URL}${cleanUrl}`;
 }
 
 interface ApiResponse<T = any> {

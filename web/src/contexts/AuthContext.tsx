@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''; 
+// Client-side auth uses relative paths to leverage Next.js rewrites
+const API_URL = ''; 
 
 interface User {
     id: string;

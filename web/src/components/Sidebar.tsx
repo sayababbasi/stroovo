@@ -63,7 +63,8 @@ interface NavSection {
     collapsible?: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// Use relative paths to leverage Next.js rewrites
+const API_URL = '';
 
 export default function Sidebar() {
     const pathname = usePathname();
