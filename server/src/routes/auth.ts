@@ -131,6 +131,7 @@ router.post('/signup', async (req, res) => {
     }
     res.status(500).json({ error: 'Signup failed' });
   }
+});
 // GET /api/auth/me
 router.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
