@@ -96,6 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 localStorage.setItem('stroovo_token', userData.accessToken || currentToken);
                 localStorage.setItem('stroovo_user', JSON.stringify(userData.user));
                 
+                // Update cookie
+                document.cookie = `accessToken=${userData.accessToken || currentToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+                
                 scheduleTokenRefresh();
                 return true;
             } else {
@@ -167,9 +170,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(data.user);
             setAccessToken(data.accessToken);
             
-            // Persist to localStorage
+            // Persist to localStorage for client-side state
             localStorage.setItem('stroovo_token', data.accessToken);
             localStorage.setItem('stroovo_user', JSON.stringify(data.user));
+            
+            // Set cookie for middleware/server-side state
+            document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
             
             scheduleTokenRefresh();
 

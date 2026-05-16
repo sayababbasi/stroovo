@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const jwtSecret = process.env.JWT_SECRET || 'stroovo-production-v2-stable-2026';
+const jwtSecret = process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026';
 const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
 export async function middleware(request: NextRequest) {

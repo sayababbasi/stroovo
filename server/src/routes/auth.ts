@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
         tenantId: user.tenantId,
         role: user.role 
       },
-      process.env.JWT_SECRET || 'fallback-secret',
+      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
       { expiresIn: '24h' }
     );
 
@@ -59,7 +59,7 @@ router.post('/login-simple', async (req, res) => {
     }
     const token = jwt.sign(
       { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
+      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
       { expiresIn: '24h' }
     );
     res.json({
@@ -111,7 +111,7 @@ router.post('/signup', async (req, res) => {
         tenantId: result.user.tenantId,
         role: result.user.role 
       },
-      process.env.JWT_SECRET || 'fallback-secret',
+      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
       { expiresIn: '24h' }
     );
 
@@ -142,7 +142,7 @@ router.get('/me', async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026') as any;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: { tenant: true }
