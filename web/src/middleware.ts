@@ -32,18 +32,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Temporary bypass verification to break the loop if secret is mismatching
-  return NextResponse.next();
-
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     
-    // Check for tenantId in payload
-    if (!payload.tenantId && !pathname.includes('/admin')) {
-       // Allow access but log warning or redirect to onboarding if needed
-       console.warn('No tenantId found in JWT payload');
-    }
-
     // Add tenantId to headers for easy access in API routes
     const requestHeaders = new Headers(request.headers);
     if (payload.tenantId) {
@@ -79,9 +70,6 @@ export async function middleware(request: NextRequest) {
       path: '/',
     });
 
-    if (pathname.startsWith('/api')) {
-      return response;
-    }
     return response;
   }
 }
