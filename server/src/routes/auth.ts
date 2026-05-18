@@ -26,7 +26,7 @@ router.post('/login', async (req, res) => {
         role: user.role 
       },
       process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.json({
@@ -60,7 +60,7 @@ router.post('/login-simple', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role },
       process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
     res.json({
       token,
@@ -112,11 +112,12 @@ router.post('/signup', async (req, res) => {
         role: result.user.role 
       },
       process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.status(201).json({
       token,
+      accessToken: token, // Added for compatibility with frontend
       user: {
         id: result.user.id,
         name: result.user.name,
@@ -164,6 +165,54 @@ router.get(['/me', '/session'], async (req, res) => {
     });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// POST /api/auth/refresh
+router.post('/refresh', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026') as any;
+    
+    // Generate new token valid for 7 days
+    const newToken = jwt.sign(
+      { 
+        id: decoded.id, 
+        email: decoded.email, 
+        tenantId: decoded.tenantId,
+        role: decoded.role 
+      },
+      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
+      { expiresIn: '7d' }
+    );
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      token: newToken,
+      accessToken: newToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId
+      }
+    });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +11,14 @@ function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams?.get('redirect') || '/dashboard';
-    const { login: authLogin } = useAuth();
+    const { login: authLogin, isAuthenticated } = useAuth();
+
+    // Check if user is already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push(redirect);
+        }
+    }, [isAuthenticated, router, redirect]);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

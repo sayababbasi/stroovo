@@ -96,37 +96,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 localStorage.setItem('stroovo_token', userData.accessToken || currentToken);
                 localStorage.setItem('stroovo_user', JSON.stringify(userData.user));
                 
-                // Update cookie
-                document.cookie = `accessToken=${userData.accessToken || currentToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+                // Update cookie to 7 days (604800 seconds)
+                document.cookie = `accessToken=${userData.accessToken || currentToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
                 
-                scheduleTokenRefresh();
                 return true;
-            } else {
-                console.warn('[Auth] Token verification failed, status:', response.status);
-                // If backend says token is invalid, clear storage
+            } else if (response.status === 401 || response.status === 403 || response.status === 404) {
+                console.warn('[Auth] Token verification explicitly failed, status:', response.status);
+                // Clear session only on explicit authentication failure
                 localStorage.removeItem('stroovo_token');
                 localStorage.removeItem('stroovo_user');
+                setUser(null);
+                setAccessToken(null);
+                document.cookie = `accessToken=; path=/; max-age=0; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+                return false;
+            } else {
+                console.warn('[Auth] Server returned temporary error:', response.status, '- keeping session active');
+                return true;
             }
         } catch (error) {
-            console.error('[Auth] Failed to initialize auth:', error);
+            console.error('[Auth] Failed to initialize auth due to network error:', error, '- keeping session active');
+            return true;
         }
-
-        console.log('[Auth] Attempting token refresh fallback...');
-        // Fallback to refresh token
-        return await refreshTokenFn();
     };
 
     const scheduleTokenRefresh = () => {
-        if (refreshTimeout) {
-            clearTimeout(refreshTimeout);
-        }
-        
-        // Schedule refresh 2 minutes before expiry (assuming 15 min expiry)
-        const timeout = setTimeout(() => {
-            refreshTokenFn();
-        }, 13 * 60 * 1000); // 13 minutes
-        
-        setRefreshTimeout(timeout);
+        // Disabled active 13-minute refresh loop to avoid calling unimplemented endpoint.
+        // Session validity is securely verified on mount and backend requests.
     };
 
     const login = async (email: string, password: string) => {
@@ -174,11 +169,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('stroovo_token', data.accessToken);
             localStorage.setItem('stroovo_user', JSON.stringify(data.user));
             
-            // Set cookie for middleware/server-side state
-            document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+            // Set cookie for middleware/server-side state for 7 days
+            document.cookie = `accessToken=${data.accessToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
             
-            scheduleTokenRefresh();
-
             return { success: true };
         } catch (error) {
             console.error('Login error:', error);
@@ -201,10 +194,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: data.error || 'Signup failed' };
             }
 
+            const tokenToUse = data.accessToken || data.token;
+
             // Successful signup
             setUser(data.user);
-            setAccessToken(data.accessToken);
-            scheduleTokenRefresh();
+            setAccessToken(tokenToUse);
+            
+            // Persist token and user in local storage
+            localStorage.setItem('stroovo_token', tokenToUse);
+            localStorage.setItem('stroovo_user', JSON.stringify(data.user));
+            
+            // Set cookie for middleware/server-side state for 7 days
+            document.cookie = `accessToken=${tokenToUse}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
 
             return { success: true };
         } catch (error) {
@@ -234,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAccessToken(null);
             localStorage.removeItem('stroovo_token');
             localStorage.removeItem('stroovo_user');
+            document.cookie = `accessToken=; path=/; max-age=0; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
             router.push('/login');
         }
     };
