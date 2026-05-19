@@ -36,8 +36,9 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Client-side auth uses the production API URL directly
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
+// Auth calls go through relative paths so the Next.js rewrite proxy forwards them correctly.
+// Using absolute API_URL caused double-/api prefix bugs when NEXT_PUBLIC_API_URL ended with /api.
+const API_URL = '';
 
 interface User {
     id: string;
@@ -111,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             headers['Authorization'] = `Bearer ${currentToken}`;
             
-            const response = await fetch(`${API_URL}/api/auth/me`, {
+            const response = await fetch(`/api/auth/me`, {
                 method: 'GET',
                 headers,
                 credentials: 'include',
@@ -160,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password: string) => {
         try {
             // Use raw fetch to get a proper Response with .json() and .ok
-            const res = await fetch(`${API_URL}/api/auth/login-simple`, {
+            const res = await fetch(`/api/auth/login-simple`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
