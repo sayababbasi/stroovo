@@ -16,13 +16,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 export function generateTokens(user: { id: string; email: string; role: string; tenantId?: string | null }) {
     const accessToken = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
+        { id: user.id, userId: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
         JWT_SECRET,
         { expiresIn: '1h' }
     );
 
     const refreshToken = jwt.sign(
-        { userId: user.id, tenantId: user.tenantId },
+        { id: user.id, userId: user.id, tenantId: user.tenantId },
         JWT_REFRESH_SECRET,
         { expiresIn: '7d' }
     );

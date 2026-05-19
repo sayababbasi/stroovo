@@ -4,8 +4,8 @@ import bcrypt from 'bcryptjs';
 // Security constants
 export const SECURITY_CONFIG = {
   // JWT Settings
-  JWT_SECRET: process.env.JWT_SECRET || 'stroovo-production-v2-stable-2026',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-super-refresh-secret-jwt-key',
+  JWT_SECRET: process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'revotic-ai-workflow-refresh-secret-2026',
   JWT_ACCESS_EXPIRY: '15m', // Shorter for security
   JWT_REFRESH_EXPIRY: '7d',
   

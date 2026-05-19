@@ -37,7 +37,7 @@ router.post('/login', async (req, res) => {
         tenantId: user.tenantId,
         role: user.role 
       },
-      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
+      process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026',
       { expiresIn: '7d' }
     );
 
@@ -82,7 +82,7 @@ router.post('/login-simple', async (req, res) => {
     }
     const token = jwt.sign(
       { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role },
-      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
+      process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026',
       { expiresIn: '7d' }
     );
     res.json({
@@ -134,7 +134,7 @@ router.post('/signup', async (req, res) => {
         tenantId: result.user.tenantId,
         role: result.user.role 
       },
-      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
+      process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026',
       { expiresIn: '7d' }
     );
 
@@ -166,7 +166,7 @@ router.get(['/me', '/session'], async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026') as any;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: { tenant: true }
@@ -201,7 +201,7 @@ router.post('/refresh', async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026') as any;
     
     // Generate new token valid for 7 days
     const newToken = jwt.sign(
@@ -211,7 +211,7 @@ router.post('/refresh', async (req, res) => {
         tenantId: decoded.tenantId,
         role: decoded.role 
       },
-      process.env.JWT_SECRET || 'stroovo-secure-fallback-secret-2026',
+      process.env.JWT_SECRET || 'revotic-ai-workflow-secret-2026',
       { expiresIn: '7d' }
     );
 
