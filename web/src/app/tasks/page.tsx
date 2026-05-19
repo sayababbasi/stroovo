@@ -73,7 +73,7 @@ export default function TasksPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [accessToken]);
 
     useEffect(() => {
         // Socket initialization from environment variable

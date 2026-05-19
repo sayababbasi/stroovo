@@ -46,7 +46,7 @@ export default function NotificationBell() {
             controller.abort();
             clearInterval(interval);
         };
-    }, [isAuthenticated, isLoading]);
+    }, [isAuthenticated, isLoading, accessToken]);
 
     const markAllRead = async () => {
         if (!isAuthenticated) return;

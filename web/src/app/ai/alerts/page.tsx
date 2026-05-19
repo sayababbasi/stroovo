@@ -55,7 +55,7 @@ export default function AlertsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     fetchRisks();

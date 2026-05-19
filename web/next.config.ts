@@ -7,8 +7,20 @@ const nextConfig: NextConfig = {
     
     return [
       {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
+        source: '/api/auth/:path*',
+        destination: `${backendUrl}/api/auth/:path*`,
+      },
+      {
+        source: '/api/tasks/:path*',
+        destination: `${backendUrl}/api/tasks/:path*`,
+      },
+      {
+        source: '/api/teams',
+        destination: `${backendUrl}/api/teams`,
+      },
+      {
+        source: '/api/teams/:id',
+        destination: `${backendUrl}/api/teams/:id`,
       },
       {
         source: '/login',
