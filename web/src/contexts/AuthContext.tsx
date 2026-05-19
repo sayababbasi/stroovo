@@ -3,8 +3,41 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Client-side auth uses relative paths to leverage Next.js rewrites
-const API_URL = ''; 
+// Global fetch interceptor to automatically append the Authorization header to all api calls
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = async function (input, init) {
+    let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    
+    if (url.startsWith('/api/') || url.includes('/api/') || url.startsWith('api/')) {
+      const token = localStorage.getItem('stroovo_token');
+      if (token) {
+        init = init || {};
+        init.headers = init.headers || {};
+        
+        if (init.headers instanceof Headers) {
+          if (!init.headers.has('Authorization')) {
+            init.headers.set('Authorization', `Bearer ${token}`);
+          }
+        } else if (Array.isArray(init.headers)) {
+          const hasAuth = init.headers.some(([key]) => key.toLowerCase() === 'authorization');
+          if (!hasAuth) {
+            init.headers.push(['Authorization', `Bearer ${token}`]);
+          }
+        } else {
+          const headersRecord = init.headers as Record<string, string>;
+          if (!headersRecord['Authorization'] && !headersRecord['authorization']) {
+            headersRecord['Authorization'] = `Bearer ${token}`;
+          }
+        }
+      }
+    }
+    return originalFetch.call(this, input, init);
+  };
+}
+
+// Client-side auth uses the production API URL directly
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
 
 interface User {
     id: string;

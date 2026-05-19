@@ -63,8 +63,8 @@ interface NavSection {
     collapsible?: boolean;
 }
 
-// Use relative paths to leverage Next.js rewrites
-const API_URL = '';
+// Use production API URL directly
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
 
 export default function Sidebar() {
     const pathname = usePathname();

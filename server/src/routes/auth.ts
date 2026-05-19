@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -14,7 +15,18 @@ router.post('/login', async (req, res) => {
       include: { tenant: true }
     });
 
-    if (!user || user.passwordHash !== password) { // Simplified password check for now
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    let isMatch = false;
+    if (user.passwordHash.startsWith('$2b$') || user.passwordHash.startsWith('$2a$')) {
+      isMatch = await bcrypt.compare(password, user.passwordHash);
+    } else {
+      isMatch = user.passwordHash === password;
+    }
+
+    if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -54,7 +66,18 @@ router.post('/login-simple', async (req, res) => {
       where: { email },
       include: { tenant: true }
     });
-    if (!user || user.passwordHash !== password) {
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    let isMatch = false;
+    if (user.passwordHash.startsWith('$2b$') || user.passwordHash.startsWith('$2a$')) {
+      isMatch = await bcrypt.compare(password, user.passwordHash);
+    } else {
+      isMatch = user.passwordHash === password;
+    }
+
+    if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
     const token = jwt.sign(

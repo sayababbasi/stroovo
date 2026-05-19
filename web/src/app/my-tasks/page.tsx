@@ -22,8 +22,8 @@ import {
 } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
-// Use relative paths to leverage Next.js rewrites
-const API_URL = '';
+// Use production API URL directly
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
 
 interface Task {
     id: string;
