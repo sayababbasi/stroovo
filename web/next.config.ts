@@ -11,8 +11,12 @@ const nextConfig: NextConfig = {
         destination: `${backendUrl}/api/auth/:path*`,
       },
       {
-        source: '/api/tasks/:path*',
-        destination: `${backendUrl}/api/tasks/:path*`,
+        source: '/api/tasks',
+        destination: `${backendUrl}/api/tasks`,
+      },
+      {
+        source: '/api/tasks/:id',
+        destination: `${backendUrl}/api/tasks/:id`,
       },
       {
         source: '/api/teams',
