@@ -48,15 +48,18 @@ function redirectToLogin(request: NextRequest, pathname: string) {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   console.log(`[PROXY] Processing: ${pathname}`);
 
   // Public paths
   if (
+    pathname === '/' ||
+    pathname.startsWith('/landing') ||
     pathname.includes('/api/auth') ||
     pathname === '/login' ||
     pathname === '/signup' ||
+    pathname.startsWith('/auth') ||
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
     pathname === '/logo.png' ||
@@ -103,5 +106,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png|icon.png).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

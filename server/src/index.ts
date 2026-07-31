@@ -6,10 +6,10 @@ import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import { prisma } from './lib/prisma';
-import authRoutes from './routes/auth.js';
-import taskRoutes from './routes/tasks.js';
-import teamRoutes from './routes/teams.js';
-import { setupWebSockets } from './sockets/index.js';
+import authRoutes from './routes/auth';
+import taskRoutes from './routes/tasks';
+import teamRoutes from './routes/teams';
+import { setupWebSockets } from './sockets/index';
 
 
 const app = express();

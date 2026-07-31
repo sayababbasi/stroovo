@@ -23,10 +23,10 @@ export const metadata: Metadata = {
   description: "Stroovo is an AI-powered workflow platform that helps teams manage tasks, automate processes, and work smarter.",
   icons: {
     icon: [
-      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: '/icon.png',
+    apple: '/favicon.png',
   },
 };
 

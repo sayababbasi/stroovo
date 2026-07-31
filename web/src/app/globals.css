@@ -2,45 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Base Colors - Light */
+    --background: 210 40% 98%; /* #f8fafc */
+    --foreground: 222.2 84% 4.9%; /* #020817 */
+    
+    /* Surfaces */
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Brand Colors */
+    --brand-purple: 249 46% 54%; /* #6554C0 */
+    --brand-blue: 216 100% 40%; /* #0052CC */
+    --brand-cyan: 194 86% 58%; /* #36C5F0 */
+    
+    /* Semantic Actions */
+    --primary: 249 46% 54%; /* Primary = Purple */
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 210 40% 96.1%; /* #f1f5f9 */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* #0f172a */
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b */
+    
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    
+    --destructive: 0 84.2% 60.2%; /* #ef4444 */
+    --destructive-foreground: 210 40% 98%;
+
+    /* Forms & Borders */
+    --border: 214.3 31.8% 91.4%; /* #e2e8f0 */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 249 46% 54%; /* Focus ring = purple */
+
+    /* Border Radius */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Base Colors - Dark */
+    --background: 222.2 84% 4.9%; /* #020817 - Deep Navy */
+    --foreground: 210 40% 98%; /* #f8fafc */
+    
+    /* Surfaces */
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Brand Colors (Slightly adjusted for dark mode contrast if needed) */
+    --brand-purple: 249 46% 54%;
+    --brand-blue: 216 100% 40%;
+    --brand-cyan: 194 86% 58%;
+    
+    /* Semantic Actions */
+    --primary: 249 46% 54%;
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 217.2 32.6% 17.5%; /* #1e293b */
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* #94a3b8 */
+    
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Forms & Borders */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 249 46% 54%;
   }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+@layer base {
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-poppins), sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-poppins), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }

@@ -45,8 +45,9 @@ export async function GET(request: Request) {
         }
 
         // Get user data
+        const userId = (payload as any).id || payload.userId;
         const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
+            where: { id: userId as string },
             select: {
                 id: true,
                 name: true,

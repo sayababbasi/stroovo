@@ -35,8 +35,7 @@ export default function LandingPage() {
             <nav className={`nav ${scrolled ? 'nav-scrolled' : ''}`}>
                 <div className="nav-content">
                     <div className="logo">
-                        <Zap color="#0052CC" fill="#0052CC" size={24} />
-                        <span>Stroovo</span>
+                        <img src="/logo.png" alt="Stroovo Logo" style={{ height: '32px', width: 'auto' }} />
                     </div>
                     <div className="nav-links">
                         <a href="#features">Features</a>
@@ -264,8 +263,7 @@ export default function LandingPage() {
                 <div className="footer-content">
                     <div className="footer-brand">
                         <div className="logo">
-                            <Zap color="#0052CC" fill="#0052CC" size={20} />
-                            <span>Stroovo</span>
+                            <img src="/logo.png" alt="Stroovo Logo" style={{ height: '24px', width: 'auto' }} />
                         </div>
                         <p>Autonomous Team Operations Engine.</p>
                     </div>

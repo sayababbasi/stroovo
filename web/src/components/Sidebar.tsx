@@ -132,6 +132,7 @@ export default function Sidebar() {
     const sections: NavSection[] = [
         {
             title: 'Stroovo',
+            collapsible: true,
             items: [
                 { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
                 { name: 'My Tasks', href: '/tasks', icon: CheckSquare },
@@ -143,6 +144,7 @@ export default function Sidebar() {
         },
         {
             title: 'Planning',
+            collapsible: true,
             items: [
                 { name: 'Goals', href: '/goals', icon: Target },
                 { name: 'Roadmap', href: '/roadmap', icon: Milestone },
@@ -174,6 +176,7 @@ export default function Sidebar() {
         },
         {
             title: 'Teams',
+            collapsible: true,
             items: [
                 { name: 'My Team', href: '/teams/my-team', icon: Network },
                 { name: 'Core Development', href: '/teams/core', icon: Network },
@@ -184,6 +187,7 @@ export default function Sidebar() {
         },
         {
             title: 'Collaboration',
+            collapsible: true,
             items: [
                 { name: 'Messages', href: '/messages', icon: MessageSquareMore },
                 { name: 'Files', href: '/files', icon: FolderTree },
@@ -192,6 +196,7 @@ export default function Sidebar() {
         },
         {
             title: 'Analytics',
+            collapsible: true,
             items: [
                 { name: 'Analytics Dashboard', href: '/analytics', icon: BarChart2 },
                 { name: 'Performance Reports', href: '/reports', icon: FileBarChart2 },
@@ -199,6 +204,7 @@ export default function Sidebar() {
         },
         {
             title: 'AI Workspace',
+            collapsible: true,
             items: [
                 { name: 'AI Assistant', href: '/ai/assistant', icon: Bot },
                 { name: 'AI Suggestions', href: '/ai/suggestions', icon: Sparkles, badge: 'Alpha' },

@@ -26,10 +26,7 @@ const nextConfig: NextConfig = {
         source: '/api/teams/:id',
         destination: `${backendUrl}/api/teams/:id`,
       },
-      {
-        source: '/login',
-        destination: '/auth/login',
-      },
+
       {
         source: '/signup',
         destination: '/auth/signup',
