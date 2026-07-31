@@ -19,6 +19,7 @@ export default function NotificationBell() {
         }
 
         const controller = new AbortController();
+        let interval: NodeJS.Timeout;
 
         const fetchNotifications = async () => {
             try {
@@ -27,6 +28,9 @@ export default function NotificationBell() {
                     if (res.error?.includes('unauthorized') || res.error?.includes('forbidden')) {
                         setNotifications([]);
                         setUnreadCount(0);
+                    } else if (res.error?.toLowerCase().includes('fetch') || res.error?.toLowerCase().includes('network')) {
+                        // Stop polling if the backend is completely unreachable to prevent Next.js console spam
+                        clearInterval(interval);
                     }
                     return;
                 }
@@ -34,14 +38,13 @@ export default function NotificationBell() {
                 setNotifications(data.notifications || []);
                 setUnreadCount(data.unreadCount || 0);
             } catch (error) {
-                if ((error as Error).name !== 'AbortError') {
-                    console.error('Failed to fetch notifications:', error);
-                }
+                // Silently ignore network errors during background polling
+                clearInterval(interval);
             }
         };
 
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+        interval = setInterval(fetchNotifications, 30000); // Poll every 30s
         return () => {
             controller.abort();
             clearInterval(interval);

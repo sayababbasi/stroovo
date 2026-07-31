@@ -71,14 +71,22 @@ export default function Sidebar() {
     const { user, logout, isAuthenticated, isLoading } = useAuth();
     const branding = useBranding();
     
-    // Initialize state from sessionStorage if available
-    const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Stroovo', 'Projects']));
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('sidebarExpandedSections');
-            if (saved) return new Set(JSON.parse(saved));
+            if (saved) {
+                try {
+                    setExpandedSections(new Set(JSON.parse(saved)));
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            }
         }
-        return new Set(['Stroovo', 'Projects']);
-    });
+    }, []);
     
     const [projects, setProjects] = useState<Project[]>([]);
     const navContainerRef = useRef<HTMLDivElement>(null);
@@ -118,9 +126,7 @@ export default function Sidebar() {
                     console.error('Navbar projects fetch returned invalid JSON:', text.substring(0, 50));
                 }
             } catch (err) {
-                if ((err as Error).name !== 'AbortError') {
-                    console.error('Failed to fetch sidebar projects:', err);
-                }
+                // Silently ignore network errors to prevent Next.js console spam
             }
         };
 
@@ -285,8 +291,8 @@ export default function Sidebar() {
         if (isHeader) {
             return (
                 <div key={item.name} className={styles.section}>
-                    <div className={styles.navItem} style={{ paddingLeft: '16px', opacity: 0.8, cursor: 'default' }}>
-                        <Icon size={16} />
+                    <div className={styles.navItem} style={{ opacity: 0.8, cursor: 'default' }}>
+                        <Icon size={18} />
                         <span>{item.name}</span>
                     </div>
                     <div className={styles.nav}>
@@ -297,8 +303,8 @@ export default function Sidebar() {
                                 className={styles.navItem}
                                 style={{
                                     paddingLeft: '44px',
-                                    fontSize: '12.5px',
-                                    height: '28px',
+                                    fontSize: '13px',
+                                    height: '32px',
                                     gap: '8px'
                                 }}
                             >
@@ -320,9 +326,8 @@ export default function Sidebar() {
                 key={item.href ?? item.name}
                 href={item.href ?? '#'}
                 className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-                style={{ paddingLeft: '16px' }}
             >
-                <Icon size={16} />
+                <Icon size={18} />
                 <span>{item.name}</span>
                 {item.badge && (
                     <span className={styles.badge} data-type={item.badge === 'Beta' ? 'beta' : 'count'}>
@@ -367,7 +372,7 @@ export default function Sidebar() {
                                 <span>{section.title.toUpperCase()}</span>
                             </div>
 
-                            {(!section.collapsible || isExpanded) && (
+                            {(!section.collapsible || isExpanded) && isMounted && (
                                 <nav className={styles.nav}>
                                     {section.items.map((item) => renderNavItem(item))}
                                 </nav>
@@ -385,11 +390,10 @@ export default function Sidebar() {
                 <nav className={styles.nav}>
                     {settingsItems.map((item) => renderNavItem(item))}
                     <div
-                        className={styles.navItem}
-                        style={{ color: '#FF5630', cursor: 'pointer' }}
+                        className={`${styles.navItem} ${styles.logoutItem}`}
                         onClick={() => logout()}
                     >
-                        <LogOut size={16} />
+                        <LogOut size={18} />
                         <span>Logout</span>
                     </div>
                 </nav>

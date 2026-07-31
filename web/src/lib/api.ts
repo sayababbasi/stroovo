@@ -146,7 +146,6 @@ export async function apiGet<T = any>(
       };
     }
   } catch (error: any) {
-    console.error('API GET error:', error);
     return { success: false, error: error.message || 'Network error' };
   }
 }
@@ -184,7 +183,6 @@ export async function apiPost<T = any>(
       };
     }
   } catch (error: any) {
-    console.error('API POST error:', error);
     return { success: false, error: error.message || 'Network error' };
   }
 }
@@ -222,7 +220,6 @@ export async function apiPut<T = any>(
       };
     }
   } catch (error: any) {
-    console.error('API PUT error:', error);
     return { success: false, error: error.message || 'Network error' };
   }
 }
@@ -254,7 +251,6 @@ export async function apiDelete<T = any>(
       };
     }
   } catch (error: any) {
-    console.error('API DELETE error:', error);
     return { success: false, error: error.message || 'Network error' };
   }
 }
