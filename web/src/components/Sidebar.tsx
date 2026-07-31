@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard,
     CheckSquare,
@@ -70,8 +70,18 @@ export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout, isAuthenticated, isLoading } = useAuth();
     const branding = useBranding();
-    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Stroovo', 'Projects']));
+    
+    // Initialize state from sessionStorage if available
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('sidebarExpandedSections');
+            if (saved) return new Set(JSON.parse(saved));
+        }
+        return new Set(['Stroovo', 'Projects']);
+    });
+    
     const [projects, setProjects] = useState<Project[]>([]);
+    const navContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isLoading || !isAuthenticated || !user) {
@@ -235,6 +245,38 @@ export default function Sidebar() {
         });
     };
 
+    // Save expanded sections to session storage whenever they change
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('sidebarExpandedSections', JSON.stringify(Array.from(expandedSections)));
+        }
+    }, [expandedSections]);
+
+    // Automatically expand the section containing the active pathname
+    useEffect(() => {
+        const activeSection = sections.find(section => 
+            section.items.some(item => 
+                item.href === pathname || 
+                (item.children && item.children.some(child => child.href === pathname))
+            )
+        );
+        if (activeSection && !expandedSections.has(activeSection.title)) {
+            setExpandedSections(prev => new Set([...prev, activeSection.title]));
+        }
+    }, [pathname, sections, expandedSections]);
+
+    // Restore scroll position
+    useEffect(() => {
+        const savedScroll = sessionStorage.getItem('sidebarScrollPosition');
+        if (savedScroll && navContainerRef.current) {
+            navContainerRef.current.scrollTop = parseInt(savedScroll, 10);
+        }
+    }, []);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        sessionStorage.setItem('sidebarScrollPosition', e.currentTarget.scrollTop.toString());
+    };
+
     const renderNavItem = (item: NavItem) => {
         const Icon = item.icon;
         const isActive = item.href === pathname;
@@ -294,13 +336,22 @@ export default function Sidebar() {
     return (
         <aside className={styles.sidebar} style={{ borderRight: `1px solid ${branding.primaryColor}22` }}>
             <div className={styles.logo}>
-                <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '8px 16px', borderRadius: '12px', textDecoration: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                    <img src="/logo.png" alt="Stroovo" style={{ height: '32px', objectFit: 'contain' }} />
+                <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', marginLeft: '-8px' }}>
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 12 L22 6" stroke="#6554C0" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M6 19 L26 10" stroke="#0052CC" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M10 26 L24 20" stroke="#36C5F0" strokeWidth="5" strokeLinecap="round" />
+                    </svg>
+                    <span style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.5px' }}>Stroovo</span>
                 </Link>
                 <NotificationBell />
             </div>
 
-            <div className={styles.navContainer}>
+            <div 
+                className={styles.navContainer} 
+                ref={navContainerRef}
+                onScroll={handleScroll}
+            >
                 {sections.map((section) => {
                     const isExpanded = expandedSections.has(section.title);
                     return (
