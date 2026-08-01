@@ -48,9 +48,9 @@ function redirectToLogin(request: NextRequest, pathname: string) {
   return response;
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log(`[PROXY] Processing: ${pathname}`);
+  console.log(`[MIDDLEWARE] Processing: ${pathname}`);
 
   // Public paths
   if (
@@ -107,6 +107,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
