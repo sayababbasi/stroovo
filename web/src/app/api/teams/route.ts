@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { TeamService } from '@/lib/teams/team-service';
+import { requirePermission } from '@/lib/authorization';
+import { P } from '@/lib/permissions/registry';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,9 +11,12 @@ export const dynamic = 'force-dynamic';
  * List all teams for the current tenant.
  */
 export async function GET(request: Request) {
+    const authResult = await requirePermission(P.TEAMS_VIEW)(request as any);
+    if (!authResult.success) return authResult.response;
+
     try {
-        const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
+        // Headers managed by authResult
+        const tenantId = authResult.user.tenantId;
         const { searchParams } = new URL(request.url);
         const include = searchParams.get('include');
 
@@ -87,10 +92,12 @@ async function ensureDefaultTenant(tenantId: string, userId?: string) {
  * Body: { name: string, description?: string }
  */
 export async function POST(request: Request) {
+    const authResult = await requirePermission(P.TEAMS_CREATE)(request as any);
+    if (!authResult.success) return authResult.response;
+
     try {
-        const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
-        const userId = headerList.get('x-user-id');
+        const tenantId = authResult.user.tenantId;
+        const userId = authResult.user.id;
 
         // For development, use defaults if not provided
         const effectiveTenantId = tenantId || 'default-tenant';

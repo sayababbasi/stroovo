@@ -10,6 +10,9 @@ import AdminCreateTeamModal from './components/AdminCreateTeamModal';
 import AdminMembersTab from './components/AdminMembersTab';
 import AdminRolesTab from './components/AdminRolesTab';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { P, ADMIN_TEAM_TAB_PERMISSIONS } from '@/lib/permissions/registry';
+import Can from '@/components/auth/Can';
 
 function KpiCard({ icon, title, value, trend, color }: {
   icon: React.ReactNode; title: string; value: number | string; trend?: string; color: string;
@@ -38,10 +41,19 @@ function KpiCard({ icon, title, value, trend, color }: {
 }
 
 export default function AdminTeamsPage() {
+    const { hasPermission } = useAuth();
     const [teams, setTeams] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('Teams');
+    
+    // Determine available tabs based on permissions
+    const ALL_TABS = ['Teams', 'Members', 'Roles & Permissions', 'Access Policies', 'Invitations', 'Team Hierarchy', 'Audit Activity'];
+    const availableTabs = ALL_TABS.filter(tab => {
+        const requiredPerm = ADMIN_TEAM_TAB_PERMISSIONS[tab];
+        return requiredPerm ? hasPermission(requiredPerm) : true;
+    });
+    
+    const [activeTab, setActiveTab] = useState(availableTabs[0] || 'Teams');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // Filters
@@ -74,8 +86,6 @@ export default function AdminTeamsPage() {
         return true;
     });
 
-    const TABS = ['Teams', 'Members', 'Roles & Permissions', 'Access Policies', 'Invitations', 'Team Hierarchy', 'Audit Activity'];
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
             
@@ -94,12 +104,14 @@ export default function AdminTeamsPage() {
                     <button style={{ height: '40px', padding: '0 16px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#172B4D', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                         Export
                     </button>
-                    <button 
-                        onClick={() => setIsCreateModalOpen(true)}
-                        style={{ height: '40px', padding: '0 16px', borderRadius: '8px', border: 'none', background: '#0052CC', color: 'white', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <Plus size={16} /> Create Team
-                    </button>
+                    <Can permission={P.TEAMS_CREATE}>
+                        <button 
+                            onClick={() => setIsCreateModalOpen(true)}
+                            style={{ height: '40px', padding: '0 16px', borderRadius: '8px', border: 'none', background: '#0052CC', color: 'white', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                            <Plus size={16} /> Create Team
+                        </button>
+                    </Can>
                 </div>
             </div>
 
@@ -115,7 +127,7 @@ export default function AdminTeamsPage() {
 
             {/* Navigation Tabs */}
             <div style={{ borderBottom: '1px solid #DFE1E6', display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '1px' }}>
-                {TABS.map((tab) => (
+                {availableTabs.map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}

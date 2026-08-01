@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyAccessToken, extractTokenFromHeader } from '@/lib/auth/tokens';
 import AuthenticationService from '@/lib/auth/auth-service';
+import { permissionSetForUser, getEffectiveRole } from '@/lib/authorization';
 
 // Initialize auth service
 const authService = new AuthenticationService(prisma);
@@ -44,22 +45,37 @@ export async function GET(request: Request) {
             );
         }
 
-        // Get user data
+        // Get user data with full role/permission relations for RBAC
         const userId = (payload as any).id || payload.userId;
         const user = await prisma.user.findUnique({
             where: { id: userId as string },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                title: true,
-                contact: true,
-                image: true,
-                tenantId: true,
-                createdAt: true,
-                isActive: true,
-                isEmailVerified: true,
+            include: {
+                systemRole: {
+                    include: {
+                        permissions: { include: { permission: true } },
+                    },
+                },
+                additionalRoles: {
+                    include: {
+                        role: {
+                            include: { permissions: { include: { permission: true } } }
+                        }
+                    }
+                },
+                teamMembers: {
+                    include: {
+                        systemRole: {
+                            include: { permissions: { include: { permission: true } } }
+                        }
+                    }
+                },
+                projectAccesses: {
+                    include: {
+                        role: {
+                            include: { permissions: { include: { permission: true } } }
+                        }
+                    }
+                },
             },
         });
 
@@ -81,9 +97,30 @@ export async function GET(request: Request) {
             }
         }
 
+        // Compute effective permissions from RBAC system
+        const permissions = permissionSetForUser(user as any);
+        const effectiveRole = getEffectiveRole(user as any);
+
+        // Return safe user object (without internal relation data)
+        const safeUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            title: user.title,
+            contact: user.contact,
+            image: user.image,
+            tenantId: user.tenantId,
+            createdAt: user.createdAt,
+            isActive: user.isActive,
+            isEmailVerified: user.isEmailVerified,
+        };
+
         return NextResponse.json({ 
-            user,
-            accessToken: token // Include token for client-side use
+            user: safeUser,
+            permissions,
+            effectiveRole,
+            accessToken: token
         }, { headers: corsHeaders });
     } catch (error) {
         console.error('Get me error:', error);

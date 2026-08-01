@@ -21,3 +21,5 @@
   - **Reason**: Enterprise RBAC matrices update frequently across many checkboxes. Sending the complete array via `PUT /api/admin/roles/[id]/permissions` eliminates race conditions and edge cases compared to patching individual permission grants/revokes.
 - **Decision**: TypeScript Interface over Discriminated Union for `AuthResult`.
   - **Reason**: Adjusted `AuthResult` to a standard interface to maintain compatibility across API routes when strict mode narrowing behaves unexpectedly in complex Next.js middleware setups.
+- **Decision**: Centralized Permission Registry for strict RBAC.
+  - **Reason**: To enforce security-by-default, all frontend and backend code MUST reference the `P` constant exported from `src/lib/permissions/registry.ts`. We removed the legacy role-based wildcard bypass in `authorization.ts` because it caused insecure false positives in edge cases. API endpoints now evaluate DB-driven effective permissions rather than static frontend state.

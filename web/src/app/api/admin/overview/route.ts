@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
+import { requirePermission } from '@/lib/authorization';
+import { P } from '@/lib/permissions/registry';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResult = await requirePermission(P.DASHBOARD_ADMIN_VIEW)(request as any);
+    if (!authResult.success) return authResult.response;
+
     try {
         const [userCount, taskCount, completedToday, aiActionsCount] = await Promise.all([
             prisma.user.count(),

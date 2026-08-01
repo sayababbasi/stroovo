@@ -49,6 +49,8 @@ interface User {
     contact?: string;
     image?: string;
     tenantId?: string;
+    permissions?: string[];
+    effectiveRole?: string;
 }
 
 interface AuthContextType {
@@ -56,6 +58,10 @@ interface AuthContextType {
     accessToken: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    permissions: string[];
+    hasPermission: (key: string) => boolean;
+    hasAnyPermission: (...keys: string[]) => boolean;
+    hasAllPermissions: (...keys: string[]) => boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string; requiresMFA?: boolean; sessionId?: string }>;
     signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
@@ -69,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [permissions, setPermissions] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshTimeout, setRefreshTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -123,12 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
                 const userData = await response.json();
                 console.log('[Auth] Token verified successfully');
-                setUser(userData.user);
+                
+                // Store permissions from backend RBAC
+                const userWithPerms = {
+                    ...userData.user,
+                    permissions: userData.permissions || [],
+                    effectiveRole: userData.effectiveRole || userData.user.role,
+                };
+                setUser(userWithPerms);
+                setPermissions(userData.permissions || []);
                 setAccessToken(userData.accessToken || currentToken);
                 
                 // Update storage
                 localStorage.setItem('stroovo_token', userData.accessToken || currentToken);
-                localStorage.setItem('stroovo_user', JSON.stringify(userData.user));
+                localStorage.setItem('stroovo_user', JSON.stringify(userWithPerms));
                 
                 // Update cookie to 7 days (604800 seconds)
                 document.cookie = `accessToken=${userData.accessToken || currentToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
@@ -353,6 +368,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // ── Permission check methods ──
+    const hasPermission = (key: string): boolean => {
+        return permissions.includes('*') || permissions.includes(key);
+    };
+
+    const hasAnyPermission = (...keys: string[]): boolean => {
+        if (permissions.includes('*')) return true;
+        return keys.some(k => permissions.includes(k));
+    };
+
+    const hasAllPermissions = (...keys: string[]): boolean => {
+        if (permissions.includes('*')) return true;
+        return keys.every(k => permissions.includes(k));
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -360,6 +390,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 accessToken,
                 isAuthenticated: !!user,
                 isLoading,
+                permissions,
+                hasPermission,
+                hasAnyPermission,
+                hasAllPermissions,
                 login,
                 signup,
                 logout,

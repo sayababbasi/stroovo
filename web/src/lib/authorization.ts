@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 // @ts-ignore - Ignore missing exports if Prisma isn't fully generated
 import type { Permission, Role, Task, User, TeamMember, ProjectAccess } from '@prisma/client';
+import { P } from '@/lib/permissions/registry';
 
 export type EffectiveRole =
   | 'SUPER_ADMIN'
@@ -26,13 +27,9 @@ type PermissionContext = {
   permissionKeys: string[];
 };
 
-export interface AuthResult {
-  success: boolean;
-  user?: UserWithPermissions;
-  effectiveRole?: EffectiveRole;
-  permissionKeys?: string[];
-  response?: NextResponse;
-}
+export type AuthResult = 
+  | { success: true; user: UserWithPermissions; effectiveRole: EffectiveRole; permissionKeys: string[] }
+  | { success: false; response: NextResponse };
 
 function normalizeRoleName(roleName?: string | null): EffectiveRole | null {
   if (!roleName) return null;
@@ -62,6 +59,26 @@ export function getEffectiveRole(user: Pick<UserWithPermissions, 'role' | 'syste
 
 function dedupe(values: string[]): string[] {
   return Array.from(new Set(values));
+}
+
+/**
+ * Normalize legacy permission keys to the canonical registry format.
+ * e.g. 'tasks.read.own' → 'tasks.view', 'projects.read' → 'projects.view'
+ * 'teams.read.all' → 'teams.view', 'users.read.own' → 'users.view'
+ */
+function normalizePermissionKey(key: string): string {
+  const ALIASES: Record<string, string> = {
+    'tasks.read.own':    P.TASKS_VIEW,
+    'tasks.read':        P.TASKS_VIEW,
+    'projects.read':     P.PROJECTS_VIEW,
+    'users.read.own':    P.USERS_VIEW,
+    'users.read':        P.USERS_VIEW,
+    'teams.read.all':    P.TEAMS_VIEW,
+    'teams.read':        P.TEAMS_VIEW,
+    'admin.dashboard':   P.DASHBOARD_ADMIN_VIEW,
+    'executive.dashboard.view': P.DASHBOARD_EXECUTIVE_VIEW,
+  };
+  return ALIASES[key] ?? key;
 }
 
 export function permissionSetForUser(user: UserWithPermissions): string[] {
@@ -95,12 +112,8 @@ export function permissionSetForUser(user: UserWithPermissions): string[] {
     }
   }
 
-  const effectiveRole = getEffectiveRole(user);
-  if (effectiveRole === 'SUPER_ADMIN' || effectiveRole === 'ADMIN' || effectiveRole === 'EXECUTIVE') {
-    if (!explicit.includes('*')) {
-      explicit.push('*');
-    }
-  }
+  // NO legacy wildcard fallback — permissions come ONLY from database roles.
+  // The seed script must be run to populate roles and permissions.
 
   return dedupe(explicit);
 }
@@ -125,11 +138,13 @@ export function hasPermission(
     return true;
   }
 
-  // Fallback for legacy string roles during RBAC transition
-  const effectiveRole = getEffectiveRole(user);
-  if (effectiveRole === 'SUPER_ADMIN' || effectiveRole === 'ADMIN' || effectiveRole === 'EXECUTIVE') {
+  // Also check normalized aliases (e.g. tasks.read.own → tasks.view)
+  const normalizedKey = normalizePermissionKey(permissionKey);
+  if (normalizedKey !== permissionKey && (globalPermissions.includes(normalizedKey))) {
     return true;
   }
+
+  // NO legacy role-based fallback — authorization comes from database permissions only.
 
   if (!scope || scope.type === 'organization') {
     return false; // Already checked global
@@ -138,8 +153,8 @@ export function hasPermission(
   // 2. Check Team Level
   if (scope.type === 'team' && scope.id && user.teamMembers) {
     const membership = user.teamMembers.find((tm: any) => tm.teamId === scope.id);
-    if (membership && membership.role) {
-      const teamPerms = membership.role.permissions.map((p: any) => p.permission.key);
+    if (membership && membership.systemRole) {
+      const teamPerms = membership.systemRole.permissions.map((p: any) => p.permission.key);
       if (teamPerms.includes(permissionKey) || teamPerms.includes('*')) return true;
     }
   }
@@ -179,10 +194,10 @@ export function explainPermission(
 
   if (scope?.type === 'team' && scope.id && user.teamMembers) {
     const membership = user.teamMembers.find((tm: any) => tm.teamId === scope.id);
-    if (membership?.role) {
-      const perms = membership.role.permissions.map((p: any) => p.permission.key);
+    if (membership?.systemRole) {
+      const perms = membership.systemRole.permissions.map((p: any) => p.permission.key);
       if (perms.includes(permissionKey) || perms.includes('*')) {
-        sources.push(`Team Role: ${membership.role.name} on Team ${scope.id}`);
+        sources.push(`Team Role: ${membership.systemRole.name} on Team ${scope.id}`);
       }
     }
   }

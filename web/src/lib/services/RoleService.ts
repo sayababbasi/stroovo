@@ -228,14 +228,14 @@ export class RoleService {
         } else if (scopeType === 'team' && scopeId) {
             // Upsert team membership with role
             return prisma.teamMember.upsert({
-                where: { userId_teamId: { userId, teamId: scopeId } },
+                where: { teamId_userId: { userId, teamId: scopeId } },
                 update: { roleId },
                 create: { userId, teamId: scopeId, roleId }
             });
         } else if (scopeType === 'project' && scopeId) {
             // Upsert project access with role
             return prisma.projectAccess.upsert({
-                where: { userId_projectId: { userId, projectId: scopeId } },
+                where: { projectId_userId: { userId, projectId: scopeId } },
                 update: { roleId },
                 create: { userId, projectId: scopeId, roleId }
             });

@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { headers } from 'next/headers';
 import prisma from '@/lib/prisma';
+import { requirePermission } from '@/lib/authorization';
+import { P } from '@/lib/permissions/registry';
 
 export async function POST(request: Request) {
-    try {
-        const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
-        const userId = headerList.get('x-user-id');
+    const authResult = await requirePermission(P.BILLING_MANAGE)(request as any);
+    if (!authResult.success) return authResult.response;
 
-        if (!tenantId || !userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    try {
+        // Auth headers handled by requirePermission
+        const tenantId = authResult.user.tenantId;
+        const userId = authResult.user.id;
 
         const tenant = await prisma.tenant.findUnique({
             where: { id: tenantId },

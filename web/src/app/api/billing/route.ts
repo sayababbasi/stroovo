@@ -3,10 +3,16 @@ import { prisma } from '@/lib/prisma';
 import { StripeProvider } from '@/lib/billing/stripe';
 import { BillingManager } from '@/lib/billing/provider';
 
+import { requirePermission } from '@/lib/authorization';
+import { P } from '@/lib/permissions/registry';
+
 const stripeProvider = new StripeProvider();
 const billingManager = new BillingManager(stripeProvider);
 
 export async function GET(request: Request) {
+    const authResult = await requirePermission(P.BILLING_VIEW)(request as any);
+    if (!authResult.success) return authResult.response;
+
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get('tenantId');
 

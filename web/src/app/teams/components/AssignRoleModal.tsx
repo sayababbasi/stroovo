@@ -37,7 +37,7 @@ export default function AssignRoleModal({ isOpen, onClose, onSuccess, userIds }:
   const fetchRoles = async () => {
     setLoading(true);
     try {
-      const res = await apiGet<Role[]>('/api/admin/roles');
+      const res = await apiGet<Role[]>('/api/admin/roles', null);
       if (res.success && res.data) {
         setRoles(res.data);
       }

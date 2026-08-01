@@ -8,22 +8,26 @@ import {
     ShieldCheck, Activity, CreditCard, Puzzle, 
     Bot, Settings, Zap, CheckSquare
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { P } from '@/lib/permissions/registry';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
 
+    const { hasPermission } = useAuth();
+
     const menuItems = [
-        { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-        { name: 'Users', href: '/admin/users', icon: Users },
-        { name: 'Teams', href: '/admin/teams', icon: Network },
-        { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
-        { name: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck },
-        { name: 'System Logs', href: '/admin/logs', icon: Activity },
-        { name: 'AI Monitoring', href: '/admin/ai-monitoring', icon: Bot },
-        { name: 'Billing', href: '/admin/billing', icon: CreditCard },
-        { name: 'Integrations', href: '/admin/integrations', icon: Puzzle },
-        { name: 'Settings', href: '/admin/settings', icon: Settings },
-    ];
+        { name: 'Overview', href: '/admin', icon: LayoutDashboard, requiredPermission: P.DASHBOARD_ADMIN_VIEW },
+        { name: 'Users', href: '/admin/users', icon: Users, requiredPermission: P.USERS_VIEW },
+        { name: 'Teams', href: '/admin/teams', icon: Network, requiredPermission: P.TEAMS_VIEW },
+        { name: 'Projects', href: '/admin/projects', icon: FolderKanban, requiredPermission: P.PROJECTS_VIEW },
+        { name: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck, requiredPermission: P.ROLES_VIEW },
+        { name: 'System Logs', href: '/admin/logs', icon: Activity, requiredPermission: P.SYSTEM_LOGS_VIEW },
+        { name: 'AI Monitoring', href: '/admin/ai-monitoring', icon: Bot, requiredPermission: P.AI_MONITORING_VIEW },
+        { name: 'Billing', href: '/admin/billing', icon: CreditCard, requiredPermission: P.BILLING_VIEW },
+        { name: 'Integrations', href: '/admin/integrations', icon: Puzzle, requiredPermission: P.INTEGRATIONS_VIEW },
+        { name: 'Settings', href: '/admin/settings', icon: Settings, requiredPermission: P.SETTINGS_VIEW },
+    ].filter(item => hasPermission(item.requiredPermission));
 
     return (
         <aside style={{

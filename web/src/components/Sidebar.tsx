@@ -48,12 +48,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import styles from './Sidebar.module.css';
 import { useBranding } from '@/hooks/useBranding';
 import NotificationBell from './NotificationBell';
+import { P } from '@/lib/permissions/registry';
 
 interface NavItem {
     name: string;
     href?: string;
     icon: any;
     badge?: string;
+    requiredPermission?: string;
     children?: { name: string; href: string; id: string }[];
 }
 
@@ -68,7 +70,7 @@ const API_URL = '';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { user, logout, isAuthenticated, isLoading } = useAuth();
+    const { user, logout, isAuthenticated, isLoading, hasPermission } = useAuth();
     const branding = useBranding();
     
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Stroovo', 'Projects']));
@@ -149,32 +151,33 @@ export default function Sidebar() {
         {
             title: 'Stroovo',
             collapsible: true,
-            items: [
+            items: ([
                 { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-                { name: 'My Tasks', href: '/tasks', icon: CheckSquare },
-                { name: 'Board', href: '/board', icon: Trello },
-                { name: 'Timeline', href: '/timeline', icon: BarChart2 },
-                { name: 'Calendar', href: '/calendar', icon: Calendar },
-                { name: 'Teams', href: '/teams', icon: Network },
-            ]
+                { name: 'My Tasks', href: '/tasks', icon: CheckSquare, requiredPermission: P.TASKS_VIEW },
+                { name: 'Board', href: '/board', icon: Trello, requiredPermission: P.TASKS_VIEW },
+                { name: 'Timeline', href: '/timeline', icon: BarChart2, requiredPermission: P.PROJECTS_VIEW },
+                { name: 'Calendar', href: '/calendar', icon: Calendar, requiredPermission: P.TASKS_VIEW },
+                { name: 'Teams', href: '/teams', icon: Network, requiredPermission: P.TEAMS_VIEW },
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'Planning',
             collapsible: true,
-            items: [
-                { name: 'Goals', href: '/goals', icon: Target },
-                { name: 'Roadmap', href: '/roadmap', icon: Milestone },
-                { name: 'Sprint Planning', href: '/sprint-planning', icon: ListTodo },
-            ]
+            items: ([
+                { name: 'Goals', href: '/goals', icon: Target, requiredPermission: P.GOALS_VIEW },
+                { name: 'Roadmap', href: '/roadmap', icon: Milestone, requiredPermission: P.PROJECTS_VIEW },
+                { name: 'Sprint Planning', href: '/sprint-planning', icon: ListTodo, requiredPermission: P.PROJECTS_VIEW },
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'Projects',
             collapsible: true,
-            items: [
-                { name: 'All Projects', href: '/projects', icon: FolderKanban },
+            items: ([
+                { name: 'All Projects', href: '/projects', icon: FolderKanban, requiredPermission: P.PROJECTS_VIEW },
                 {
                     name: 'Starred',
                     icon: Star,
+                    requiredPermission: P.PROJECTS_VIEW,
                     children: starredProjects.length > 0 ? starredProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` })) : [
                         { id: 'p1', name: 'Quantum UI Overhaul', href: '#' },
                         { id: 'p2', name: 'Edge Migration', href: '#' }
@@ -183,64 +186,65 @@ export default function Sidebar() {
                 {
                     name: 'Recent',
                     icon: Clock,
+                    requiredPermission: P.PROJECTS_VIEW,
                     children: recentProjects.length > 0 ? recentProjects.map(p => ({ id: p.id, name: p.name, href: `/projects?id=${p.id}` })) : [
                         { id: 'r1', name: 'Sprint Planning 2026', href: '#' },
                         { id: 'r2', name: 'APAC Market Share', href: '#' }
                     ]
                 },
-            ]
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'Teams',
             collapsible: true,
-            items: [
-                { name: 'My Team', href: '/teams/my-team', icon: Network },
-                { name: 'Core Development', href: '/teams/core', icon: Network },
-                { name: 'Design Systems', href: '/teams/design', icon: Palette },
-                { name: 'Marketing Team', href: '/teams/marketing', icon: Megaphone },
-                { name: 'AI Research Team', href: '/teams/ai', icon: BrainCircuit },
-            ]
+            items: ([
+                { name: 'My Team', href: '/teams/my-team', icon: Network, requiredPermission: P.TEAMS_VIEW },
+                { name: 'Core Development', href: '/teams/core', icon: Network, requiredPermission: P.TEAMS_VIEW },
+                { name: 'Design Systems', href: '/teams/design', icon: Palette, requiredPermission: P.TEAMS_VIEW },
+                { name: 'Marketing Team', href: '/teams/marketing', icon: Megaphone, requiredPermission: P.TEAMS_VIEW },
+                { name: 'AI Research Team', href: '/teams/ai', icon: BrainCircuit, requiredPermission: P.TEAMS_VIEW },
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'Collaboration',
             collapsible: true,
-            items: [
+            items: ([
                 { name: 'Messages', href: '/messages', icon: MessageSquareMore },
                 { name: 'Files', href: '/files', icon: FolderTree },
                 { name: 'Activity', href: '/activity', icon: History },
-            ]
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'Analytics',
             collapsible: true,
-            items: [
-                { name: 'Analytics Dashboard', href: '/analytics', icon: BarChart2 },
-                { name: 'Performance Reports', href: '/reports', icon: FileBarChart2 },
-            ]
+            items: ([
+                { name: 'Analytics Dashboard', href: '/analytics', icon: BarChart2, requiredPermission: P.REPORTS_VIEW },
+                { name: 'Performance Reports', href: '/reports', icon: FileBarChart2, requiredPermission: P.REPORTS_VIEW },
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
         {
             title: 'AI Workspace',
             collapsible: true,
-            items: [
-                { name: 'AI Assistant', href: '/ai/assistant', icon: Bot },
-                { name: 'AI Suggestions', href: '/ai/suggestions', icon: Sparkles, badge: 'Alpha' },
-                { name: 'AI Insights', href: '/ai/insights', icon: BrainCircuit },
-                { name: 'AI Agents', href: '/ai/agents', icon: Users },
-                { name: 'AI Workflows', href: '/ai/workflows', icon: Network },
-                { name: 'AI Automations', href: '/ai/automations', icon: Radio },
-                { name: 'AI Memory', href: '/ai/memory', icon: Database },
-                { name: 'AI History', href: '/ai/history', icon: History },
-            ]
+            items: ([
+                { name: 'AI Assistant', href: '/ai/assistant', icon: Bot, requiredPermission: P.AI_VIEW },
+                { name: 'AI Suggestions', href: '/ai/suggestions', icon: Sparkles, badge: 'Alpha', requiredPermission: P.AI_VIEW },
+                { name: 'AI Insights', href: '/ai/insights', icon: BrainCircuit, requiredPermission: P.AI_VIEW },
+                { name: 'AI Agents', href: '/ai/agents', icon: Users, requiredPermission: P.AI_VIEW },
+                { name: 'AI Workflows', href: '/ai/workflows', icon: Network, requiredPermission: P.AI_VIEW },
+                { name: 'AI Automations', href: '/ai/automations', icon: Radio, requiredPermission: P.AUTOMATIONS_VIEW },
+                { name: 'AI Memory', href: '/ai/memory', icon: Database, requiredPermission: P.AI_VIEW },
+                { name: 'AI History', href: '/ai/history', icon: History, requiredPermission: P.AI_VIEW },
+            ] as NavItem[]).filter(item => !item.requiredPermission || hasPermission(item.requiredPermission))
         },
-    ];
+    ].filter(section => section.items.length > 0);
 
     const settingsItems: NavItem[] = [
         { name: 'Notifications', href: '/settings/notifications', icon: Bell },
-        { name: 'Billing', href: '/settings/billing', icon: CreditCard },
-        { name: 'Integrations', href: '/settings/integrations', icon: Puzzle },
-        { name: 'User Management', href: '/admin/users', icon: UserCog },
+        { name: 'Billing', href: '/settings/billing', icon: CreditCard, requiredPermission: P.BILLING_VIEW },
+        { name: 'Integrations', href: '/settings/integrations', icon: Puzzle, requiredPermission: P.INTEGRATIONS_VIEW },
+        { name: 'User Management', href: '/admin/users', icon: UserCog, requiredPermission: P.USERS_VIEW },
         { name: 'Help', href: '/help', icon: HelpCircle },
-    ];
+    ].filter(item => !item.requiredPermission || hasPermission(item.requiredPermission));
 
     const toggleSection = (title: string) => {
         setExpandedSections(prev => {

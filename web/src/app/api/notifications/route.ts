@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
+import { requirePermission } from '@/lib/authorization';
+import { P } from '@/lib/permissions/registry';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResult = await requirePermission(P.NOTIFICATIONS_VIEW)(request as any);
+    if (!authResult.success) return authResult.response;
+
     try {
-        const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
-        const userId = headerList.get('x-user-id');
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Remove manual header/userId check since requirePermission handles auth validation
+        const userId = authResult.user.id;
+        const tenantId = authResult.user.tenantId;
 
         const whereClause: any = { userId };
         if (tenantId) whereClause.tenantId = tenantId;

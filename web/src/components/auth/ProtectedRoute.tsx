@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredPermission, scope, fallback }: ProtectedRouteProps) {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, hasPermission } = useAuth();
     const router = useRouter();
     const [authorized, setAuthorized] = useState<boolean | null>(null);
 
@@ -24,28 +24,11 @@ export default function ProtectedRoute({ children, requiredPermission, scope, fa
                 return;
             }
 
-            // Note: In a real app, 'hasPermission' might need to be evaluated on the server side via API 
-            // if 'user' object in AuthContext doesn't include full populated scopes.
-            // For now, assuming user object includes all permissions:
-            
-            // Replicate the hasPermission logic client-side if we only have flattened permissions in context
-            // In a robust implementation, the user context would carry the pre-calculated effective permissions.
-            // Assuming AuthContext's user.permissions is a flat array of strings computed from backend.
-            
-            let isAuth = false;
-            const u = user as any;
-            if (u.permissions && Array.isArray(u.permissions)) {
-                if (u.permissions.includes('*') || u.permissions.includes(requiredPermission)) {
-                    isAuth = true;
-                }
-            } else if ((user as any).role === 'SUPER_ADMIN' || (user as any).role === 'ADMIN' || (user as any).role === 'CEO') {
-                // Fallback for older user object structures without populated permissions
-                isAuth = true;
-            }
-
+            // Use the centralized RBAC hasPermission method from AuthContext
+            const isAuth = hasPermission(requiredPermission);
             setAuthorized(isAuth);
         }
-    }, [user, isLoading, requiredPermission, scope, router]);
+    }, [user, isLoading, requiredPermission, hasPermission, router]);
 
     if (isLoading || authorized === null) {
         return (
