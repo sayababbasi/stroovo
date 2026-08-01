@@ -41,17 +41,15 @@ const statusData = [
 const MetricCard = ({ title, value, trend, trendDir, icon: Icon, color }: any) => (
     <div className="bg-white border border-gray-100 rounded-[24px] p-5 shadow-sm hover:shadow-md transition-all">
         <div className="flex items-center justify-between mb-4">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{title}</h4>
+            <h4 className="text-[11px] font-semibold text-gray-400">{title}</h4>
             <div className={`p-2 rounded-lg bg-${color}-50 text-${color}-600`}>
                 <Icon size={14} />
             </div>
         </div>
         <div className="flex items-end justify-between">
             <div>
-                <div className="text-2xl font-black text-gray-900 mb-1">{value}</div>
-                <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter ${
-                    trendDir === 'up' ? 'text-emerald-500' : 'text-rose-500'
-                }`}>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{value}</div>
+                <div className={`flex items-center gap-1 text-[10px] font-semibold tracking-tighter ${ trendDir === 'up' ? 'text-emerald-500' : 'text-rose-500' }`}>
                     {trendDir === 'up' ? <TrendingUp size={10} /> : <TrendingUp size={10} className="rotate-180" />}
                     {trend}
                 </div>
@@ -80,9 +78,9 @@ const EngineCard = ({ icon: Icon, name, health, uptime, lastRestart }: any) => (
                 <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
                     <Icon size={16} />
                 </div>
-                <h4 className="text-[12px] font-black text-gray-900">{name}</h4>
+                <h4 className="text-[12px] font-semibold text-gray-900">{name}</h4>
             </div>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-semibold">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Running
             </div>
@@ -91,8 +89,8 @@ const EngineCard = ({ icon: Icon, name, health, uptime, lastRestart }: any) => (
         <div className="space-y-4">
             <div>
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Health</span>
-                    <span className="text-[10px] font-black text-gray-900">{health}%</span>
+                    <span className="text-[9px] font-semibold text-gray-400">Health</span>
+                    <span className="text-[10px] font-semibold text-gray-900">{health}%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
                     <div className="h-full bg-indigo-500" style={{ width: `${health}%` }} />
@@ -101,17 +99,17 @@ const EngineCard = ({ icon: Icon, name, health, uptime, lastRestart }: any) => (
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Uptime</div>
-                    <div className="text-[10px] font-black text-gray-900">{uptime}</div>
+                    <div className="text-[8px] font-semibold text-gray-400">Uptime</div>
+                    <div className="text-[10px] font-semibold text-gray-900">{uptime}</div>
                 </div>
                 <div>
-                    <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Last Restart</div>
-                    <div className="text-[10px] font-black text-gray-900">{lastRestart}</div>
+                    <div className="text-[8px] font-semibold text-gray-400">Last Restart</div>
+                    <div className="text-[10px] font-semibold text-gray-900">{lastRestart}</div>
                 </div>
             </div>
         </div>
 
-        <button className="w-full mt-5 py-2 text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] hover:bg-indigo-50 rounded-lg transition-all">
+        <button className="w-full mt-5 py-2 text-[9px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
             Manage
         </button>
     </div>
@@ -121,7 +119,7 @@ const MonitorRow = ({ label, value, progress }: any) => (
     <div className="space-y-1.5">
         <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-gray-500">{label}</span>
-            <span className="text-[10px] font-black text-gray-900">{value}</span>
+            <span className="text-[10px] font-semibold text-gray-900">{value}</span>
         </div>
         <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
             <motion.div 
@@ -136,7 +134,7 @@ const MonitorRow = ({ label, value, progress }: any) => (
 const ControlToggle = ({ label, desc, checked }: any) => (
     <div className="flex items-center justify-between py-3">
         <div>
-            <div className="text-[11px] font-black text-gray-900 mb-0.5">{label}</div>
+            <div className="text-[11px] font-semibold text-gray-900 mb-0.5">{label}</div>
             <div className="text-[9px] font-medium text-gray-400">{desc}</div>
         </div>
         <div className={`w-10 h-5 rounded-full p-1 cursor-pointer transition-all ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}>
@@ -172,19 +170,19 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-sm font-black text-gray-900 leading-none">98%</span>
-                            <span className="text-[6px] font-bold text-gray-400 uppercase tracking-tighter">Health</span>
+                            <span className="text-sm font-semibold text-gray-900 leading-none">98%</span>
+                            <span className="text-[6px] font-bold text-gray-400 tracking-tighter">Health</span>
                         </div>
                     </div>
                     <div className="space-y-2 flex-1 pt-1">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">AI Systems Status</h4>
+                        <h4 className="text-[10px] font-semibold text-gray-400 mb-1">AI Systems Status</h4>
                         {statusData.map((s, i) => (
                             <div key={i} className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
                                     <span className="text-[9px] font-bold text-gray-500">{s.name}</span>
                                 </div>
-                                <span className="text-[9px] font-black text-gray-900">{s.value} <span className="text-gray-300">({Math.round((s.value/28)*100)}%)</span></span>
+                                <span className="text-[9px] font-semibold text-gray-900">{s.value} <span className="text-gray-300">({Math.round((s.value/28)*100)}%)</span></span>
                             </div>
                         ))}
                     </div>
@@ -202,9 +200,7 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                     <button 
                         key={tab} 
                         onClick={() => setActiveTab(tab)}
-                        className={`pb-4 text-[10px] font-black uppercase tracking-[0.1em] transition-all relative whitespace-nowrap ${
-                            activeTab === tab ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                        }`}
+                        className={`pb-4 text-[10px] font-semibold transition-all relative whitespace-nowrap ${ activeTab === tab ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600' }`}
                     >
                         {tab}
                         {activeTab === tab && <motion.div layoutId="aiControlTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />}
@@ -217,7 +213,7 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                 <div className="col-span-9 space-y-8">
                     <div>
                         <div className="mb-6">
-                            <h3 className="text-base font-black text-gray-900 leading-tight">AI Systems Control Center</h3>
+                            <h3 className="text-base font-semibold text-gray-900 leading-tight">AI Systems Control Center</h3>
                             <p className="text-[11px] text-gray-400 font-medium">Monitor and control all AI components from one place.</p>
                         </div>
                         <div className="grid grid-cols-4 gap-6">
@@ -236,8 +232,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                         {/* ACTIVITY STREAM */}
                         <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">AI Activity Stream</h3>
-                                <button className="text-[8px] font-black text-indigo-600 uppercase">View All</button>
+                                <h3 className="text-[10px] font-semibold text-gray-900">AI Activity Stream</h3>
+                                <button className="text-[8px] font-semibold text-indigo-600">View All</button>
                             </div>
                             <div className="space-y-4">
                                 {[
@@ -250,8 +246,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                                     <div key={i} className="flex items-start gap-3">
                                         <div className="p-1.5 bg-gray-50 text-gray-400 rounded-lg shrink-0"><item.icon size={12} /></div>
                                         <div className="flex-1">
-                                            <div className="text-[10px] font-black text-gray-900 leading-tight">{item.text}</div>
-                                            <div className="text-[8px] font-bold text-gray-300 uppercase tracking-tighter mt-0.5">{item.time}</div>
+                                            <div className="text-[10px] font-semibold text-gray-900 leading-tight">{item.text}</div>
+                                            <div className="text-[8px] font-bold text-gray-300 tracking-tighter mt-0.5">{item.time}</div>
                                         </div>
                                     </div>
                                 ))}
@@ -261,8 +257,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                         {/* PERFORMANCE METRICS */}
                         <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">AI Performance Metrics</h3>
-                                <select className="bg-gray-50 border-none text-[8px] font-black uppercase tracking-widest text-gray-400 rounded px-1 py-0.5">
+                                <h3 className="text-[10px] font-semibold text-gray-900">AI Performance Metrics</h3>
+                                <select className="bg-gray-50 border-none text-[8px] font-semibold text-gray-400 rounded px-1 py-0.5">
                                     <option>This Week</option>
                                 </select>
                             </div>
@@ -277,8 +273,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                                     <div key={i} className="flex items-center justify-between">
                                         <span className="text-[10px] font-bold text-gray-500">{item.label}</span>
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black text-gray-900">{item.value}</span>
-                                            <span className="text-[9px] font-black text-emerald-500">{item.trend}</span>
+                                            <span className="text-[10px] font-semibold text-gray-900">{item.value}</span>
+                                            <span className="text-[9px] font-semibold text-emerald-500">{item.trend}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -288,8 +284,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                         {/* RECENT DECISIONS */}
                         <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Recent AI Decisions</h3>
-                                <button className="text-[8px] font-black text-indigo-600 uppercase">View All</button>
+                                <h3 className="text-[10px] font-semibold text-gray-900">Recent AI Decisions</h3>
+                                <button className="text-[8px] font-semibold text-indigo-600">View All</button>
                             </div>
                             <div className="space-y-4">
                                 {[
@@ -301,11 +297,9 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                                     <div key={i} className="space-y-1">
                                         <div className="flex items-start gap-2">
                                             <div className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 bg-${item.color === 'rose' ? 'rose-500' : item.color === 'amber' ? 'amber-500' : 'indigo-500'}`} />
-                                            <div className="text-[10px] font-black text-gray-900 leading-tight">{item.title}</div>
+                                            <div className="text-[10px] font-semibold text-gray-900 leading-tight">{item.title}</div>
                                         </div>
-                                        <span className={`ml-3.5 px-2 py-0.5 rounded-lg text-[7px] font-black uppercase tracking-widest ${
-                                            item.color === 'rose' ? 'bg-rose-50 text-rose-600' : item.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'
-                                        }`}>{item.impact}</span>
+                                        <span className={`ml-3.5 px-2 py-0.5 rounded-lg text-[7px] font-semibold ${ item.color === 'rose' ? 'bg-rose-50 text-rose-600' : item.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600' }`}>{item.impact}</span>
                                     </div>
                                 ))}
                             </div>
@@ -318,8 +312,8 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                     {/* SYSTEM MONITOR */}
                     <div className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em]">Real-time System Monitor</h3>
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                            <h3 className="text-[11px] font-semibold text-gray-900">Real-time System Monitor</h3>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-semibold">
                                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                                 Live
                             </div>
@@ -332,7 +326,7 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                             <div className="pt-2">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-500">AI Requests (RPM)</span>
-                                    <span className="text-[10px] font-black text-gray-900">1,248</span>
+                                    <span className="text-[10px] font-semibold text-gray-900">1,248</span>
                                 </div>
                                 <div className="h-10 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -347,7 +341,7 @@ export const AIControlSystem = ({ role }: { role: string }) => {
 
                     {/* GLOBAL CONTROLS */}
                     <div className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
-                        <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] mb-8">AI Global Controls</h3>
+                        <h3 className="text-[11px] font-semibold text-gray-900 mb-8">AI Global Controls</h3>
                         <div className="space-y-2 divide-y divide-gray-50">
                             <ControlToggle label="Enable All AI Systems" desc="All systems are active and operational" checked={true} />
                             <ControlToggle label="Auto-Optimize Performance" desc="Automatically optimize system performance" checked={true} />
@@ -357,10 +351,10 @@ export const AIControlSystem = ({ role }: { role: string }) => {
                         </div>
 
                         <div className="mt-8 space-y-3">
-                            <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all">
+                            <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-semibold shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all">
                                 Restart All Systems
                             </button>
-                            <button className="w-full py-4 bg-white border border-gray-100 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                            <button className="w-full py-4 bg-white border border-gray-100 text-indigo-600 rounded-2xl text-[10px] font-semibold hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
                                 <RefreshCcw size={14} />
                                 Run Health Check
                             </button>

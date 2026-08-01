@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import FloatingAI from '@/components/FloatingAI';
+import MembersTab from './components/MembersTab';
+import RolesTab from './components/RolesTab';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
@@ -74,7 +76,8 @@ export default function StroovoTeamsDashboard() {
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'MEMBERS' | 'INVITES' | 'ACTIVITY' | 'ROLES' | 'INSIGHTS'>('MEMBERS');
-  const [mainNavTab, setMainNavTab] = useState('Team');
+  const [mainNavTab, setMainNavTab] = useState<'Teams' | 'Members' | 'Roles'>('Teams');
+  const [innerTeamTab, setInnerTeamTab] = useState('Members');
 
   // Invites Modal
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -254,805 +257,425 @@ export default function StroovoTeamsDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100%', background: '#FAFBFC', overflow: 'hidden' }} className="font-sans text-gray-900">
       <Sidebar />
-      <div style={{ flex: 1, marginLeft: '260px', display: 'flex', height: '100vh', overflow: 'hidden', background: '#FBFBFD' }} className="text-gray-900 font-sans p-2">
+      <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-      {/* INNER SIDEBAR: TEAMS LIST */}
-      <aside className="w-72 flex-shrink-0 bg-[#FBFBFD] border-r border-gray-200 flex flex-col overflow-y-auto">
-        <div className="p-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Teams</h2>
-          <button className="text-gray-500 hover:text-gray-900"><Plus size={18} /></button>
-        </div>
-        <div className="px-4 pb-4 border-b border-gray-100">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <Input className="pl-9 bg-white border-gray-200 shadow-sm text-sm h-9" placeholder="Search teams..." />
+        {/* HEADER */}
+        <header style={{ height: '72px', background: 'white', borderBottom: '1px solid #E8EAED', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#EEF2FF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={20} />
+             </div>
+             <div>
+                <h1 style={{ fontSize: '16px', fontWeight: 700, color: '#172B4D', margin: 0, lineHeight: 1.2 }}>Teams</h1>
+                <p style={{ fontSize: '13px', color: '#6B778C', margin: 0 }}>Manage your teams, members and their permissions.</p>
+             </div>
           </div>
-        </div>
-        
-        <nav className="p-2 border-b border-gray-100 space-y-0.5">
-           <NavItem icon={<Home size={18}/>} label="Home" />
-           <NavItem icon={<Inbox size={18}/>} label="Inbox" />
-           <NavItem icon={<CheckSquare size={18}/>} label="My Tasks" />
-           <NavItem icon={<Calendar size={18}/>} label="Schedule" />
-        </nav>
-
-        <div className="p-4">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">TEAMS</h2>
-          <div className="space-y-1">
-            {teams.map((team) => {
-              const isActive = currentTeam?.id === team.id;
-              return (
-                <div 
-                  key={team.id}
-                  onClick={() => setCurrentTeam(team)}
-                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-[#EEF2FF]' : 'hover:bg-gray-100'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded flex items-center justify-center ${isActive ? 'bg-[#E0E7FF] text-blue-600' : 'bg-[#E0E7FF] text-blue-500'}`}>
-                      <Users size={16} />
-                    </div>
-                    <div>
-                      <h3 className={`text-sm font-medium ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>{team.name}</h3>
-                      <p className="text-xs text-gray-500">{team._count?.members || team.members?.length || 0} members • {team._count?.spaces || team.spaces?.length || 0} spaces</p>
-                    </div>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        
-        {/* TOP BAR */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0 z-10 relative">
-          {/* Left section: Active Team */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-              <Users size={18} />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold text-gray-900">{currentTeam?.name || 'Loading...'}</h1>
-              <p className="text-xs text-gray-500">{currentTeam?._count?.members || currentTeam?.members?.length || 0} members • {currentTeam?._count?.spaces || currentTeam?.spaces?.length || 0} spaces</p>
-            </div>
-          </div>
-
-          {/* Right section: Navigation & Actions */}
-          <div className="flex items-center gap-4">
-            {/* Top Navigation */}
-            <div className="flex items-center bg-gray-50 p-1 rounded-lg border border-gray-100">
-              {[
-                { id: 'Overview', icon: Layout },
-                { id: 'Workspace', icon: Folder },
-                { id: 'Tasks', icon: CheckCircle2 },
-                { id: 'Team', icon: Users },
-                { id: 'Insights', icon: Brain },
-              ].map(tab => (
-                <button 
-                  key={tab.id}
-                  onClick={() => setMainNavTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${mainNavTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
-                >
-                  <tab.icon size={16} /> {tab.id}
-                </button>
-              ))}
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <div style={{ position: 'relative', width: '320px' }}>
+               <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
+               <input 
+                 type="text" 
+                 placeholder="Search teams, members... ( / )" 
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 style={{ width: '100%', height: '36px', paddingLeft: '36px', paddingRight: '120px', borderRadius: '8px', border: '1px solid #DFE1E6', fontSize: '13px', outline: 'none' }}
+               />
+               <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#0052CC', background: '#EEF2FF', padding: '2px 6px', borderRadius: '4px' }}>PRO TIP</span>
+                  <span style={{ fontSize: '11px', color: '#8A94A6' }}>Press / to search</span>
+               </div>
             </div>
             
-            <button className="text-gray-400 hover:text-gray-600"><Search size={20}/></button>
-            <button className="text-gray-400 hover:text-gray-600"><Settings size={20}/></button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+               <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {activeMembers.slice(0, 3).map((m, i) => (
+                    <div key={m.id} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid white', marginLeft: i > 0 ? '-10px' : 0, background: '#DFE1E6', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#42526E', fontSize: '12px', fontWeight: 600, zIndex: 10 - i }}>
+                      {m.user?.image ? <img src={m.user.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : m.user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                    </div>
+                  ))}
+                  {activeMembers.length > 3 && (
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid white', marginLeft: '-10px', background: '#FF8B00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, zIndex: 0 }}>
+                      +{activeMembers.length - 3}
+                    </div>
+                  )}
+               </div>
+               
+               <button 
+                  onClick={() => document.getElementById('invite-email-input')?.focus()}
+                  style={{ background: '#0052CC', color: 'white', border: 'none', borderRadius: '8px', padding: '0 16px', height: '36px', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+               >
+                 <Plus size={16} /> Invite Member
+               </button>
+            </div>
           </div>
         </header>
 
-        {/* SCROLLABLE MAIN CONTENT */}
-        <div className="flex-1 overflow-auto bg-[#FBFBFD]">
-          {mainNavTab === 'Team' ? (
-            <div className="max-w-7xl mx-auto p-8 space-y-8">
-            
-            {/* Header Title & Actions */}
-            <div className="flex justify-between items-end">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Team Management</h1>
-                <p className="text-gray-500 mt-1">Manage members, roles, and workspace access.</p>
-              </div>
-              <Button 
-                onClick={() => setIsInviteModalOpen(true)}
-                className="bg-gray-900 hover:bg-gray-800 text-white shadow-md shadow-gray-900/10 rounded-lg px-5 h-10 font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
-              >
-                <UserPlus size={16} />
-                Invite Member
-              </Button>
-            </div>
-
-            {/* PHASE 2: DASHBOARD HEADER CARDS (Task 2.1) */}
-            <div className="grid grid-cols-5 gap-4">
-              <StatCard 
-                icon={<Users className="text-blue-500" />} 
-                value={members.length} 
-                label="Total Members" 
-                trend="+2 this week" 
-                trendUp={true} 
-              />
-              <StatCard 
-                icon={<Mail className="text-orange-500" />} 
-                value={currentTeam?.invitations?.length || 0} 
-                label="Pending Invites" 
-                trend="1 expiring soon" 
-                trendUp={false} 
-              />
-              <StatCard 
-                icon={<Activity className="text-green-500" />} 
-                value={onlineUsers.length} 
-                label="Active (24h)" 
-                trend="High engagement" 
-                trendUp={true} 
-              />
-              <StatCard 
-                icon={<Shield className="text-purple-500" />} 
-                value={adminsCount} 
-                label="Admins" 
-                trend="Secure setup" 
-                trendUp={true} 
-              />
-              <StatCard 
-                icon={<TrendingUp className="text-indigo-500" />} 
-                value={`${teamHealthScore}%`} 
-                label="Team Health Score" 
-                trend="+5% vs last month" 
-                trendUp={true} 
-                highlight 
-              />
-            </div>
-
-            <div className="flex gap-8 items-start">
-              {/* LEFT MAIN CONTENT (Tabs & Table) */}
-              <div className="flex-1 space-y-6">
-                
-                {/* PHASE 3: TAB SYSTEM (Task 3.1) */}
-                <div className="flex border-b border-gray-200">
-                  <TabButton active={activeTab === 'MEMBERS'} onClick={() => setActiveTab('MEMBERS')} label="Members" count={members.length} />
-                  <TabButton active={activeTab === 'INVITES'} onClick={() => setActiveTab('INVITES')} label="Pending Invites" count={currentTeam?.invitations?.length} />
-                  <TabButton active={activeTab === 'ACTIVITY'} onClick={() => setActiveTab('ACTIVITY')} label="Activity" />
-                  <TabButton active={activeTab === 'ROLES'} onClick={() => setActiveTab('ROLES')} label="Roles & Permissions" />
-                  <TabButton active={activeTab === 'INSIGHTS'} onClick={() => setActiveTab('INSIGHTS')} label="Insights" />
-                </div>
-
-                {/* TAB CONTENTS */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  
-                  {activeTab === 'MEMBERS' && (
-                    <div className="flex flex-col h-full">
-                      {/* PHASE 4: MEMBERS TABLE (Tasks 4.1, 4.2, 4.3) */}
-                      {/* Table Filters */}
-                      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                          <input 
-                            type="text" 
-                            placeholder="Search members..." 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-64 h-9 pl-9 pr-4 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition-all"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <select 
-                            value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
-                            className="h-9 px-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-indigo-500 shadow-sm cursor-pointer"
-                          >
-                            <option value="ALL">All Roles</option>
-                            <option value="OWNER">Owner</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="MANAGER">Manager</option>
-                            <option value="MEMBER">Member</option>
-                            <option value="GUEST">Guest</option>
-                          </select>
-                          <select 
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="h-9 px-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-indigo-500 shadow-sm cursor-pointer"
-                          >
-                            <option value="ALL">All Status</option>
-                            <option value="ONLINE">Online</option>
-                            <option value="OFFLINE">Offline</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-gray-50/80 border-b border-gray-100">
-                              <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Member</th>
-                              <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                              <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                              <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Active</th>
-                              <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50">
-                            {filteredMembers.map((member) => (
-                              <tr key={member.id} className="hover:bg-gray-50/50 transition-colors group">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center gap-3">
-                                    <div className="relative">
-                                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                                        {member.user?.image ? (
-                                          <img src={member.user.image} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                          <span className="text-indigo-700 font-medium text-sm">{member.user?.name?.charAt(0) || member.user?.email?.charAt(0) || 'U'}</span>
-                                        )}
-                                      </div>
-                                      {member.status === 'ONLINE' && (
-                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <div className="font-semibold text-gray-900">{member.user?.name || 'Unknown User'}</div>
-                                      <div className="text-sm text-gray-500">{member.user?.email || 'No email'}</div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getRoleBadgeColor(member.role)}`}>
-                                    {member.role}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`w-2 h-2 rounded-full ${member.status === 'ONLINE' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                                    <span className="text-sm text-gray-600 capitalize">{member.status?.toLowerCase()}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {member.lastActive}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {/* Inline Actions */}
-                                    <select 
-                                      className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-600 cursor-pointer hover:border-gray-300 focus:outline-none"
-                                      value={member.role}
-                                      onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                                    >
-                                      <option value="OWNER">Owner</option>
-                                      <option value="ADMIN">Admin</option>
-                                      <option value="MANAGER">Manager</option>
-                                      <option value="MEMBER">Member</option>
-                                      <option value="GUEST">Guest</option>
-                                    </select>
-                                    <button 
-                                      onClick={() => handleRemoveMember(member.id)}
-                                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                      title="Remove Member"
-                                    >
-                                      <X size={16} />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                            {filteredMembers.length === 0 && (
-                              <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                  No members found matching your criteria.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {/* Pagination Mock */}
-                      <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-                        <span className="text-sm text-gray-500">Showing {filteredMembers.length} of {members.length} members</span>
-                        <div className="flex gap-1">
-                          <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50">Previous</button>
-                          <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50">Next</button>
-                        </div>
-                      </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }} className="hide-scrollbar">
+           
+           {/* KPI CARDS */}
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F4F1FD', color: '#6554C0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                       <Users size={20} />
                     </div>
-                  )}
+                    <div>
+                       <div style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, marginBottom: '4px' }}>Total Members</div>
+                       <div style={{ fontSize: '24px', color: '#172B4D', fontWeight: 800, lineHeight: 1, marginBottom: '8px' }}>{members.length}</div>
+                       <div style={{ fontSize: '12px', color: '#36B37E', fontWeight: 600 }}>↑ 12% <span style={{ color: '#8A94A6', fontWeight: 500 }}>vs last month</span></div>
+                    </div>
+                 </div>
+              </div>
 
-                  {activeTab === 'INVITES' && (
-                    <div className="p-0">
-                      {/* Task 5.3: Pending Invites Tab */}
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-gray-50/80 border-b border-gray-100">
-                            <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                            <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sent Date</th>
-                            <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {currentTeam?.invitations?.map(inv => (
-                            <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{inv.email || inv.user?.email || 'Unknown'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getRoleBadgeColor(inv.role)}`}>
-                                  {inv.role}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {new Date(inv.createdAt).toLocaleDateString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right">
-                                <div className="flex items-center justify-end gap-3">
-                                  <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Resend</button>
-                                  <button onClick={() => handleCancelInvite(inv.id)} className="text-sm font-medium text-red-600 hover:text-red-800">Cancel</button>
+              <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#E3FCEF', color: '#36B37E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                       <Circle size={14} className="fill-current" />
+                    </div>
+                    <div>
+                       <div style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, marginBottom: '4px' }}>Active Members</div>
+                       <div style={{ fontSize: '24px', color: '#172B4D', fontWeight: 800, lineHeight: 1, marginBottom: '8px' }}>{onlineUsers.length}</div>
+                       <div style={{ fontSize: '12px', color: '#36B37E', fontWeight: 600 }}>↑ 8% <span style={{ color: '#8A94A6', fontWeight: 500 }}>vs last month</span></div>
+                    </div>
+                 </div>
+              </div>
+
+              <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#E9F2FF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                       <Folder size={20} />
+                    </div>
+                    <div>
+                       <div style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, marginBottom: '4px' }}>Teams</div>
+                       <div style={{ fontSize: '24px', color: '#172B4D', fontWeight: 800, lineHeight: 1, marginBottom: '8px' }}>{teams.length}</div>
+                       <div style={{ fontSize: '12px', color: '#8A94A6', fontWeight: 500 }}>— No change</div>
+                    </div>
+                 </div>
+              </div>
+
+              <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#FFF0B3', color: '#FF8B00', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                       <Layout size={20} />
+                    </div>
+                    <div>
+                       <div style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, marginBottom: '4px' }}>Projects Access</div>
+                       <div style={{ fontSize: '24px', color: '#172B4D', fontWeight: 800, lineHeight: 1, marginBottom: '8px' }}>{currentTeam?.spaces?.length || 0}</div>
+                       <div style={{ fontSize: '12px', color: '#36B37E', fontWeight: 600 }}>↑ 15% <span style={{ color: '#8A94A6', fontWeight: 500 }}>vs last month</span></div>
+                    </div>
+                 </div>
+              </div>
+
+              <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F4F1FD', color: '#6554C0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                       <CheckCircle2 size={20} />
+                    </div>
+                    <div>
+                       <div style={{ fontSize: '13px', color: '#6B778C', fontWeight: 600, marginBottom: '4px' }}>Tasks Completed</div>
+                       <div style={{ fontSize: '24px', color: '#172B4D', fontWeight: 800, lineHeight: 1, marginBottom: '8px' }}>128</div>
+                       <div style={{ fontSize: '12px', color: '#36B37E', fontWeight: 600 }}>↑ 18% <span style={{ color: '#8A94A6', fontWeight: 500 }}>vs last month</span></div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           {/* MAIN TABS */}
+           <div style={{ borderBottom: '1px solid #DFE1E6', marginBottom: '24px', display: 'flex', gap: '8px' }}>
+              {(['Teams', 'Members', 'Roles'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setMainNavTab(tab)}
+                  style={{
+                    padding: '0 16px', height: '44px', background: 'none', border: 'none',
+                    borderBottom: mainNavTab === tab ? '2px solid #0052CC' : '2px solid transparent',
+                    color: mainNavTab === tab ? '#0052CC' : '#6B778C',
+                    fontSize: '14px', fontWeight: mainNavTab === tab ? 700 : 500,
+                    cursor: 'pointer', marginBottom: '-1px', transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'Roles' ? 'Roles & Permissions' : tab}
+                </button>
+              ))}
+           </div>
+
+           {/* MEMBERS TAB */}
+           {mainNavTab === 'Members' && (
+             <MembersTab
+               teams={teams.map(t => ({ id: t.id, name: t.name }))}
+               currentTeamId={currentTeam?.id}
+             />
+           )}
+
+           {/* ROLES & PERMISSIONS TAB */}
+           {mainNavTab === 'Roles' && <RolesTab />}
+
+           {/* 3 COLUMN LAYOUT — Teams Tab */}
+           <div style={{ display: mainNavTab === 'Teams' ? 'block' : 'none' }}>
+           <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+              
+              {/* LEFT COLUMN: YOUR TEAMS */}
+              <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#172B4D', margin: 0 }}>Your Teams</h2>
+                    <button style={{ background: 'none', border: 'none', color: '#0052CC', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}><Plus size={14}/> New Team</button>
+                 </div>
+                 
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {teams.map(team => {
+                       const isActive = currentTeam?.id === team.id;
+                       const colors = [
+                          { bg: '#F4F1FD', text: '#6554C0', icon: Folder },
+                          { bg: '#E3FCEF', text: '#36B37E', icon: LinkIcon },
+                          { bg: '#E9F2FF', text: '#0052CC', icon: Search },
+                          { bg: '#FFEBE6', text: '#FF5630', icon: Bell },
+                          { bg: '#FFF0B3', text: '#FF8B00', icon: Shield },
+                          { bg: '#E3FCEF', text: '#36B37E', icon: Settings }
+                       ];
+                       const colorObj = colors[team.name.length % colors.length];
+                       const Icon = colorObj.icon;
+
+                       return (
+                       <div key={team.id} onClick={() => setCurrentTeam(team)} style={{ background: isActive ? 'white' : '#FAFBFC', border: isActive ? '1px solid #DFE1E6' : '1px solid transparent', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer', boxShadow: isActive ? '0 2px 4px rgba(9, 30, 66, 0.03)' : 'none', transition: 'all 0.2s' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: colorObj.bg, color: colorObj.text, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Icon size={20} />
+                             </div>
+                             <div>
+                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D', marginBottom: '4px' }}>{team.name}</div>
+                                <div style={{ fontSize: '12px', color: '#6B778C', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                   {team._count?.members || team.members?.length || 0} members <Circle size={6} className="fill-current" style={{ color: isActive ? '#0052CC' : '#FF8B00' }}/>
                                 </div>
-                              </td>
-                            </tr>
+                             </div>
+                          </div>
+                          <button style={{ background: 'none', border: 'none', color: '#8A94A6', cursor: 'pointer', padding: '4px' }}><MoreHorizontal size={16} /></button>
+                       </div>
+                       );
+                    })}
+                 </div>
+
+                 <button style={{ background: 'none', border: 'none', color: '#6B778C', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', cursor: 'pointer', marginTop: '8px' }}>
+                    <Folder size={16} /> View Archived Teams
+                 </button>
+              </div>
+
+              {/* CENTER COLUMN: SELECTED TEAM */}
+              <div style={{ flex: 1, background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)', padding: '24px' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                       <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: '#F4F1FD', color: '#6554C0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Folder size={28} />
+                       </div>
+                       <div>
+                          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#172B4D', margin: 0, marginBottom: '6px' }}>{currentTeam?.name || 'Loading...'}</h2>
+                          <p style={{ fontSize: '13px', color: '#6B778C', margin: 0, fontWeight: 500 }}>{members.length} members • {currentTeam?.spaces?.length || 0} projects</p>
+                       </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                       <button style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#6B778C', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Settings size={16} /></button>
+                       <button style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#6B778C', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><MoreHorizontal size={16} /></button>
+                    </div>
+                 </div>
+
+                 {/* TEAM TABS */}
+                 <div style={{ borderBottom: '1px solid #DFE1E6', marginBottom: '24px', display: 'flex', gap: '32px' }}>
+                    {['Members', 'Projects', 'Activity', 'Settings'].map(tab => (
+                       <div 
+                         key={tab} 
+                         onClick={() => setInnerTeamTab(tab)}
+                         style={{ 
+                            paddingBottom: '12px', 
+                            borderBottom: innerTeamTab === tab ? '2px solid #0052CC' : '2px solid transparent', 
+                            color: innerTeamTab === tab ? '#0052CC' : '#6B778C', 
+                            fontSize: '13px', 
+                            fontWeight: 600, 
+                            cursor: 'pointer' 
+                         }}>
+                          {tab}
+                       </div>
+                    ))}
+                 </div>
+
+                 {/* TABLE CONTROLS */}
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ position: 'relative', width: '280px' }}>
+                       <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
+                       <input 
+                         type="text" 
+                         placeholder="Search members..." 
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         style={{ width: '100%', height: '36px', paddingLeft: '36px', paddingRight: '16px', borderRadius: '8px', border: '1px solid #DFE1E6', fontSize: '13px', outline: 'none' }}
+                       />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                       <button style={{ height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#172B4D', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                         <Search size={14} /> Filter
+                       </button>
+                       <select 
+                         value={roleFilter}
+                         onChange={(e) => setRoleFilter(e.target.value)}
+                         style={{ height: '36px', padding: '0 32px 0 12px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#172B4D', fontSize: '13px', fontWeight: 600, outline: 'none', cursor: 'pointer', appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6%209L12%2015L18%209%22%20stroke%3D%22%236B778C%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px' }}
+                       >
+                         <option value="ALL">Role</option>
+                         <option value="OWNER">Owner</option>
+                         <option value="ADMIN">Admin</option>
+                         <option value="MANAGER">Manager</option>
+                         <option value="MEMBER">Member</option>
+                         <option value="GUEST">Guest</option>
+                       </select>
+                    </div>
+                 </div>
+
+                 {/* MEMBERS TABLE */}
+                 <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                       <thead>
+                          <tr style={{ borderBottom: '1px solid #DFE1E6' }}>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase' }}>Member</th>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase' }}>Role</th>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase' }}>Projects</th>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase' }}>Tasks</th>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase' }}>Status</th>
+                             <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                          </tr>
+                       </thead>
+                       <tbody>
+                          {filteredMembers.map((member) => (
+                             <tr key={member.id} style={{ borderBottom: '1px solid #F4F5F7' }}>
+                                <td style={{ padding: '16px' }}>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#F4F1FD', color: '#6554C0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, overflow: 'hidden' }}>
+                                         {member.user?.image ? <img src={member.user.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : member.user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                                      </div>
+                                      <div>
+                                         <div style={{ fontSize: '13px', fontWeight: 700, color: '#172B4D', marginBottom: '2px' }}>{member.user?.name || 'Unknown User'}</div>
+                                         <div style={{ fontSize: '12px', color: '#6B778C' }}>{member.user?.email || 'No email'}</div>
+                                      </div>
+                                   </div>
+                                </td>
+                                <td style={{ padding: '16px' }}>
+                                   <select 
+                                     value={member.role}
+                                     onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                                     style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, border: 'none', background: member.role === 'ADMIN' || member.role === 'OWNER' ? '#E9F2FF' : member.role === 'MANAGER' ? '#E3FCEF' : '#F4F1FD', color: member.role === 'ADMIN' || member.role === 'OWNER' ? '#0052CC' : member.role === 'MANAGER' ? '#36B37E' : '#6554C0', cursor: 'pointer', appearance: 'none', outline: 'none' }}
+                                   >
+                                     <option value="OWNER">Owner</option>
+                                     <option value="ADMIN">Admin</option>
+                                     <option value="MANAGER">Manager</option>
+                                     <option value="MEMBER">Member</option>
+                                     <option value="GUEST">Guest</option>
+                                   </select>
+                                </td>
+                                <td style={{ padding: '16px', fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{currentTeam?.spaces?.length || 0}</td>
+                                <td style={{ padding: '16px', fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>{Math.floor(Math.random() * 30) + 5}</td>
+                                <td style={{ padding: '16px' }}>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: member.status === 'ONLINE' ? '#36B37E' : '#FF8B00' }}>
+                                      <Circle size={8} className="fill-current" /> {member.status === 'ONLINE' ? 'Online' : 'Away'}
+                                   </div>
+                                </td>
+                                <td style={{ padding: '16px', textAlign: 'right' }}>
+                                   <button onClick={() => handleRemoveMember(member.id)} style={{ background: 'none', border: '1px solid #DFE1E6', borderRadius: '6px', padding: '6px', color: '#6B778C', cursor: 'pointer', marginLeft: 'auto' }} title="Remove Member">
+                                      <MoreHorizontal size={16} />
+                                   </button>
+                                </td>
+                             </tr>
                           ))}
-                          {(!currentTeam?.invitations || currentTeam.invitations.length === 0) && (
-                            <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No pending invites.</td></tr>
+                          {filteredMembers.length === 0 && (
+                             <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#8A94A6', fontSize: '13px' }}>No members found.</td></tr>
                           )}
-                        </tbody>
-                      </table>
+                       </tbody>
+                    </table>
+                 </div>
+                 
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
+                    <div style={{ fontSize: '12px', color: '#6B778C', fontWeight: 500 }}>Showing 1 to {filteredMembers.length} of {members.length} members</div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                       <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #DFE1E6', background: 'white', color: '#6B778C', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} /></button>
+                       <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #DFE1E6', background: '#F4F5F7', color: '#0052CC', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>1</button>
+                       <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #DFE1E6', background: 'white', color: '#6B778C', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={14} /></button>
                     </div>
-                  )}
+                 </div>
+              </div>
 
-                  {['ACTIVITY', 'ROLES', 'INSIGHTS'].includes(activeTab) && (
-                    <div className="p-12 flex flex-col items-center justify-center text-center">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-4">
-                        <MoreHorizontal size={24} />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Coming Soon</h3>
-                      <p className="text-gray-500 max-w-sm">This section is currently under development. Detailed {activeTab.toLowerCase()} views will be available in the next update.</p>
+              {/* RIGHT COLUMN */}
+              <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                 
+                 {/* TEAM ACTIVITY */}
+                 <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)', padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                       <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#172B4D', margin: 0 }}>Team Activity</h3>
+                       <button style={{ background: '#EEF2FF', border: 'none', borderRadius: '6px', padding: '4px 8px', color: '#0052CC', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>View all</button>
                     </div>
-                  )}
-
-                </div>
-
-                {/* PHASE 7: LOWER DASHBOARD SECTION */}
-                <div className="grid grid-cols-3 gap-6 pt-2">
-                  {/* Workspaces Card (Task 7.1) */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 col-span-1 flex flex-col hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-gray-900">Workspaces</h3>
-                      <button className="text-gray-400 hover:text-indigo-600 bg-gray-50 hover:bg-indigo-50 p-1.5 rounded-md transition-colors"><Plus size={16} /></button>
-                    </div>
-                    <div className="space-y-3 flex-1">
-                      <WorkspaceItem name="Campaigns" members={12} icon={<Target size={16} />} color="bg-orange-100 text-orange-600" />
-                      <WorkspaceItem name="Content Team" members={8} icon={<FileText size={16} />} color="bg-blue-100 text-blue-600" />
-                      <WorkspaceItem name="Design Studio" members={5} icon={<PenTool size={16} />} color="bg-purple-100 text-purple-600" />
-                    </div>
-                  </div>
-
-                  {/* Quick Actions Card (Task 7.2) */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 col-span-1 flex flex-col hover:shadow-md transition-shadow">
-                    <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-                    <div className="grid grid-cols-2 gap-3 flex-1">
-                      <QuickAction icon={<Folder />} label="Create Workspace" />
-                      <QuickAction icon={<UserPlus />} label="Invite Members" onClick={() => setIsInviteModalOpen(true)} />
-                      <QuickAction icon={<Shield />} label="Manage Roles" onClick={() => setActiveTab('ROLES')} />
-                      <QuickAction icon={<Settings />} label="Team Settings" />
-                    </div>
-                  </div>
-
-                  {/* Invite Link Card (Task 7.3) */}
-                  <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-md p-5 col-span-1 text-white flex flex-col relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                      <LinkIcon size={120} />
-                    </div>
-                    <h3 className="font-bold text-white mb-2 relative z-10">Invite via Link</h3>
-                    <p className="text-indigo-100 text-sm mb-4 relative z-10">Anyone with this link can request to join your team.</p>
                     
-                    <div className="mt-auto relative z-10 space-y-3">
-                      <div className="flex bg-white/10 rounded-lg p-1 border border-white/20 backdrop-blur-sm">
-                        <input 
-                          type="text" 
-                          readOnly 
-                          value="https://stroovo.com/join/mkt-team" 
-                          className="bg-transparent text-white text-sm px-3 outline-none flex-1 font-mono"
-                        />
-                        <button className="bg-white text-indigo-600 px-3 py-1.5 rounded-md text-sm font-semibold shadow hover:bg-indigo-50 transition-colors">
-                          Copy
-                        </button>
-                      </div>
-                      <select className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none appearance-none cursor-pointer">
-                        <option value="anyone" className="text-gray-900">Anyone with link</option>
-                        <option value="domain" className="text-gray-900">Only @company.com</option>
-                        <option value="invited" className="text-gray-900">Only invited emails</option>
-                      </select>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                       {activities.slice(0, 5).map((act, i) => (
+                          <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: ['#F4F1FD', '#FFF0B3', '#E9F2FF', '#FFEBE6', '#E3FCEF'][i % 5], color: ['#6554C0', '#FF8B00', '#0052CC', '#FF5630', '#36B37E'][i % 5], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '11px', fontWeight: 700 }}>
+                                {act.user?.substring(0, 2).toUpperCase() || 'U'}
+                             </div>
+                             <div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#172B4D', marginBottom: '2px' }}>{act.user}</div>
+                                <div style={{ fontSize: '12px', color: '#6B778C', lineHeight: 1.4 }}>{act.action}</div>
+                                <div style={{ fontSize: '11px', color: '#8A94A6', marginTop: '4px', fontWeight: 500 }}>{act.time}</div>
+                             </div>
+                          </div>
+                       ))}
                     </div>
-                  </div>
-                </div>
+                 </div>
 
-              </div>
-
-              {/* PHASE 6: RIGHT SIDEBAR (Task 6.1, 6.2, 6.3) */}
-              <div className="w-80 flex-shrink-0 space-y-6">
-                
-                {/* Online Users */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                      Online Now
-                    </h3>
-                    <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full">{onlineUsers.length}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {onlineUsers.slice(0, 8).map((u, i) => (
-                      <div key={i} className="relative group cursor-pointer hover:-translate-y-1 transition-transform">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden">
-                          {u.user?.image ? <img src={u.user.image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-700 font-bold text-sm">{u.user?.name?.charAt(0) || 'U'}</div>}
-                        </div>
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                        
-                        {/* Tooltip */}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
-                          {u.user?.name}
-                        </div>
-                      </div>
-                    ))}
-                    {onlineUsers.length > 8 && (
-                      <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white shadow-sm flex items-center justify-center text-xs font-bold text-gray-500">
-                        +{onlineUsers.length - 8}
-                      </div>
-                    )}
-                    {onlineUsers.length === 0 && <p className="text-sm text-gray-500">No one is currently online.</p>}
-                  </div>
-                </div>
-
-                {/* Team Activity Panel */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h3 className="font-bold text-gray-900 mb-4">Recent Activity</h3>
-                  <div className="space-y-4">
-                    {activities.map((log) => (
-                      <div key={log.id} className="flex gap-3 items-start group">
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-indigo-100 transition-colors">
-                          <Activity size={14} />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-800 leading-snug">
-                            <span className="font-semibold">{log.user}</span> {log.action}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">{log.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button className="w-full mt-4 text-center text-sm font-semibold text-indigo-600 hover:text-indigo-700 py-2 hover:bg-indigo-50 rounded-lg transition-colors">
-                    View All Activity
-                  </button>
-                </div>
-
-                {/* Insights Panel */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h3 className="font-bold text-gray-900 mb-4 flex items-center justify-between">
-                    Insights 
-                    <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded">7 Days</span>
-                  </h3>
-                  
-                  {/* Fake Chart */}
-                  <div className="mb-6">
-                    <div className="flex items-end gap-1 h-24 mb-2">
-                      {[30, 45, 25, 60, 40, 80, 55].map((h, i) => (
-                        <div key={i} className="flex-1 bg-indigo-100 hover:bg-indigo-500 transition-colors rounded-t-sm" style={{ height: `${h}%` }}></div>
-                      ))}
+                 {/* INVITE MEMBERS */}
+                 <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)', padding: '24px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#172B4D', margin: 0, marginBottom: '6px' }}>Invite Members</h3>
+                    <p style={{ fontSize: '13px', color: '#6B778C', margin: 0, marginBottom: '16px' }}>Invite your team members to collaborate.</p>
+                    
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                       <input 
+                         id="invite-email-input"
+                         type="email"
+                         placeholder="Enter email address"
+                         value={inviteEmails}
+                         onChange={(e) => setInviteEmails(e.target.value)}
+                         style={{ flex: 1, minWidth: 0, height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid #DFE1E6', fontSize: '13px', outline: 'none' }}
+                       />
+                       <select
+                         value={inviteRole}
+                         onChange={(e) => setInviteRole(e.target.value)}
+                         style={{ width: '100px', flexShrink: 0, height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid #DFE1E6', fontSize: '13px', fontWeight: 600, color: '#172B4D', outline: 'none', background: 'white' }}
+                       >
+                         <option value="MEMBER">Member</option>
+                         <option value="ADMIN">Admin</option>
+                         <option value="GUEST">Guest</option>
+                       </select>
                     </div>
-                    <div className="flex justify-between text-[10px] text-gray-400 font-medium px-1">
-                      <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                    </div>
-                  </div>
+                    <button 
+                      onClick={handleInvite}
+                      disabled={isInviting || !inviteEmails.trim()}
+                      style={{ width: '100%', height: '40px', borderRadius: '8px', border: 'none', background: '#EEF2FF', color: '#0052CC', fontSize: '13px', fontWeight: 700, cursor: (isInviting || !inviteEmails.trim()) ? 'not-allowed' : 'pointer', opacity: (isInviting || !inviteEmails.trim()) ? 0.6 : 1, transition: 'all 0.2s' }}
+                    >
+                      {isInviting ? 'Sending...' : 'Send Invite'}
+                    </button>
+                 </div>
 
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Top Active Members</h4>
-                  <div className="space-y-3">
-                    <TopMember name="Sarah Smith" score={98} />
-                    <TopMember name="Alex Johnson" score={85} />
-                    <TopMember name="Mike Davis" score={72} />
-                  </div>
-                </div>
+                 {/* HELP CARD */}
+                 <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6', boxShadow: '0 2px 4px rgba(9, 30, 66, 0.02)', padding: '24px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#172B4D', margin: 0, marginBottom: '6px' }}>Need help?</h3>
+                    <p style={{ fontSize: '13px', color: '#6B778C', margin: 0, marginBottom: '16px', lineHeight: 1.4 }}>Learn how to manage your team effectively.</p>
+                    <button style={{ background: '#F4F5F7', border: '1px solid #DFE1E6', borderRadius: '8px', padding: '8px 16px', color: '#0052CC', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                       <HelpCircle size={14} /> View Help Center
+                    </button>
+                 </div>
 
               </div>
-            </div>
-          </div>
-          ) : (
-            <>
-               {mainNavTab === 'Overview' && <OverviewTab team={currentTeam} members={members} onlineUsers={onlineUsers} teamHealthScore={teamHealthScore} setIsInviteModalOpen={setIsInviteModalOpen} />}
-               {mainNavTab === 'Workspace' && <WorkspaceTab team={currentTeam} />}
-               {mainNavTab === 'Tasks' && <TasksTab team={currentTeam} />}
-               {mainNavTab === 'Insights' && <InsightsTab team={currentTeam} members={members} />}
-            </>
-          )}
-        </div>
-      </main>
-
-      {/* PHASE 5: INVITATION SYSTEM MODAL (Task 5.2) */}
-      <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white rounded-2xl border-0 shadow-2xl">
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 text-white">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-white">
-                <UserPlus size={24} />
-                Invite to Team
-              </DialogTitle>
-              <p className="text-indigo-100 mt-1">Add new members to collaborate in your workspace.</p>
-            </DialogHeader>
-          </div>
-          
-          <div className="p-6 space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="emails" className="font-semibold text-gray-700 text-sm">Email Addresses</Label>
-              <Input 
-                id="emails"
-                placeholder="e.g. john@company.com, sarah@company.com" 
-                value={inviteEmails}
-                onChange={(e) => setInviteEmails(e.target.value)}
-                className="focus-visible:ring-indigo-500"
-              />
-              <p className="text-xs text-gray-500">Separate multiple emails with commas.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="role" className="font-semibold text-gray-700 text-sm">Role & Permissions</Label>
-              <select 
-                id="role"
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                <option value="ADMIN">Admin - Full access to all settings</option>
-                <option value="MANAGER">Manager - Can manage members and projects</option>
-                <option value="MEMBER">Member - Can view and collaborate</option>
-                <option value="GUEST">Guest - Limited read-only access</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="message" className="font-semibold text-gray-700 text-sm">Personal Message (Optional)</Label>
-              <textarea 
-                id="message"
-                placeholder="Welcome to the team! Here's access to our workspace."
-                value={inviteMessage}
-                onChange={(e) => setInviteMessage(e.target.value)}
-                className="flex min-h-[80px] w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 resize-none"
-              />
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={sendEmail} 
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 accent-indigo-600"
-                />
-                <span className="text-sm text-gray-700 font-medium">Send email invitation</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={generateLink} 
-                  onChange={(e) => setGenerateLink(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 accent-indigo-600"
-                />
-                <span className="text-sm text-gray-700 font-medium">Generate shareable invite link</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl">
-            <Button variant="ghost" onClick={() => setIsInviteModalOpen(false)} className="font-medium text-gray-600 hover:text-gray-900">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleInvite} 
-              disabled={isInviting || !inviteEmails.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-md shadow-indigo-200"
-            >
-              {isInviting ? 'Sending...' : (generateLink && !sendEmail ? 'Generate Link' : 'Send Invite')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <FloatingAI />
-      </div>
-    </div>
-  );
-}
-
-// --- Sub-components for UI structure ---
-
-function NavItem({ icon, label, active = false, badge }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string }) {
-  return (
-    <div className={`flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${active ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'}`}>
-      <div className="flex items-center gap-3">
-        {React.cloneElement(icon as React.ReactElement<any>, { className: active ? 'text-indigo-600' : 'text-gray-400' })}
-        <span className="text-sm">{label}</span>
-      </div>
-      {badge && <span className="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{badge}</span>}
-    </div>
-  );
-}
-
-function StatCard({ icon, value, label, trend, trendUp, highlight = false }: any) {
-  return (
-    <div className={`rounded-2xl p-5 shadow-sm border ${highlight ? 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100' : 'bg-white border-gray-100'} hover:shadow-md transition-shadow`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${highlight ? 'bg-white shadow-sm' : 'bg-gray-50'}`}>
-          {icon}
-        </div>
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-        <div className="text-sm font-semibold text-gray-500 mb-3">{label}</div>
-        <div className={`flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-emerald-600' : 'text-amber-600'}`}>
-          {trendUp ? <TrendingUp size={12} /> : <Clock size={12} />}
-          {trend}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TabButton({ active, onClick, label, count }: any) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${active ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-200'}`}
-    >
-      {label}
-      {count !== undefined && (
-        <span className={`text-xs px-2 py-0.5 rounded-full ${active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function WorkspaceItem({ name, members, icon, color }: any) {
-  return (
-    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{name}</p>
-          <p className="text-xs text-gray-500">{members} members</p>
-        </div>
-      </div>
-      <ChevronDown size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
-    </div>
-  );
-}
-
-function QuickAction({ icon, label, onClick }: any) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all text-gray-600 group">
-      <div className="text-gray-400 group-hover:text-indigo-600 transition-colors">
-        {icon}
-      </div>
-      <span className="text-xs font-semibold text-center">{label}</span>
-    </button>
-  );
-}
-
-function TopMember({ name, score }: any) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">
-        {name.charAt(0)}
-      </div>
-      <div className="flex-1">
-        <div className="flex justify-between mb-1">
-          <span className="text-sm font-semibold text-gray-900">{name}</span>
-          <span className="text-xs font-bold text-indigo-600">{score}</span>
-        </div>
-        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${score}%` }}></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Additional missing icons used but not in lucide imports directly
-function Target(props: any) { return <PieChart {...props} />; }
-function PenTool(props: any) { return <Settings {...props} />; }
-
-function OverviewTab({ team, members, onlineUsers, teamHealthScore, setIsInviteModalOpen }: any) {
-  const pendingInvites = team?.invitations?.length || 0;
-  return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8 animate-in fade-in duration-300">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Team Overview</h1>
-          <p className="text-gray-500 mt-1">At a glance view of {team?.name || 'your team'}.</p>
-        </div>
-        <div className="flex gap-3">
-           <Button onClick={() => setIsInviteModalOpen(true)} className="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"><UserPlus size={16} className="mr-2" /> Invite Member</Button>
-           <Button className="bg-indigo-600 hover:bg-indigo-700 text-white"><CheckCircle2 size={16} className="mr-2" /> Create Task</Button>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard icon={<Users className="text-indigo-600" />} value={members?.length || 0} label="Total Members" trend="+2 this week" trendUp={true} highlight={true} />
-        <StatCard icon={<Activity className="text-purple-600" />} value={onlineUsers?.length || 0} label="Active (24h)" trend="Stable" trendUp={true} />
-        <StatCard icon={<CheckCircle2 className="text-emerald-600" />} value="128" label="Tasks Completed" trend="+12 this week" trendUp={true} />
-        <StatCard icon={<Clock className="text-amber-600" />} value="24" label="Tasks Pending" trend="-3 this week" trendUp={true} />
-        <StatCard icon={<PieChart className="text-blue-600" />} value={`${teamHealthScore || 92}/100`} label="Team Health" trend="Excellent" trendUp={true} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6 col-span-1 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><AlertCircle size={18} className="text-red-500"/> Needs Attention</h3>
-          <div className="space-y-4">
-             <div className="flex items-start gap-3">
-               <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><Clock size={16}/></div>
-               <div><p className="text-sm font-semibold text-gray-900">3 Overdue Tasks</p><p className="text-xs text-gray-500">Marketing Campaign requires action</p></div>
-             </div>
-             <div className="flex items-start gap-3">
-               <div className="p-2 bg-gray-50 rounded-lg text-gray-500"><User size={16}/></div>
-               <div><p className="text-sm font-semibold text-gray-900">2 Inactive Members</p><p className="text-xs text-gray-500">No login in 7 days</p></div>
-             </div>
-             <div className="flex items-start gap-3">
-               <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Mail size={16}/></div>
-               <div><p className="text-sm font-semibold text-gray-900">{pendingInvites} Pending Invites</p><p className="text-xs text-gray-500">Awaiting response</p></div>
-             </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 col-span-1 lg:col-span-2">
-           <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-500"/> Team Progress</h3>
-           <div className="space-y-6">
-              <div>
-                <div className="flex justify-between mb-2"><span className="text-sm font-semibold text-gray-700">Tasks Completion</span><span className="text-sm font-bold text-emerald-600">84%</span></div>
-                <div className="w-full bg-gray-100 rounded-full h-2"><div className="bg-emerald-500 h-2 rounded-full" style={{width: '84%'}}></div></div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-2"><span className="text-sm font-semibold text-gray-700">Workspace Setup</span><span className="text-sm font-bold text-indigo-600">100%</span></div>
-                <div className="w-full bg-gray-100 rounded-full h-2"><div className="bg-indigo-500 h-2 rounded-full" style={{width: '100%'}}></div></div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-2"><span className="text-sm font-semibold text-gray-700">Q3 Sprint Progress</span><span className="text-sm font-bold text-purple-600">65%</span></div>
-                <div className="w-full bg-gray-100 rounded-full h-2"><div className="bg-purple-500 h-2 rounded-full" style={{width: '65%'}}></div></div>
-              </div>
+           </div>
            </div>
         </div>
       </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-         <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Activity size={18} className="text-indigo-500"/> Recent Activity Timeline</h3>
-         <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-emerald-100 text-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><CheckCircle2 size={14}/></div>
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center justify-between mb-1"><div className="font-bold text-gray-900 text-sm">Task Completed</div><time className="text-xs font-medium text-gray-500">2h ago</time></div>
-                <div className="text-sm text-gray-600">Sarah Smith completed task <span className="font-medium text-gray-900">"Draft Q3 Proposal"</span></div>
-              </div>
-            </div>
-            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-indigo-100 text-indigo-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><UserPlus size={14}/></div>
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center justify-between mb-1"><div className="font-bold text-gray-900 text-sm">New Member</div><time className="text-xs font-medium text-gray-500">5h ago</time></div>
-                <div className="text-sm text-gray-600">Mike Davis joined the <span className="font-medium text-gray-900">Marketing Team</span></div>
-              </div>
-            </div>
-            <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-purple-100 text-purple-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"><Shield size={14}/></div>
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center justify-between mb-1"><div className="font-bold text-gray-900 text-sm">Role Updated</div><time className="text-xs font-medium text-gray-500">1d ago</time></div>
-                <div className="text-sm text-gray-600">You updated roles for <span className="font-medium text-gray-900">2 members</span></div>
-              </div>
-            </div>
-         </div>
-      </div>
     </div>
-  )
+  );
 }
 
 function WorkspaceTab({ team }: any) {
@@ -1178,6 +801,20 @@ function TasksTab({ team }: any) {
       </div>
     </div>
   )
+}
+
+function TopMember({ name, score }: { name: string; score: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#42526E' }}>
+          {name.substring(0, 2).toUpperCase()}
+        </div>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: '#172B4D' }}>{name}</span>
+      </div>
+      <span style={{ fontSize: '14px', fontWeight: 700, color: '#0052CC' }}>{score}</span>
+    </div>
+  );
 }
 
 function InsightsTab({ team, members }: any) {

@@ -15,8 +15,8 @@ const ReportItem = ({ title, date, format, size }: any) => (
                 {format === 'PDF' ? <FileText size={18} /> : <FileSpreadsheet size={18} />}
             </div>
             <div>
-                <div className="text-[11px] font-black text-gray-900 mb-0.5">{title}</div>
-                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-[11px] font-semibold text-gray-900 mb-0.5">{title}</div>
+                <div className="text-[9px] font-bold text-gray-400 flex items-center gap-2">
                     {date}
                     <span className="text-gray-200">•</span>
                     {size}
@@ -37,9 +37,9 @@ export const ReportingPanel = ({ role }: { role: string }) => {
                     <div className="p-2 bg-gray-50 rounded-xl">
                         <BarChart3 size={18} className="text-gray-400" />
                     </div>
-                    <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Executive Reporting</h3>
+                    <h3 className="text-[10px] font-semibold text-gray-900">Executive Reporting</h3>
                 </div>
-                <button className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">All Reports</button>
+                <button className="text-[9px] font-semibold text-indigo-600 hover:underline">All Reports</button>
             </div>
 
             <div className="space-y-1 divide-y divide-gray-50">
@@ -69,7 +69,7 @@ export const ReportingPanel = ({ role }: { role: string }) => {
                 />
             </div>
 
-            <button className="w-full mt-8 py-4 bg-white border border-gray-100 text-gray-600 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-50 hover:border-indigo-100 transition-all flex items-center justify-center gap-2">
+            <button className="w-full mt-8 py-4 bg-white border border-gray-100 text-gray-600 rounded-2xl text-[10px] font-semibold hover:bg-gray-50 hover:border-indigo-100 transition-all flex items-center justify-center gap-2">
                 Configure Automated Reports
                 <ChevronRight size={14} />
             </button>

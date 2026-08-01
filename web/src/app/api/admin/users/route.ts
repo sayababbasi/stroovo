@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         const validatedData = createUserSchema.parse(body);
         console.log('[POST /api/admin/users] Validated data:', validatedData);
 
-        const user = await AdminService.createUser(validatedData);
+        const user = await AdminService.createUser(validatedData as any);
         await logAdminAction({
             request,
             user: authResult.user,

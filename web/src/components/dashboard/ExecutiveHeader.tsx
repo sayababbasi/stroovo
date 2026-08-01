@@ -20,10 +20,10 @@ export const ExecutiveHeader = ({ isAIMode }: { isAIMode?: boolean }) => {
                 {!isAIMode ? (
                     <>
                         <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
                                 Good Morning, {user?.name?.split(' ')[0] || 'Executive'}
                             </h1>
-                            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100/50">
+                            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-semibold border border-emerald-100/50">
                                 Operational Health: 94%
                             </div>
                         </div>
@@ -37,7 +37,7 @@ export const ExecutiveHeader = ({ isAIMode }: { isAIMode?: boolean }) => {
                 ) : (
                     <>
                         <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+                            <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
                                 AI Control System
                             </h1>
                             <Sparkles size={20} className="text-indigo-600" />
@@ -65,7 +65,7 @@ export const ExecutiveHeader = ({ isAIMode }: { isAIMode?: boolean }) => {
                     <div className="absolute inset-y-0 right-5 flex items-center">
                         <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-xl">
                             <Sparkles size={12} className="text-indigo-500" />
-                            <span className="text-[10px] font-black text-gray-400">AI</span>
+                            <span className="text-[10px] font-semibold text-gray-400">AI</span>
                         </div>
                     </div>
                 </div>
@@ -89,8 +89,8 @@ export const ExecutiveHeader = ({ isAIMode }: { isAIMode?: boolean }) => {
 
                 <div className="flex items-center gap-3 pl-2 cursor-pointer group">
                     <div className="text-right">
-                        <div className="text-xs font-black text-gray-900 leading-none mb-1 group-hover:text-indigo-600 transition-colors">{user?.name || 'Executive'}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{user?.role || 'Administrator'}</div>
+                        <div className="text-xs font-semibold text-gray-900 leading-none mb-1 group-hover:text-indigo-600 transition-colors">{user?.name || 'Executive'}</div>
+                        <div className="text-[10px] font-bold text-gray-400">{user?.role || 'Administrator'}</div>
                     </div>
                     <div className="relative">
                         <div className="w-11 h-11 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 border-2 border-white shadow-md overflow-hidden group-hover:scale-105 transition-transform">

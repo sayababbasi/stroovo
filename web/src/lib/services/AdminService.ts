@@ -61,8 +61,59 @@ export class AdminService {
             contact: true,
             image: true,
             isActive: true,
+            status: true,
             isEmailVerified: true,
             lastLoginAt: true,
+            systemRole: {
+              select: {
+                id: true,
+                name: true,
+                isSystem: true
+              }
+            },
+            additionalRoles: {
+              select: {
+                role: {
+                  select: {
+                    id: true,
+                    name: true,
+                    isSystem: true
+                  }
+                }
+              }
+            },
+            teamMembers: {
+              select: {
+                team: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                },
+                systemRole: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            },
+            projectAccesses: {
+              select: {
+                project: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                },
+                role: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            },
             createdAt: true,
             _count: {
               select: {
@@ -261,5 +312,51 @@ export class AdminService {
     });
     
     return activities;
+  }
+
+  /**
+   * Assign roles to a user (Primary + Additional)
+   */
+  static async assignUserRoles(userId: string, primaryRoleId?: string, additionalRoleIds?: string[]) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Update primary role if provided
+      if (primaryRoleId !== undefined) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { roleId: primaryRoleId === null ? null : primaryRoleId }
+        });
+      }
+
+      // 2. Update additional roles if provided
+      if (additionalRoleIds !== undefined) {
+        // Delete existing additional roles
+        await tx.memberRole.deleteMany({
+          where: { userId }
+        });
+
+        // Insert new additional roles
+        if (additionalRoleIds.length > 0) {
+          await tx.memberRole.createMany({
+            data: additionalRoleIds.map(roleId => ({
+              userId,
+              roleId
+            }))
+          });
+        }
+      }
+
+      // Return updated user with relations
+      return tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          systemRole: true,
+          additionalRoles: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
+    });
   }
 }

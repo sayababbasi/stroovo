@@ -60,9 +60,7 @@ export default function ExecutiveDashboard() {
                                 <button 
                                     key={tab.name} 
                                     onClick={() => setActiveTab(tab.name)}
-                                    className={`pb-4 text-[11px] font-black uppercase tracking-[0.15em] transition-all relative ${
-                                        activeTab === tab.name ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                                    }`}
+                                    className={`pb-4 text-[13px] font-semibold transition-all relative ${ activeTab === tab.name ? 'text-[#0052CC]' : 'text-[#6B778C] hover:text-[#172B4D]' }`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <tab.icon size={14} />
@@ -81,11 +79,7 @@ export default function ExecutiveDashboard() {
                         <div className="flex items-center gap-3">
                             <button 
                                 onClick={() => setIsAIControlOpen(!isAIControlOpen)}
-                                className={`px-5 py-2.5 rounded-2xl text-[11px] font-black transition-all flex items-center gap-2 shadow-lg ${
-                                    isAIControlOpen 
-                                    ? 'bg-indigo-600 text-white shadow-indigo-500/20' 
-                                    : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'
-                                }`}
+                                className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 shadow-sm ${ isAIControlOpen ? 'bg-[#0052CC] text-white' : 'bg-white text-[#172B4D] border border-gray-200 hover:bg-gray-50' }`}
                             >
                                 <Cpu size={16} />
                                 AI Control Center

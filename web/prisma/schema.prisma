@@ -1,9 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -52,6 +54,7 @@ model Team {
   updatedAt   DateTime         @updatedAt
   tenantId    String
   createdBy   String?
+  status      String           @default("ACTIVE")
   autoMode    String           @default("OFF")
   autoLogs    AutoActionLog[]
   tasks       Task[]           @relation("TeamTasks")
@@ -67,9 +70,11 @@ model TeamMember {
   teamId   String
   userId   String
   role     String   @default("MEMBER")
+  roleId   String?
   joinedAt DateTime @default(now())
   team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  systemRole Role?  @relation(fields: [roleId], references: [id])
 
   @@unique([teamId, userId])
   @@index([teamId])
@@ -143,6 +148,7 @@ model User {
   emailVerificationToken String?
   failedLoginAttempts    Int                   @default(0)
   isActive               Boolean               @default(true)
+  status                 String                @default("ACTIVE")
   isEmailVerified        Boolean               @default(false)
   lastLoginAt            DateTime?
   lockedUntil            DateTime?
@@ -175,6 +181,8 @@ model User {
   teamMessages           TeamMessage[]
   systemRole             Role?                 @relation(fields: [roleId], references: [id])
   tenant                 Tenant?               @relation(fields: [tenantId], references: [id])
+  additionalRoles        MemberRole[]
+  projectAccesses        ProjectAccess[]
 }
 
 model Role {
@@ -186,6 +194,9 @@ model Role {
   updatedAt   DateTime         @updatedAt
   permissions RolePermission[]
   users       User[]
+  additionalUsers MemberRole[]
+  teamMembers     TeamMember[]
+  projectAccesses ProjectAccess[]
 }
 
 model Permission {
@@ -284,6 +295,7 @@ model Project {
   tenant         Tenant?   @relation(fields: [tenantId], references: [id])
   risks          Risk[]
   tasks          Task[]
+  accessList     ProjectAccess[]
 }
 
 model Task {
@@ -921,6 +933,37 @@ model TeamMessage {
 
   @@index([teamId])
   @@index([userId])
+}
+
+model MemberRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model ProjectAccess {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([roleId])
 }
 
 model Automation {

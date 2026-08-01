@@ -23,3 +23,29 @@
 
 ## `components/KanbanCard.tsx`
 - **KanbanCard**: Individual task cards on the board. Uses semantic colors for priority chips, displays progress bars, and manages its own hover/drag visual states. Heavily relies on typography for information hierarchy.
+
+# Teams Module Components
+
+## `app/teams/page.tsx`
+- **TeamsDashboard**: Acts as the main shell to switch between the "Teams", "Members", and "Roles & Permissions" root tabs.
+
+## `app/teams/components/MembersTab.tsx`
+- **MembersTab**: The high-level orchestrator for user management. Renders KPI summary cards, functional search/filter toolbars, and the `MemberTable`.
+
+## `app/teams/components/MemberTable.tsx`
+- **MemberTable**: Enterprise-grade table displaying users, primary roles, team assignments, projects/tasks count, and status. It supports inline role modification and invoking the detailed profile drawer.
+
+## `app/teams/components/MemberDrawer.tsx`
+- **MemberDrawer**: A right-side slide-out panel utilizing Radix UI Dialog primitives. Displays a comprehensive user profile, detailed metrics, and a tabbed interface for contact info, assigned teams, and computed permission lists.
+
+## `app/teams/components/InviteMemberModal.tsx`
+- **InviteMemberModal**: Advanced invitation flow handling role assignment and team scoping before invitation dispatch.
+
+## `app/teams/components/RolesTab.tsx`
+- **RolesTab**: The high-level orchestrator for Role-Based Access Control. Displays role metrics and orchestrates the layout between the left-side `RoleList` and the right-side `RoleDetail`.
+
+## `app/teams/components/RoleDetail.tsx`
+- **RoleDetail**: A tabbed configuration panel for modifying Role metadata (Name, Description), managing associated Members, and rendering the `PermissionMatrix` for deep access modifications.
+
+## `app/teams/components/PermissionMatrix.tsx`
+- **PermissionMatrix**: A complex, grouped grid UI mapped to system modules (Tasks, Projects, Team, Calendar, Billing). Handles the visualization and batch-sync payload structure for assigning No Access / View / Edit / Full Access permissions.

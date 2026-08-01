@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         const validatedData = createRoleSchema.parse(body);
         console.log('[POST /api/admin/roles] Validated data:', validatedData);
         
-        const role = await RoleService.createRole(validatedData);
+        const role = await RoleService.createRole(validatedData as any);
         console.log('[POST /api/admin/roles] Role created successfully:', role.id);
         
         return NextResponse.json(role, { status: 201 });

@@ -55,12 +55,12 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                 <div className="col-span-7 bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] mb-1">Global Organization Intelligence</h3>
+                            <h3 className="text-[11px] font-semibold text-gray-900 mb-1">Global Organization Intelligence</h3>
                             <p className="text-[10px] font-bold text-gray-400 italic">How we stack up against industry benchmarks.</p>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-2xl">
                             <Sparkles size={14} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">AI Benchmark: Elite</span>
+                            <span className="text-[10px] font-semibold">AI Benchmark: Elite</span>
                         </div>
                     </div>
 
@@ -91,16 +91,16 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
 
                     <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-50">
                         <div className="text-center">
-                            <div className="text-xl font-black text-gray-900">94.2</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Innovation Index</div>
+                            <div className="text-xl font-semibold text-gray-900">94.2</div>
+                            <div className="text-[9px] font-semibold text-gray-400">Innovation Index</div>
                         </div>
                         <div className="text-center border-x border-gray-50">
-                            <div className="text-xl font-black text-emerald-500">+18%</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">vs Competitors</div>
+                            <div className="text-xl font-semibold text-emerald-500">+18%</div>
+                            <div className="text-[9px] font-semibold text-gray-400">vs Competitors</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-xl font-black text-indigo-600">Top 3%</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global Ranking</div>
+                            <div className="text-xl font-semibold text-indigo-600">Top 3%</div>
+                            <div className="text-[9px] font-semibold text-gray-400">Global Ranking</div>
                         </div>
                     </div>
                 </div>
@@ -112,9 +112,9 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                             <div className="p-2 bg-amber-50 rounded-xl">
                                 <Trophy size={18} className="text-amber-500" />
                             </div>
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Talent ROI Leaderboard</h3>
+                            <h3 className="text-[10px] font-semibold text-gray-900">Talent ROI Leaderboard</h3>
                         </div>
-                        <button className="text-[9px] font-black text-indigo-600 uppercase">All Talent</button>
+                        <button className="text-[9px] font-semibold text-indigo-600">All Talent</button>
                     </div>
 
                     <div className="space-y-4 flex-1">
@@ -128,13 +128,13 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                                         {i === 0 && <Crown size={12} className="absolute -top-1.5 -right-1.5 text-amber-500" />}
                                     </div>
                                     <div>
-                                        <div className="text-[11px] font-black text-gray-900">{emp.name}</div>
-                                        <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{emp.role}</div>
+                                        <div className="text-[11px] font-semibold text-gray-900">{emp.name}</div>
+                                        <div className="text-[9px] font-bold text-gray-400">{emp.role}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-[11px] font-black text-indigo-600">{emp.score} <span className="text-[8px] font-bold text-gray-400">Score</span></div>
-                                    <div className="text-[9px] font-black text-emerald-500">{emp.impact} <span className="text-gray-300">Impact</span></div>
+                                    <div className="text-[11px] font-semibold text-indigo-600">{emp.score} <span className="text-[8px] font-bold text-gray-400">Score</span></div>
+                                    <div className="text-[9px] font-semibold text-emerald-500">{emp.impact} <span className="text-gray-300">Impact</span></div>
                                 </div>
                             </div>
                         ))}
@@ -144,10 +144,10 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                         <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-2xl rounded-full -mr-8 -mt-8" />
                         <div className="flex items-center gap-2 mb-2">
                             <Flame size={16} className="text-amber-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Retention Alert</span>
+                            <span className="text-[10px] font-semibold">Retention Alert</span>
                         </div>
                         <p className="text-[11px] font-medium text-indigo-100 leading-relaxed">
-                            <span className="font-black text-white">Elena R.</span> has been high-impact for 12 weeks. AI recommends a performance review to ensure retention.
+                            <span className="font-semibold text-white">Elena R.</span> has been high-impact for 12 weeks. AI recommends a performance review to ensure retention.
                         </p>
                     </div>
                 </div>
@@ -161,9 +161,9 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                             <div className="p-2 bg-indigo-50 rounded-xl">
                                 <Briefcase size={18} className="text-indigo-600" />
                             </div>
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">My Strategic Focus</h3>
+                            <h3 className="text-[10px] font-semibold text-gray-900">My Strategic Focus</h3>
                         </div>
-                        <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest">3 Priority</span>
+                        <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-semibold">3 Priority</span>
                     </div>
 
                     <div className="space-y-3">
@@ -173,15 +173,13 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                             { title: 'Meet with Team Alpha Lead', time: 'Mon, 10am', status: 'MEDIUM' }
                         ].map((task, i) => (
                             <div key={i} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-indigo-500/5 transition-all group cursor-pointer">
-                                <div className="text-[11px] font-black text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{task.title}</div>
+                                <div className="text-[11px] font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{task.title}</div>
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400">
                                         <Clock size={10} />
                                         {task.time}
                                     </div>
-                                    <span className={`text-[8px] font-black uppercase tracking-widest ${
-                                        task.status === 'CRITICAL' ? 'text-rose-500' : 'text-indigo-500'
-                                    }`}>{task.status}</span>
+                                    <span className={`text-[8px] font-semibold ${ task.status === 'CRITICAL' ? 'text-rose-500' : 'text-indigo-500' }`}>{task.status}</span>
                                 </div>
                             </div>
                         ))}
@@ -195,7 +193,7 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                             <div className="p-2 bg-emerald-50 rounded-xl">
                                 <CheckCircle2 size={18} className="text-emerald-500" />
                             </div>
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Predictive Completion</h3>
+                            <h3 className="text-[10px] font-semibold text-gray-900">Predictive Completion</h3>
                         </div>
                     </div>
 
@@ -203,10 +201,10 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                         {taskData.map((task, i) => (
                             <div key={i}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">{task.name}</span>
+                                    <span className="text-[10px] font-semibold text-gray-900">{task.name}</span>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-bold text-gray-400 italic">Predicting {task.predicted}%</span>
-                                        <span className="text-[11px] font-black text-indigo-600">{task.completed}%</span>
+                                        <span className="text-[11px] font-semibold text-indigo-600">{task.completed}%</span>
                                     </div>
                                 </div>
                                 <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden relative">
@@ -223,10 +221,10 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
 
                     <div className="mt-8 pt-8 border-t border-gray-50 flex items-center justify-between">
                         <div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Velocity Health</div>
+                            <div className="text-[9px] font-semibold text-gray-400 mb-1">Velocity Health</div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                                <span className="text-sm font-black text-gray-900">Strong (1.4x)</span>
+                                <span className="text-sm font-semibold text-gray-900">Strong (1.4x)</span>
                             </div>
                         </div>
                         <ArrowUpRight size={20} className="text-gray-300" />
@@ -240,7 +238,7 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                             <div className="p-2 bg-blue-50 rounded-xl">
                                 <Activity size={18} className="text-blue-500" />
                             </div>
-                            <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Project ROI Analysis</h3>
+                            <h3 className="text-[10px] font-semibold text-gray-900">Project ROI Analysis</h3>
                         </div>
                     </div>
 
@@ -264,18 +262,18 @@ export const ExecutiveIntelligence = ({ role }: { role: string }) => {
                                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-blue-600 shadow-sm">
                                     <Lightbulb size={14} />
                                 </div>
-                                <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Resource ROI</span>
+                                <span className="text-[10px] font-semibold text-gray-900">Resource ROI</span>
                             </div>
-                            <span className="text-[11px] font-black text-blue-600">92.4%</span>
+                            <span className="text-[11px] font-semibold text-blue-600">92.4%</span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-2xl">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm">
                                     <CheckCircle2 size={14} />
                                 </div>
-                                <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">SLA Adherence</span>
+                                <span className="text-[10px] font-semibold text-gray-900">SLA Adherence</span>
                             </div>
-                            <span className="text-[11px] font-black text-emerald-600">100%</span>
+                            <span className="text-[11px] font-semibold text-emerald-600">100%</span>
                         </div>
                     </div>
                 </div>

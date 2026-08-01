@@ -45,3 +45,40 @@
 - **File Management**: Implemented functionality where files can be attached and downloaded by all users, but renaming and deleting files are restricted to ADMIN, SUPER_ADMIN, PROJECT_MANAGER, and CEO roles. File deletion uses a custom confirmation modal.
 - **Comment Section**: Only Admin and CEO level users can edit and delete comments. All other users can only post comments. Includes emoji picker and rich text placeholders.
 - **Modals**: Subtask and Task deletions have custom confirmation popups using Radix UI Dialogs. components for improved UX during destructive actions (e.g., deleting a comment).
+
+## Phase 4: Calendar Module UI/UX Upgrade
+- **Scope**: Redesign the Calendar module to match the premium SaaS design system with refined spacing, typography, and clean interaction models.
+- **Key Changes**:
+  - Overhauled layout and aesthetic structure of the Calendar module.
+  - Implemented crisp 1px borders, subtle drop shadows, and modern enterprise typography.
+
+## Phase 5: Teams Module UI/UX Upgrade
+- **Scope**: Complete redesign of the Teams module (`/teams`), focusing specifically on the Members list and Roles & Permissions matrix.
+- **Key Changes**:
+  - Maintained the core layout structure but overhauled the design language.
+  - Rebuilt the Members Tab (`MembersTab.tsx`) with an enterprise-grade table for users, displaying clear roles, project counts, and activity statuses.
+  - Implemented `MemberDrawer.tsx` for viewing detailed user profiles and assigning permissions directly.
+  - Rebuilt the Roles & Permissions Tab (`RolesTab.tsx` and `RoleDetail.tsx`), complete with an advanced `PermissionMatrix.tsx` to handle granular access control across multiple modules (Tasks, Projects, Team, Billing).
+  - Migrated legacy backend APIs to cleanly support full permission set syncing (via `PUT /api/admin/roles/[id]/permissions`) and role creation.
+  - Wired up top-level main tabs ("Teams", "Members", "Roles & Permissions") with strict typing to switch content cleanly.
+
+## Phase 6: Admin Teams Module Construction
+- **Scope**: Built the complete Enterprise Admin Teams Management module (`/admin/teams`), accessible exclusively by `SUPER_ADMIN` and `ADMIN`.
+- **Database/Prisma Changes**:
+  - Appended `status` field (`String @default("ACTIVE")`) to `Team` model to track Active, Restricted, and Archived states securely.
+- **Backend API Routes**:
+  - Created `/api/admin/teams/route.ts` to fetch all teams system-wide (GET) and forcefully create teams (POST) bypassing user-level checks.
+  - Created `/api/admin/teams/[id]/route.ts` (GET, PATCH, DELETE) to support high-risk administrative operations: archiving teams, transferring Team Lead ownership, and permanently deleting teams.
+  - Created `/api/admin/teams/[id]/members/route.ts` (POST) to allow admins to assign users to teams directly from the UI.
+  - Created `/api/admin/users/[id]/activity/route.ts` (GET) to fetch user profiles alongside their activity logs (ActivityLog).
+- **Frontend Components (`src/app/admin/teams/`)**:
+  - `page.tsx`: Built the layout containing the KPI statistics overview, Teams administrative navigation, and inline filters for the teams datatable. Mounted `AdminMembersTab.tsx` for the Members section.
+  - `AdminTeamTable.tsx`: Implemented a clean, scalable data table showcasing robust member metrics, health statuses, and team leads.
+  - `AdminCreateTeamModal.tsx`: Designed an exhaustive modal capturing Team Name, Description, Lead Selection, Status, and Access/Visibility policies.
+  - `AdminTeamDetailDrawer.tsx`: Engineered a slide-out drawer providing granular visibility into team descriptions, administrative actions (transfer, archive, delete), and a nested members list. Integrated `AdminAddTeamMemberModal`.
+  - `AdminTransferOwnershipModal.tsx` & `AdminDeleteTeamModal.tsx`: Implemented confirmation-gated modals specifically designed for high-risk destructive and state-changing actions.
+  - `AdminMembersTab.tsx`: The primary container for the enterprise Members module, including KPI statistic cards, global user search, status/role filtering, and pagination controls.
+  - `AdminMemberTable.tsx`: An enterprise data table rendering members with their Global Role, Team count, Project count, Status, Last Active timestamp, and Joined date.
+  - `AdminMemberDetailDrawer.tsx`: A comprehensive 360-degree view slide-out drawer displaying a member's Profile Info, Administrative Controls (Edit, Suspend), Team Memberships, Project Access, and Recent Administrative Activity.
+  - `AdminInviteMemberModal.tsx`: A form to invite a new user to the organization (name, email, role).
+  - `AdminSuspendMemberModal.tsx`: A high-risk confirmation modal to safely suspend a member's account, with clear warnings about the impact (revoking active sessions).

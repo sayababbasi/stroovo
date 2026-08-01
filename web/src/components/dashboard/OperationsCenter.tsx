@@ -27,16 +27,12 @@ const data = [
 const ActivityItem = ({ type, title, time, status, icon: Icon }: any) => (
     <div className="flex items-center justify-between py-4 group cursor-pointer">
         <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                type === 'AI' ? 'bg-indigo-50 text-indigo-600' :
-                type === 'EXECUTION' ? 'bg-emerald-50 text-emerald-600' :
-                'bg-blue-50 text-blue-600'
-            } group-hover:scale-110 transition-transform`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${ type === 'AI' ? 'bg-indigo-50 text-indigo-600' : type === 'EXECUTION' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600' } group-hover:scale-110 transition-transform`}>
                 <Icon size={18} />
             </div>
             <div>
-                <div className="text-[11px] font-black text-gray-900 mb-0.5">{title}</div>
-                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                <div className="text-[11px] font-semibold text-gray-900 mb-0.5">{title}</div>
+                <div className="text-[9px] font-bold text-gray-400 flex items-center gap-1.5">
                     <Clock size={10} />
                     {time}
                     <span className="text-gray-200">•</span>
@@ -58,9 +54,9 @@ export const OperationsCenter = ({ role }: { role: string }) => {
                         <div className="p-2 bg-gray-50 rounded-xl">
                             <Activity size={18} className="text-gray-400" />
                         </div>
-                        <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Operational Activity</h3>
+                        <h3 className="text-[10px] font-semibold text-gray-900">Operational Activity</h3>
                     </div>
-                    <button className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">View Feed</button>
+                    <button className="text-[9px] font-semibold text-indigo-600 hover:underline">View Feed</button>
                 </div>
 
                 <div className="space-y-1 divide-y divide-gray-50">
@@ -109,11 +105,11 @@ export const OperationsCenter = ({ role }: { role: string }) => {
                         <div className="p-2 bg-gray-50 rounded-xl">
                             <BarChart3 size={18} className="text-gray-400" />
                         </div>
-                        <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Execution Velocity & Efficiency</h3>
+                        <h3 className="text-[10px] font-semibold text-gray-900">Execution Velocity & Efficiency</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-black text-gray-400 uppercase hover:text-indigo-600 transition-all">Week</button>
-                        <button className="px-3 py-1.5 bg-indigo-600 border border-indigo-600 rounded-lg text-[9px] font-black text-white uppercase shadow-lg shadow-indigo-500/20">Month</button>
+                        <button className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-semibold text-gray-400 hover:text-indigo-600 transition-all">Week</button>
+                        <button className="px-3 py-1.5 bg-indigo-600 border border-indigo-600 rounded-lg text-[9px] font-semibold text-white shadow-lg shadow-indigo-500/20">Month</button>
                     </div>
                 </div>
 
@@ -160,15 +156,15 @@ export const OperationsCenter = ({ role }: { role: string }) => {
                 <div className="mt-8 flex items-center gap-8">
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-3 bg-indigo-600 rounded-full" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Delivery Velocity</span>
+                        <span className="text-[10px] font-semibold text-gray-400">Delivery Velocity</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operational Efficiency</span>
+                        <span className="text-[10px] font-semibold text-gray-400">Operational Efficiency</span>
                     </div>
                     <div className="ml-auto flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-2xl">
                         <TrendingUp size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">+14.2% Growth</span>
+                        <span className="text-[10px] font-semibold">+14.2% Growth</span>
                     </div>
                 </div>
             </div>

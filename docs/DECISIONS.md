@@ -9,3 +9,15 @@
   - **Reason**: Using large heavily colored blocks for status (like `#FFEBE6` with red text) draws too much attention away from the task name. A subtle colored dot next to text accomplishes the same visual cue without overpowering the row.
 - **Decision**: No backend modifications.
   - **Reason**: To limit scope strictly to UI/UX, we decoupled the visual redesign from any API or data-fetching logic. The existing props and data structures in `page.tsx` and `TaskRow.tsx` were reused exactly as is.
+
+## Calendar Module UI Overhaul
+- **Decision**: Preserve existing backend interactions.
+  - **Reason**: We strictly separated the UI layer upgrade from the data mutation layer to prevent functional regressions in Calendar scheduling.
+
+## Teams Module UI Overhaul & RBAC
+- **Decision**: Componentized Teams architecture.
+  - **Reason**: We broke the monolithic Teams `page.tsx` into distinct enterprise-grade sub-components (`MembersTab.tsx`, `RolesTab.tsx`, `PermissionMatrix.tsx`) because the scale of an enterprise Roles & Permissions matrix is too complex for a single file.
+- **Decision**: Implemented full-array permission sync over incremental endpoints.
+  - **Reason**: Enterprise RBAC matrices update frequently across many checkboxes. Sending the complete array via `PUT /api/admin/roles/[id]/permissions` eliminates race conditions and edge cases compared to patching individual permission grants/revokes.
+- **Decision**: TypeScript Interface over Discriminated Union for `AuthResult`.
+  - **Reason**: Adjusted `AuthResult` to a standard interface to maintain compatibility across API routes when strict mode narrowing behaves unexpectedly in complex Next.js middleware setups.

@@ -13,30 +13,28 @@ const InsightCard = ({ title, description, impact, confidence, category, action 
     <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group border-l-4 border-l-indigo-500">
         <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                    impact === 'HIGH' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'
-                }`}>
+                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-semibold ${ impact === 'HIGH' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600' }`}>
                     {impact} IMPACT
                 </span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">• {category}</span>
+                <span className="text-[10px] font-bold text-gray-400">• {category}</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 rounded-xl">
                 <Brain size={12} className="text-indigo-500" />
-                <span className="text-[10px] font-black text-gray-900">{confidence}% Confidence</span>
+                <span className="text-[10px] font-semibold text-gray-900">{confidence}% Confidence</span>
             </div>
         </div>
 
-        <h4 className="text-sm font-black text-gray-900 mb-2 leading-tight group-hover:text-indigo-600 transition-colors">{title}</h4>
+        <h4 className="text-sm font-semibold text-gray-900 mb-2 leading-tight group-hover:text-indigo-600 transition-colors">{title}</h4>
         <p className="text-[12px] text-gray-500 font-medium leading-relaxed mb-6">
             {description}
         </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2">
+            <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-semibold hover:bg-black transition-all flex items-center gap-2">
                 {action}
                 <ArrowRight size={12} />
             </button>
-            <button className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-indigo-600 transition-colors flex items-center gap-1">
+            <button className="text-[10px] font-semibold text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
                 Why?
                 <ChevronRight size={12} />
             </button>
@@ -57,11 +55,11 @@ export const AIInsightsPanel = ({ role }: { role: string }) => {
                             <Sparkles size={24} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black tracking-tight">AI Executive Intelligence</h2>
+                            <h2 className="text-2xl font-semibold tracking-tight">AI Executive Intelligence</h2>
                             <p className="text-sm text-indigo-100 font-medium">Continuous organizational analysis and predictive optimization.</p>
                         </div>
                     </div>
-                    <button className="px-6 py-3 bg-white text-indigo-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/10">
+                    <button className="px-6 py-3 bg-white text-indigo-600 rounded-2xl text-[11px] font-semibold hover:scale-105 transition-all shadow-xl shadow-white/10">
                         Run Strategic Audit
                     </button>
                 </div>

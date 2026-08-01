@@ -12,6 +12,7 @@ export type EffectiveRole =
 
 type UserWithPermissions = User & {
   systemRole: (Role & { permissions: Array<{ permission: Permission }> }) | null;
+  additionalRoles?: Array<{ role: Role & { permissions: Array<{ permission: Permission }> } }>;
 };
 
 type PermissionContext = {
@@ -22,9 +23,13 @@ type PermissionContext = {
 
 type PermissionResult = NextResponse | PermissionContext;
 
-type AuthResult = 
-  | { success: true; user: UserWithPermissions; effectiveRole: EffectiveRole; permissionKeys: string[] }
-  | { success: false; response: NextResponse };
+export interface AuthResult {
+  success: boolean;
+  user?: UserWithPermissions;
+  effectiveRole?: EffectiveRole;
+  permissionKeys?: string[];
+  response?: NextResponse;
+}
 
 const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
   SUPER_ADMIN: ['*'],
@@ -164,7 +169,16 @@ function permissionVariants(permissionKey: string): string[] {
 
 export function permissionSetForUser(user: UserWithPermissions): string[] {
   const effectiveRole = getEffectiveRole(user);
-  const explicit = user.systemRole?.permissions.map((item) => item.permission.key) ?? [];
+  let explicit = user.systemRole?.permissions.map((item) => item.permission.key) ?? [];
+
+  if (user.additionalRoles) {
+    for (const ar of user.additionalRoles) {
+      if (ar.role && ar.role.permissions) {
+        explicit = explicit.concat(ar.role.permissions.map((item) => item.permission.key));
+      }
+    }
+  }
+
   return dedupe([...getDerivedPermissions(effectiveRole), ...explicit]);
 }
 
@@ -188,6 +202,17 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
           },
         },
       },
+      additionalRoles: {
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true }
+              }
+            }
+          }
+        }
+      }
     },
   });
 
@@ -209,6 +234,17 @@ async function loadUserFromRequest(request: Request): Promise<UserWithPermission
           },
         },
       },
+      additionalRoles: {
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true }
+              }
+            }
+          }
+        }
+      }
     },
   });
 }
