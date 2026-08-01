@@ -33,8 +33,9 @@ export default function ProtectedRoute({ children, requiredPermission, scope, fa
             // Assuming AuthContext's user.permissions is a flat array of strings computed from backend.
             
             let isAuth = false;
-            if (user.permissions && Array.isArray(user.permissions)) {
-                if (user.permissions.includes('*') || user.permissions.includes(requiredPermission)) {
+            const u = user as any;
+            if (u.permissions && Array.isArray(u.permissions)) {
+                if (u.permissions.includes('*') || u.permissions.includes(requiredPermission)) {
                     isAuth = true;
                 }
             } else if ((user as any).role === 'SUPER_ADMIN' || (user as any).role === 'ADMIN' || (user as any).role === 'CEO') {

@@ -28,7 +28,7 @@ export default function AdminRoleDetail({ role, allPermissions, onRefresh }: Adm
         setLoading(true);
         try {
             // Need the full role with specific users and permissions
-            const res = await apiGet<any>(`/api/admin/roles/${role.id}`);
+            const res = await apiGet<any>(`/api/admin/roles/${role.id}`, null);
             if (res.success && res.data) {
                 setRoleDetails(res.data);
             } else {

@@ -51,10 +51,10 @@ export default function AdminTeamsPage() {
     const fetchTeams = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await apiGet<any>(`/api/admin/teams?stats=true`);
+            const res = await apiGet<any>(`/api/admin/teams?stats=true`, null);
             if (res.success && res.data) {
                 setTeams(res.data);
-                if (res.stats) setStats(res.stats);
+                if ((res as any).stats) setStats((res as any).stats);
             }
         } catch (error) {
             toast.error('Failed to load teams');

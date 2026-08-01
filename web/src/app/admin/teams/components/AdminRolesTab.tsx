@@ -19,8 +19,8 @@ export default function AdminRolesTab() {
         setLoading(true);
         try {
             const [rolesRes, permsRes] = await Promise.all([
-                apiGet<any[]>('/api/admin/roles'),
-                apiGet<any[]>('/api/admin/permissions')
+                apiGet<any[]>('/api/admin/roles', null),
+                apiGet<any[]>('/api/admin/permissions', null)
             ]);
             
             if (rolesRes.success && rolesRes.data) {

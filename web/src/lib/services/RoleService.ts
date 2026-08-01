@@ -34,7 +34,7 @@ export class RoleService {
         });
         
         // Sum users and additionalUsers for member count
-        const formattedRoles = roles.map(r => ({
+        const formattedRoles = roles.map((r: any) => ({
             ...r,
             memberCount: r._count.users + r._count.additionalUsers
         }));
@@ -92,7 +92,7 @@ export class RoleService {
                 const sourceRole = await this.getRoleById(data.cloneFromRoleId);
                 if (sourceRole && sourceRole.permissions.length > 0) {
                     await prisma.rolePermission.createMany({
-                        data: sourceRole.permissions.map(p => ({
+                        data: sourceRole.permissions.map((p: any) => ({
                             roleId: role.id,
                             permissionId: p.permissionId
                         }))

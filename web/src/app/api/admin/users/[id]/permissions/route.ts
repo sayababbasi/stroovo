@@ -18,7 +18,7 @@ export async function GET(
             include: {
                 systemRole: { include: { permissions: { include: { permission: true } } } },
                 additionalRoles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
-                teamMembers: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+                teamMembers: { include: { systemRole: { include: { permissions: { include: { permission: true } } } } } },
                 projectAccesses: { include: { role: { include: { permissions: { include: { permission: true } } } } } }
             }
         });
