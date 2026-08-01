@@ -5,6 +5,8 @@ import { CreateTaskSchema } from '@/validation/task';
 import { TaskService } from '@/lib/tasks/task-service';
 import { canAccessTask, requirePermission } from '@/lib/authorization';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     const authResult = await requirePermission('tasks.read.own')(request as any);
     if (!authResult.success) return authResult.response;

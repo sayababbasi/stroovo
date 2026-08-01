@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Bot, Users, Clock, X, Shield, AlertTriangle } from 'lucide-react';
+import { Sparkles, Users, Clock, X, Shield, AlertTriangle } from 'lucide-react';
 import type { Task } from './types';
 
 interface AIInsightsBannerProps {
@@ -67,32 +67,35 @@ export default function AIInsightsBanner({ tasks, onDismiss }: AIInsightsBannerP
 
     return (
         <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 16px', marginBottom: 16,
-            background: 'linear-gradient(90deg, rgba(101,84,192,0.06) 0%, rgba(0,82,204,0.04) 50%, transparent 100%)',
-            borderLeft: '3px solid #6554C0', borderRadius: '0 10px 10px 0',
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', marginBottom: 20,
+            background: '#F9F9FB',
+            border: '1px solid #E8EAED', borderRadius: 8,
         }}>
             <div style={{
-                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                background: 'linear-gradient(135deg, #6554C0, #0052CC)',
+                width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                background: '#0052CC',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-                <Bot size={14} color="white" />
+                <Sparkles size={12} color="white" />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#172B4D' }}>AI Insights:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D' }}>AI Insights</span>
+                <div style={{ width: 1, height: 16, background: '#DFE1E6' }} />
                 {insights.map((ins, i) => (
                     <span key={i} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        fontSize: '12px', fontWeight: 600, color: ins.color,
-                        background: ins.bg, padding: '3px 10px', borderRadius: 14,
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        fontSize: '12px', fontWeight: 500, color: ins.color,
+                        background: ins.bg, padding: '4px 10px', borderRadius: 6, border: `1px solid ${ins.color}20`
                     }}>
                         {ins.icon} {ins.text}
                     </span>
                 ))}
             </div>
             {onDismiss && (
-                <button onClick={onDismiss} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8A94A6', padding: 4 }}>
+                <button onClick={onDismiss} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8A94A6', padding: 4, display: 'flex', transition: '0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#172B4D'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#8A94A6'}>
                     <X size={14} />
                 </button>
             )}

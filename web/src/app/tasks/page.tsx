@@ -342,56 +342,62 @@ export default function TasksPage() {
                 @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
                 @keyframes spin { to{transform:rotate(360deg)} }
                 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-                .qf-btn { padding:6px 14px; border-radius:14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; border:1px solid transparent; color:#42526E; background:transparent; }
-                .qf-btn:hover { background:rgba(9,30,66,0.04); }
-                .qf-btn.active { background:#F0F5FF; color:#0052CC; border-color:#B3D4FF; }
-                .stat-card { background:white; border-radius:12px; padding:16px 18px; border:1px solid #E8EAED; cursor:pointer; transition:all 0.2s; }
-                .stat-card:hover { border-color:#B3D4FF; transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,82,204,0.08); }
-                .vw-btn { padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; border:none; background:transparent; display:flex; gap:6px; align-items:center; color:#6B778C; border-radius:6px; transition:0.15s; }
-                .vw-btn.active { background:white; color:#0052CC; box-shadow:0 1px 3px rgba(9,30,66,0.08); }
-                .t-head { font-size:11px; font-weight:700; color:#8A94A6; text-transform:uppercase; padding:10px 10px; letter-spacing:0.03em; }
+                .qf-btn { padding:10px 4px; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; border:none; border-bottom: 2px solid transparent; color:#6B778C; background:transparent; margin-right: 16px; }
+                .qf-btn:hover { color:#172B4D; }
+                .qf-btn.active { color:#0052CC; font-weight: 600; border-bottom-color:#0052CC; }
+                .stat-card { background:white; border-radius:8px; padding:20px; border:1px solid #DFE1E6; transition:all 0.2s; position: relative; overflow: hidden; }
+                .stat-card:hover { border-color:#0052CC; box-shadow: 0 4px 12px rgba(9,30,66,0.06); }
+                .vw-btn { padding:6px 14px; font-size:12px; font-weight:500; cursor:pointer; border:none; background:transparent; display:flex; gap:6px; align-items:center; color:#6B778C; border-radius:6px; transition:0.15s; }
+                .vw-btn:hover { color:#172B4D; }
+                .vw-btn.active { background:white; color:#0052CC; font-weight: 600; box-shadow:0 1px 3px rgba(9,30,66,0.08); }
+                .t-head { font-size:11px; font-weight:600; color:#6B778C; text-transform:uppercase; padding:12px 10px; letter-spacing:0.04em; }
+                .table-container { border: 1px solid #DFE1E6; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 2px rgba(9,30,66,0.03); }
+                .header-select { padding: 7px 12px 7px 30px; border: 1px solid #DFE1E6; background: white; border-radius: 6px; font-size: 13px; font-weight: 500; color: #172B4D; cursor: pointer; appearance: none; outline: none; transition: 0.15s; }
+                .header-select:hover { border-color: #B3BAC5; background: #FAFBFC; }
+                .header-select:focus { border-color: #0052CC; box-shadow: 0 0 0 1px #0052CC; }
             `}</style>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '260px' }}>
                 {/* Header */}
-                <div style={{ padding: '24px 32px 16px', background: 'white', borderBottom: '1px solid #E8EAED' }}>
+                <div style={{ padding: '24px 32px 0', background: 'white', borderBottom: '1px solid #DFE1E6' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: '#E6EFFF', color: '#0052CC', padding: 8, borderRadius: 10 }}><Inbox size={20} /></div>
-                            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', letterSpacing: '-0.02em', margin: 0 }}>All Tasks</h1>
-                            {loading && <span style={{ fontSize: '11px', color: '#8A94A6', fontWeight: 600 }}>Refreshing...</span>}
+                            <div style={{ background: '#E6EFFF', color: '#0052CC', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Inbox size={18} strokeWidth={2.5} /></div>
+                            <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#172B4D', letterSpacing: '-0.01em', margin: 0 }}>All Tasks</h1>
+                            {loading && <span style={{ fontSize: '11px', color: '#8A94A6', fontWeight: 500 }}>Refreshing...</span>}
                         </div>
-                        <div style={{ flex: 1, maxWidth: 600, margin: '0 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ flex: 1, maxWidth: 480, margin: '0 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ position: 'relative', flex: 1 }}>
                                 <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
                                 <input id="task-search" value={searchQ} onChange={e => setSearchQ(e.target.value)}
                                     placeholder="Search tasks... ( / )"
-                                    style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8, border: '1px solid #E8EAED', background: '#FAFBFC', fontSize: '13px', outline: 'none' }} />
+                                    style={{ width: '100%', padding: '8px 12px 8px 34px', borderRadius: 6, border: '1px solid transparent', background: '#F4F5F7', fontSize: '13px', outline: 'none', transition: 'all 0.2s', color: '#172B4D' }} 
+                                    onFocus={e => { e.target.style.background = 'white'; e.target.style.border = '1px solid #0052CC'; e.target.style.boxShadow = '0 0 0 2px rgba(0,82,204,0.1)'; }}
+                                    onBlur={e => { e.target.style.background = '#F4F5F7'; e.target.style.border = '1px solid transparent'; e.target.style.boxShadow = 'none'; }}
+                                    />
                             </div>
-
+                            
                             {/* Rotating Keyboard Tips */}
                             <div key={activeTipIndex} style={{ 
                                 display: 'flex', alignItems: 'center', gap: 8, 
-                                background: '#F4F5F7', padding: '7px 14px', borderRadius: 20, 
-                                fontSize: '11px', fontWeight: 700, color: '#42526E', 
+                                background: '#F4F5F7', padding: '6px 12px', borderRadius: 20, 
+                                fontSize: '11px', fontWeight: 600, color: '#42526E', 
                                 animation: 'slideUp 0.3s ease-out',
-                                whiteSpace: 'nowrap',
-                                border: '1px solid #EBECF0',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                                whiteSpace: 'nowrap'
                             }}>
-                                <span style={{ color: '#0052CC', fontSize: '10px', background: '#E6EFFF', padding: '2px 6px', borderRadius: 4, marginRight: 2 }}>PRO TIP</span>
+                                <span style={{ color: '#0052CC', fontSize: '10px', background: '#E6EFFF', padding: '2px 6px', borderRadius: 4, marginRight: 2, fontWeight: 700 }}>PRO TIP</span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                     {tips[activeTipIndex].icon}
                                     {tips[activeTipIndex].text}
                                 </span>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ position: 'relative' }}>
                                 <select 
                                     value={filterStatus}
                                     onChange={e => setFilterStatus(e.target.value as any)}
-                                    style={{ padding: '8px 12px 8px 30px', border: '1px solid #E8EAED', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', appearance: 'none', outline: 'none' }}
+                                    className="header-select"
                                 >
                                     <option value="All">All Statuses</option>
                                     {Object.entries(STATUS_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
@@ -403,7 +409,7 @@ export default function TasksPage() {
                                 <select 
                                     value={groupBy}
                                     onChange={e => setGroupBy(e.target.value as any)}
-                                    style={{ padding: '8px 12px 8px 30px', border: '1px solid #E8EAED', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', appearance: 'none', outline: 'none' }}
+                                    className="header-select"
                                 >
                                     <option value="None">No Grouping</option>
                                     <option value="Status">Group: Status</option>
@@ -413,21 +419,26 @@ export default function TasksPage() {
                                 <Columns size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6', pointerEvents: 'none' }} />
                             </div>
 
-                            <div style={{ width: 1, height: 24, background: '#E8EAED', margin: '0 4px' }} />
                             <button onClick={() => setShowCreateModal(true)}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0052CC', border: 'none', borderRadius: 8, fontSize: '13px', fontWeight: 700, color: 'white', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,82,204,0.2)' }}>
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#0052CC', border: 'none', borderRadius: 6, fontSize: '13px', fontWeight: 500, color: 'white', cursor: 'pointer', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#0047B3'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#0052CC'}
+                            >
                                 <Plus size={16} /> Create Task
                             </button>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                        <div style={{ display: 'flex' }}>
                             {['All', 'Assigned to Me', 'Due Today', 'Overdue', 'High Priority'].map(f => (
                                 <button key={f} className={`qf-btn ${quickFilter === f ? 'active' : ''}`} onClick={() => setQuickFilter(f)}>{f}</button>
                             ))}
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '12px', fontWeight: 600, color: focusMode ? '#0052CC' : '#6B778C', cursor: 'pointer', background: focusMode ? '#E6EFFF' : 'transparent', padding: '6px 12px', borderRadius: 14, transition: '0.2s' }}>
-                            <Focus size={14} /> Focus Mode
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '12px', fontWeight: 500, color: focusMode ? '#0052CC' : '#6B778C', cursor: 'pointer', marginBottom: '8px' }}>
+                            <div style={{ position: 'relative', width: 32, height: 18, background: focusMode ? '#0052CC' : '#DFE1E6', borderRadius: 16, transition: '0.2s' }}>
+                                <div style={{ position: 'absolute', top: 2, left: focusMode ? 16 : 2, width: 14, height: 14, background: 'white', borderRadius: '50%', transition: '0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+                            </div>
+                            Focus Mode
                             <input type="checkbox" checked={focusMode} onChange={e => setFocusMode(e.target.checked)} style={{ display: 'none' }} />
                         </label>
                     </div>
@@ -442,15 +453,15 @@ export default function TasksPage() {
                 )}
 
                 {/* Stats + AI Banner */}
-                <div style={{ padding: '20px 32px 0' }}>
+                <div style={{ padding: '24px 32px 0' }}>
                     {showInsights && <AIInsightsBanner tasks={tasks} onDismiss={() => setShowInsights(false)} />}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 16, marginBottom: 24 }}>
                         {stats.map((s, i) => (
                             <div key={i} className="stat-card">
-                                <div style={{ fontSize: '12px', fontWeight: 600, color: '#8A94A6', marginBottom: 8 }}>{s.label}</div>
-                                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                                    <span style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', lineHeight: 1 }}>{s.val}</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '11px', fontWeight: 700, color: s.up ? '#36B37E' : '#FF5630', background: s.up ? '#E3FCEF' : '#FFEBE6', padding: '2px 6px', borderRadius: 12 }}>
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#6B778C', marginBottom: 12 }}>{s.label}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <span style={{ fontSize: '28px', fontWeight: 600, color: '#172B4D', lineHeight: 1 }}>{s.val}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '11px', fontWeight: 500, color: s.up ? '#22A06B' : '#AE2A19', background: s.up ? '#E3FCEF' : '#FFEBE6', padding: '3px 6px', borderRadius: 4 }}>
                                         {s.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />} {s.trend}
                                     </div>
                                 </div>
@@ -459,8 +470,8 @@ export default function TasksPage() {
                     </div>
 
                     {/* View switcher */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <div style={{ background: '#EBECF0', padding: 4, borderRadius: 8, display: 'inline-flex' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <div style={{ background: '#F4F5F7', padding: 3, borderRadius: 8, display: 'inline-flex', border: '1px solid #DFE1E6' }}>
                             {[{ v: 'Table', i: List }, { v: 'Kanban', i: LayoutGrid }, { v: 'Timeline', i: Columns }].map(m => (
                                 <button key={m.v} className={`vw-btn ${viewMode === m.v ? 'active' : ''}`} onClick={() => setViewMode(m.v as typeof viewMode)}>
                                     <m.i size={14} /> {m.v}
@@ -477,12 +488,12 @@ export default function TasksPage() {
 
                 {/* Table View */}
                 {viewMode === 'Table' && (
-                    <div style={{ flex: 1, margin: '0 32px 32px', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(9,30,66,0.04)' }}>
+                    <div className="table-container" style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column' }}>
                         {/* Table Header */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '28px 36px 1fr 180px 130px 110px 140px 130px 110px', alignItems: 'center', borderBottom: '1px solid #E8EAED', background: '#FAFBFC', position: 'sticky', top: 0, zIndex: 10 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '28px 36px 1fr 180px 130px 110px 140px 130px 110px', alignItems: 'center', borderBottom: '1px solid #DFE1E6', background: '#FAFBFC', position: 'sticky', top: 0, zIndex: 10 }}>
                             <div className="t-head" />
                             <div className="t-head" style={{ display: 'flex', justifyContent: 'center' }}>
-                                <div onClick={toggleSelectAll} style={{ width: 16, height: 16, borderRadius: 4, border: `2px solid ${selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : '#DFE1E6'}`, background: selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <div onClick={toggleSelectAll} style={{ width: 14, height: 14, borderRadius: 3, border: `1px solid ${selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : '#C1C7D0'}`, background: selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? '#0052CC' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.1s' }}>
                                     {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 && <Check size={10} color="white" strokeWidth={3} />}
                                 </div>
                             </div>
@@ -504,21 +515,17 @@ export default function TasksPage() {
                                 </div>
                             ) : filteredTasks.length === 0 ? (
                                 <div style={{ padding: 64, textAlign: 'center', color: '#8A94A6' }}>
-                                    <div style={{ width: 64, height: 64, background: '#F4F5F7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                        <Bot size={28} color="#DFE1E6" />
-                                    </div>
-                                    <div style={{ fontSize: 16, fontWeight: 600, color: '#172B4D', marginBottom: 8 }}>No tasks found</div>
                                     <Inbox size={48} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
-                                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#172B4D', marginBottom: 4 }}>No tasks found</div>
+                                    <div style={{ fontSize: '16px', fontWeight: 600, color: '#172B4D', marginBottom: 4 }}>No tasks found</div>
                                     <div style={{ fontSize: '13px' }}>Try adjusting your search or filters</div>
                                 </div>
                             ) : (
                                 Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
                                     <React.Fragment key={groupName}>
                                         {groupBy !== 'None' && (
-                                            <div style={{ background: '#F4F5F7', padding: '8px 16px', fontSize: '11px', fontWeight: 800, color: '#42526E', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #EBECF0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8A94A6' }} />
-                                                {groupName} <span style={{ color: '#8A94A6', fontWeight: 600 }}>({groupTasks.length})</span>
+                                            <div style={{ background: '#FAFBFC', padding: '10px 16px', fontSize: '12px', fontWeight: 600, color: '#42526E', borderBottom: '1px solid #DFE1E6', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#8A94A6' }} />
+                                                {groupName} <span style={{ color: '#8A94A6', fontWeight: 500, fontSize: '11px', background: '#EBECF0', padding: '1px 6px', borderRadius: 10 }}>{groupTasks.length}</span>
                                             </div>
                                         )}
                                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -548,12 +555,12 @@ export default function TasksPage() {
 
                 {/* Kanban / Timeline Views */}
                 {viewMode === 'Kanban' && (
-                    <div style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
+                    <div className="table-container" style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
                         <BoardView hideHeader={true} />
                     </div>
                 )}
                 {viewMode === 'Timeline' && (
-                    <div style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid #E8EAED', borderRadius: 12, overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
+                    <div className="table-container" style={{ flex: 1, margin: '0 32px 32px', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
                         <TimelineView hideHeader={true} />
                     </div>
                 )}

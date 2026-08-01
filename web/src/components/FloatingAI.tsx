@@ -114,7 +114,7 @@ export default function FloatingAI() {
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
       >
-        {isOpen ? <X size={20} /> : <Bot size={22} />}
+        {isOpen ? <X size={20} /> : <Sparkles size={22} />}
       </button>
 
       {/* Panel */}

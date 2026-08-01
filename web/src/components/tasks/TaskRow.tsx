@@ -36,27 +36,34 @@ function StatusPill({ value, onChange }: { value: TaskStatus; onChange: (v: Task
     return (
         <div style={{ position: 'relative' }}>
             <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{
-                fontSize: '11px', fontWeight: 700, padding: '0 10px', borderRadius: 20,
-                background: bg, color, border: `1px solid ${color}50`, cursor: 'pointer',
+                fontSize: '12px', fontWeight: 500, padding: '4px 10px', borderRadius: 6,
+                background: bg, color, border: `1px solid ${color}30`, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '120px', height: '26px'
+                width: '120px', transition: 'all 0.15s'
             }}>
-                <span style={{ flex: 1, textAlign: 'center' }}>{STATUS_LABELS[value] || value}</span>
-                <ChevronDown size={12} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s', flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+                    {STATUS_LABELS[value] || value}
+                </div>
+                <ChevronDown size={12} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s', flexShrink: 0, opacity: 0.5 }} />
             </button>
             {open && (
                 <div onClick={e => e.stopPropagation()} style={{
                     position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
-                    background: 'white', borderRadius: 10, border: '1px solid #E8EAED',
-                    boxShadow: '0 12px 40px rgba(9,30,66,0.18)', padding: 4, minWidth: 150
+                    background: 'white', borderRadius: 8, border: '1px solid #DFE1E6',
+                    boxShadow: '0 4px 12px rgba(9,30,66,0.08)', padding: 4, minWidth: 150
                 }}>
                     {STATUSES.map(s => (
                         <button key={s} onClick={() => { onChange(s); setOpen(false); }} style={{
-                            display: 'block', width: '100%', textAlign: 'left',
-                            padding: '7px 12px', border: 'none', cursor: 'pointer', borderRadius: 7,
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+                            padding: '6px 12px', border: 'none', cursor: 'pointer', borderRadius: 4,
                             background: s === value ? '#F0F5FF' : 'transparent',
-                            fontSize: '12px', fontWeight: 600, color: STATUS_COLORS[s] || '#42526E'
-                        }}>{STATUS_LABELS[s]}</button>
+                            fontSize: '12px', fontWeight: 500, color: STATUS_COLORS[s] || '#42526E',
+                            transition: 'background 0.1s'
+                        }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLORS[s] || '#42526E' }} />
+                            {STATUS_LABELS[s]}
+                        </button>
                     ))}
                 </div>
             )}
@@ -70,27 +77,32 @@ function PriorityChip({ value, onChange }: { value: Priority; onChange: (v: Prio
     return (
         <div style={{ position: 'relative' }}>
             <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{
-                display: 'flex', alignItems: 'center', gap: 5,
+                display: 'flex', alignItems: 'center', gap: 6,
                 border: 'none', background: 'transparent', cursor: 'pointer',
-                fontSize: '12px', fontWeight: 700, color, padding: '2px 0'
-            }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', boxShadow: `0 0 0 2px ${color}33` }} />
+                fontSize: '12px', fontWeight: 500, color: '#172B4D', padding: '4px 6px',
+                borderRadius: 4, transition: 'background 0.15s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#F4F5F7'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
                 {PRIORITY_LABELS[value] || value}
             </button>
             {open && (
                 <div onClick={e => e.stopPropagation()} style={{
                     position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
-                    background: 'white', borderRadius: 10, border: '1px solid #E8EAED',
-                    boxShadow: '0 12px 40px rgba(9,30,66,0.18)', padding: 4, minWidth: 120
+                    background: 'white', borderRadius: 8, border: '1px solid #DFE1E6',
+                    boxShadow: '0 4px 12px rgba(9,30,66,0.08)', padding: 4, minWidth: 120
                 }}>
                     {PRIORITIES.map(p => (
                         <button key={p} onClick={() => { onChange(p); setOpen(false); }} style={{
                             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                            padding: '7px 12px', border: 'none', cursor: 'pointer', borderRadius: 7,
+                            padding: '6px 12px', border: 'none', cursor: 'pointer', borderRadius: 4,
                             background: p === value ? '#F0F5FF' : 'transparent',
-                            fontSize: '12px', fontWeight: 700, color: PRIORITY_COLORS[p] || '#42526E'
+                            fontSize: '12px', fontWeight: 500, color: '#172B4D',
+                            transition: 'background 0.1s'
                         }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: PRIORITY_COLORS[p] || '#42526E' }} />
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLORS[p] || '#42526E' }} />
                             {PRIORITY_LABELS[p]}
                         </button>
                     ))}
@@ -227,15 +239,15 @@ const TaskRow = memo(function TaskRow({
                     display: 'grid',
                     gridTemplateColumns: '28px 36px 1fr 180px 130px 110px 140px 130px 110px',
                     alignItems: 'center',
-                    borderBottom: '1px solid rgba(9,30,66,0.05)',
-                    borderLeft: `3px solid ${PRIORITY_COLORS[task.priority] || '#DFE1E6'}`,
-                    background: isDragging ? '#EEF4FF' : isSelected ? '#F0F5FF' : hovered ? '#FAFBFF' : 'white',
-                    minHeight: 52,
+                    borderBottom: '1px solid #EBECF0',
+                    borderLeft: `2px solid ${isSelected ? '#0052CC' : 'transparent'}`,
+                    background: isDragging ? '#EEF4FF' : isSelected ? '#F0F5FF' : hovered ? '#FAFBFC' : 'white',
+                    minHeight: 48,
                     position: 'relative',
                     cursor: 'pointer',
                     opacity: isDragging ? 0.85 : 1,
-                    boxShadow: isDragging ? '0 8px 30px rgba(0,82,204,0.18)' : 'none',
-                    transition: 'background 0.1s, box-shadow 0.15s',
+                    boxShadow: isDragging ? '0 8px 24px rgba(0,82,204,0.1)' : 'none',
+                    transition: 'background 0.15s, border-left-color 0.15s',
                     zIndex: isDragging ? 10 : 'auto',
                 }}
             >
@@ -248,11 +260,11 @@ const TaskRow = memo(function TaskRow({
                 {/* Checkbox */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => { e.stopPropagation(); onSelect(task.id, e); }}>
                     <div style={{
-                        width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-                        border: `2px solid ${isSelected ? '#0052CC' : '#DFE1E6'}`,
+                        width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                        border: `1px solid ${isSelected ? '#0052CC' : '#C1C7D0'}`,
                         background: isSelected ? '#0052CC' : 'white',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.12s', cursor: 'pointer'
+                        transition: 'all 0.1s', cursor: 'pointer'
                     }}>
                         {isSelected && <Check size={10} color="white" strokeWidth={3} />}
                     </div>
@@ -270,13 +282,13 @@ const TaskRow = memo(function TaskRow({
                                 onChange={e => setTitleVal(e.target.value)}
                                 onBlur={handleTitleSubmit}
                                 onKeyDown={e => { if (e.key === 'Enter') handleTitleSubmit(); if (e.key === 'Escape') { setTitleVal(task.title); setEditingTitle(false); } }}
-                                autoFocus style={{ flex: 1, border: '1.5px solid #0052CC', borderRadius: 6, padding: '3px 8px', fontSize: '13px', fontWeight: 600, outline: 'none' }} />
+                                autoFocus style={{ flex: 1, border: '1px solid #0052CC', borderRadius: 4, padding: '3px 8px', fontSize: '13px', fontWeight: 500, outline: 'none', boxShadow: '0 0 0 2px rgba(0,82,204,0.1)' }} />
                         </div>
                     ) : (
                         <span 
                             onDoubleClick={e => { e.stopPropagation(); setEditingTitle(true); }}
                             onClick={e => { e.stopPropagation(); onOpenDetails(task); }}
-                            style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                         >
                             {task.title}
                         </span>
@@ -312,11 +324,11 @@ const TaskRow = memo(function TaskRow({
                 </div>
 
                 {/* Progress */}
-                <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ flex: 1, height: 5, background: '#EBECF0', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${task.progress || 0}%`, height: '100%', borderRadius: 3, transition: 'width 0.3s ease', background: (task.progress || 0) === 100 ? '#36B37E' : (task.progress || 0) > 60 ? '#0052CC' : '#FFAB00' }} />
+                <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 4, background: '#EBECF0', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${task.progress || 0}%`, height: '100%', borderRadius: 2, transition: 'width 0.3s ease', background: (task.progress || 0) === 100 ? '#22A06B' : (task.progress || 0) > 60 ? '#0052CC' : '#FFAB00' }} />
                     </div>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 600, minWidth: 24 }}>{task.progress || 0}%</span>
+                    <span style={{ fontSize: '11px', color: '#6B778C', fontWeight: 500, minWidth: 24 }}>{task.progress || 0}%</span>
                 </div>
 
                 {/* Assignee */}
@@ -326,8 +338,8 @@ const TaskRow = memo(function TaskRow({
                 </div>
 
                 {/* Due Date */}
-                <div style={{ padding: '0 10px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: isOverdue ? '#FF5630' : dueDateDisplay === 'Today' ? '#0052CC' : '#6B778C' }}>
-                    {isOverdue && <AlertTriangle size={11} />}
+                <div style={{ padding: '0 10px', fontSize: '12px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, color: isOverdue ? '#AE2A19' : dueDateDisplay === 'Today' ? '#0052CC' : '#6B778C' }}>
+                    {isOverdue && <AlertTriangle size={12} />}
                     {dueDateDisplay}
                 </div>
             </div>

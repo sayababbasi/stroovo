@@ -196,7 +196,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
   useEffect(() => {
     const fetchFullTask = async () => {
       try {
-        const res = await fetch(`/api/tasks/${task.id}`);
+        const res = await fetch(`/api/tasks/${task.id}`, { cache: 'no-store' });
         if (res.ok) {
           const full = await res.json();
           setFiles(full.files || []);
@@ -210,7 +210,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
   }, [task.id]);
 
   const refreshTask = useCallback(async () => {
-    const response = await fetch(`/api/tasks/${task.id}`);
+    const response = await fetch(`/api/tasks/${task.id}`, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('Failed to refresh task');
     }

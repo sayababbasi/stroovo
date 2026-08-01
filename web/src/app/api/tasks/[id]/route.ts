@@ -5,6 +5,8 @@ import { UpdateTaskSchema } from '@/validation/task';
 import { TaskService } from '@/lib/tasks/task-service';
 import { canAccessTask, requirePermission } from '@/lib/authorization';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
