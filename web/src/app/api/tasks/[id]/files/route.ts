@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 
 export async function GET(
     request: Request,
@@ -33,18 +35,34 @@ export async function POST(
         }
 
         const { id } = await params;
-        const { fileName, fileUrl, fileSize, fileType } = await request.json();
+        const formData = await request.formData();
+        const file = formData.get('file') as File;
 
-        if (!fileName || !fileUrl) {
-            return NextResponse.json({ error: 'File name and URL are required' }, { status: 400 });
+        if (!file) {
+            return NextResponse.json({ error: 'File is required' }, { status: 400 });
         }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const uploadDir = join(process.cwd(), 'public', 'uploads');
+        try {
+            await mkdir(uploadDir, { recursive: true });
+        } catch (e) {}
+
+        const uniqueFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filePath = join(uploadDir, uniqueFilename);
+        
+        await writeFile(filePath, buffer);
+
+        const fileUrl = `/uploads/${uniqueFilename}`;
 
         const taskFile = await prisma.taskFile.create({
             data: {
-                name: fileName,
+                name: file.name,
                 url: fileUrl,
-                size: Number(fileSize) || 0,
-                type: fileType || 'FILE',
+                size: file.size,
+                type: file.type || 'FILE',
                 taskId: id
             }
         });
@@ -55,7 +73,7 @@ export async function POST(
                 action: 'FILE_ATTACH',
                 entity: 'TASK',
                 entityId: id,
-                metadata: { fileName },
+                metadata: { fileName: file.name },
                 tenantId,
                 userId
             }

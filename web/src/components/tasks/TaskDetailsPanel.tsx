@@ -39,7 +39,8 @@ import {
   Send,
   AlignLeft,
   Check,
-  Pencil
+  Pencil,
+  Download
 } from 'lucide-react';
 import type { HealthStatus, Priority, RiskLevel, Task, TaskStatus } from './types';
 import {
@@ -177,6 +178,11 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [subtaskToDelete, setSubtaskToDelete] = useState<{ id: string, title: string } | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<{ id: string, title: string } | null>(null);
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editFileName, setEditFileName] = useState('');
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
   const { user } = useAuth();
   const isAdminOrCEO = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'CEO' || user?.role === 'PROJECT_MANAGER';
@@ -394,6 +400,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
   };
 
   const deleteSubtask = async (subtaskId: string) => {
+    if (!subtaskId) return;
     const previous = subtasks;
     setSubtasks((current) => current.filter((item: any) => item.id !== subtaskId));
 
@@ -403,9 +410,27 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
         throw new Error('Failed to delete subtask');
       }
       await refreshTask();
+      toast.success('Subtask deleted');
     } catch (error: any) {
       setSubtasks(previous);
       toast.error(error.message || 'Failed to delete subtask');
+    } finally {
+      setSubtaskToDelete(null);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!taskId) return;
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete task');
+      toast.success('Task deleted successfully');
+      setTaskToDelete(null);
+      onClose();
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete task');
+      setTaskToDelete(null);
     }
   };
 
@@ -447,16 +472,12 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
 
     setIsUploading(true);
     try {
-      const fileUrl = URL.createObjectURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
       const res = await fetch(`/api/tasks/${task.id}/files`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileUrl,
-          fileSize: file.size,
-          fileType: file.type
-        })
+        body: formData
       });
 
       if (!res.ok) throw new Error('Failed to attach file');
@@ -470,6 +491,55 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEditFile = (file: any) => {
+    setEditingFileId(file.id);
+    setEditFileName(file.name);
+  };
+
+  const handleSaveFileEdit = async (fileId: string) => {
+    if (!editFileName.trim()) {
+      setEditingFileId(null);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/files/${fileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editFileName }),
+      });
+      if (response.ok) {
+        toast.success('File renamed');
+        setEditingFileId(null);
+        setFiles(files.map(f => f.id === fileId ? { ...f, name: editFileName } : f));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to rename file');
+      }
+    } catch (error) {
+      toast.error('Error renaming file');
+    }
+  };
+
+  const handleDeleteFile = async () => {
+    if (!fileToDelete) return;
+    try {
+      const response = await fetch(`/api/files/${fileToDelete}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        toast.success('File deleted');
+        setFiles(files.filter(f => f.id !== fileToDelete));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete file');
+      }
+    } catch (error) {
+      toast.error('Error deleting file');
+    } finally {
+      setFileToDelete(null);
     }
   };
 
@@ -666,8 +736,8 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
                   <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowMenu(false)} />
                     <div style={{ position: 'absolute', top: 24, right: 0, background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', border: '1px solid #E8EAED', padding: 4, zIndex: 11, minWidth: 140 }}>
-                      <div onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copied'); setShowMenu(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#42526E', cursor: 'pointer', borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = '#F4F5F7'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>Copy Link</div>
-                      <div onClick={() => { toast.error('Delete functionality requires confirmation'); setShowMenu(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#FF5630', cursor: 'pointer', borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = '#FFEBE6'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>Delete Task</div>
+                      <div onClick={() => { toast.success('Link copied to clipboard!'); setShowMenu(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#42526E', cursor: 'pointer', borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = '#F4F5F7'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>Copy Link</div>
+                      <div onClick={() => { setTaskToDelete({ id: task.id, title: task.title }); setShowMenu(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#FF5630', cursor: 'pointer', borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = '#FFEBE6'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>Delete Task</div>
                     </div>
                   </>
                 )}
@@ -914,9 +984,12 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
               {(subtask.aiInsights?.generatedByAI || subtask.aiInsights?.semanticHash) ? (
                 <span style={{ fontSize: 10, fontWeight: 800, color: '#6554C0', background: '#F8F7FF', padding: '4px 8px', borderRadius: 6 }}>AI</span>
               ) : null}
-              <button onClick={() => void deleteSubtask(subtask.id)} style={{ border: 'none', background: 'transparent', color: '#8A94A6', cursor: 'pointer' }}>
+              <div
+                style={{ padding: 4, cursor: 'pointer', color: '#8A94A6' }}
+                onClick={() => setSubtaskToDelete({ id: subtask.id, title: subtask.title })}
+              >
                 <Trash2 size={14} />
-              </button>
+              </div>
             </div>
           ))}
 
@@ -931,16 +1004,48 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
         <Section title="Files" icon={<Paperclip size={14} color="#8A94A6" />} badge={<span style={{ fontSize: 12, fontWeight: 600, color: '#8A94A6' }}>{files.length}</span>}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {files.map((file) => (
-              <a key={file.id} href={file.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', border: '1px solid #E8EAED', borderRadius: 8, textDecoration: 'none', background: 'white', transition: '0.2s' }}>
-                <div style={{ padding: 8, background: '#F8F7FF', borderRadius: 8 }}>
-                  <Paperclip size={16} color="#6554C0" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
-                  <div style={{ fontSize: 11, color: '#8A94A6', marginTop: 2 }}>{file.type} · {Math.round(file.size / 1024)} KB</div>
-                </div>
-                <ChevronDown size={14} color="#8A94A6" style={{ transform: 'rotate(-90deg)' }} /> {/* Using Chevron as a mock download icon */}
-              </a>
+              <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', border: '1px solid #E8EAED', borderRadius: 8, background: 'white', transition: '0.2s' }}>
+                <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none' }}>
+                  <div style={{ padding: 8, background: '#F8F7FF', borderRadius: 8 }}>
+                    <Paperclip size={16} color="#6554C0" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {editingFileId === file.id ? (
+                      <input 
+                        type="text" 
+                        value={editFileName} 
+                        onChange={(e) => setEditFileName(e.target.value)} 
+                        onClick={(e) => e.preventDefault()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveFileEdit(file.id);
+                          } else if (e.key === 'Escape') {
+                            setEditingFileId(null);
+                          }
+                        }}
+                        autoFocus
+                        style={{ fontSize: 13, fontWeight: 600, color: '#172B4D', border: '1px solid #6554C0', borderRadius: 4, padding: '2px 4px', width: '100%', outline: 'none' }} 
+                      />
+                    ) : (
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                    )}
+                    <div style={{ fontSize: 11, color: '#8A94A6', marginTop: 2 }}>{file.type} · {Math.round(file.size / 1024)} KB</div>
+                  </div>
+                  <Download size={14} color="#8A94A6" style={{ cursor: 'pointer' }} />
+                </a>
+                
+                {isAdminOrCEO && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
+                    {editingFileId === file.id ? (
+                      <button onClick={() => handleSaveFileEdit(file.id)} style={{ padding: '4px 8px', background: '#6554C0', color: 'white', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                    ) : (
+                      <Pencil size={14} color="#8A94A6" style={{ cursor: 'pointer' }} onClick={() => handleEditFile(file)} />
+                    )}
+                    <Trash2 size={14} color="#FF5630" style={{ cursor: 'pointer' }} onClick={() => setFileToDelete(file.id)} />
+                  </div>
+                )}
+              </div>
             ))}
             <input
               type="file"
@@ -1144,6 +1249,81 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
             </button>
             <button 
               onClick={() => handleDeleteComment(commentToDelete!)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#FF5630', color: 'white', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!subtaskToDelete} onOpenChange={(open) => !open && setSubtaskToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Subtask</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete the subtask <strong>{subtaskToDelete?.title}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button 
+              onClick={() => setSubtaskToDelete(null)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#F4F5F7', color: '#42526E', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => deleteSubtask(subtaskToDelete!.id)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#FF5630', color: 'white', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <strong>{taskToDelete?.title}</strong>? All associated subtasks, comments, and files will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button 
+              onClick={() => setTaskToDelete(null)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#F4F5F7', color: '#42526E', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => handleDeleteTask(taskToDelete!.id)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#FF5630', color: 'white', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete File</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this file? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button 
+              onClick={() => setFileToDelete(null)}
+              style={{ padding: '8px 16px', borderRadius: 8, background: '#F4F5F7', color: '#42526E', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleDeleteFile}
               style={{ padding: '8px 16px', borderRadius: 8, background: '#FF5630', color: 'white', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}
             >
               Delete
