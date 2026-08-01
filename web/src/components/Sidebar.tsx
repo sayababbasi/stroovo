@@ -64,7 +64,7 @@ interface NavSection {
 }
 
 // Use production API URL directly
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
+const API_URL = '';
 
 export default function Sidebar() {
     const pathname = usePathname();

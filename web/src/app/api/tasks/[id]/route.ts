@@ -92,6 +92,7 @@ export async function PATCH(
                 assigneeId: true,
                 teamId: true,
                 tenantId: true,
+                parentId: true,
             }
         });
         if (!(await canAccessTask(authResult.user, existingTask, 'update'))) {

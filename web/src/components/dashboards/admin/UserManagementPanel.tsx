@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, Search, Edit2, Trash2, UserPlus } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const API_URL = '';
 
 export default function UserManagementPanel() {
   const [users, setUsers] = useState<any[]>([]);

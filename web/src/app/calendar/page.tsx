@@ -73,7 +73,7 @@ export function CalendarView({
     }, []);
 
     const fetchProjects = async () => {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+        const API_URL = '';
         try {
             const res = await fetch(`${API_URL}/api/projects`);
             if (res.ok) {
@@ -93,7 +93,7 @@ export function CalendarView({
     const fetchTasks = () => {
         if (initialTasks) return;
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+        const API_URL = '';
         const url = teamId ? `${API_URL}/api/team-tasks?teamId=${teamId}` : `${API_URL}/api/tasks`;
         
         fetch(url)
@@ -117,7 +117,7 @@ export function CalendarView({
     const handleAddTask = async () => {
         if (!newTaskTitle || !quickAddDay) return;
         
-        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+        const API_URL = '';
         try {
             const res = await fetch(`${API_URL}/api/tasks`, {
                 method: 'POST',

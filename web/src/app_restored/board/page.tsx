@@ -6,7 +6,7 @@ import BoardView from '@/components/BoardView';
 import { Plus, Filter } from 'lucide-react';
 import { Task } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = '';
 
 export default function BoardPage() {
     const [tasks, setTasks] = useState<Task[]>([]);

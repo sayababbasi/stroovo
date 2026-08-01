@@ -23,7 +23,7 @@ import {
 import { io, Socket } from 'socket.io-client';
 
 // Use production API URL directly
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://stroovo.onrender.com';
+const API_URL = '';
 
 interface Task {
     id: string;

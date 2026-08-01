@@ -351,8 +351,9 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
 
   const createManualSubtask = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = String(form.get('title') || '').trim();
+    const form = event.currentTarget; // Cache reference
+    const formData = new FormData(form);
+    const title = String(formData.get('title') || '').trim();
     if (!title) return;
 
     try {
@@ -373,7 +374,7 @@ export default function TaskDetailsPanel({ task, onClose, onUpdate }: TaskDetail
       if (!response.ok) {
         throw new Error('Failed to create subtask');
       }
-      (event.currentTarget.elements.namedItem('title') as HTMLInputElement).value = '';
+      (form.elements.namedItem('title') as HTMLInputElement).value = '';
       await refreshTask();
     } catch (error: any) {
       toast.error(error.message || 'Failed to create subtask');

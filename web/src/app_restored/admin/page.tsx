@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Users, FolderKanban, CheckSquare, TrendingUp } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = '';
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({

@@ -6,7 +6,7 @@ import CreateGoalModal from '@/components/CreateGoalModal';
 import { Target, Plus, ChevronDown, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, User, Calendar } from 'lucide-react';
 import { Goal, Cycle } from '@/types/goals'; // Make sure this path is correct
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = '';
 
 export default function GoalsPage() {
     const [goals, setGoals] = useState<Goal[]>([]);

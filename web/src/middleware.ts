@@ -48,7 +48,7 @@ function redirectToLogin(request: NextRequest, pathname: string) {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   console.log(`[MIDDLEWARE] Processing: ${pathname}`);
 

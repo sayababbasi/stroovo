@@ -46,6 +46,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'tasks.create',
     'tasks.read.all',
     'tasks.update.all',
+    'tasks.delete.all',
     'tasks.assign',
     'teams.read',
     'teams.manage',
@@ -63,6 +64,8 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'tasks.read.own',
     'tasks.update.team',
     'tasks.update.own',
+    'tasks.delete.team',
+    'tasks.delete.own',
     'tasks.assign.team',
     'teams.read',
     'users.read.team',
@@ -75,6 +78,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
     'tasks.create',
     'tasks.read.own',
     'tasks.update.own',
+    'tasks.delete.own',
     'users.read.own',
     'ai.use',
     'automations.read',
@@ -270,7 +274,7 @@ export function requirePermission(permissionKey: string) {
 
 export async function canAccessTask(
   user: UserWithPermissions,
-  task: Pick<Task, 'id' | 'assigneeId' | 'teamId' | 'tenantId'> | null,
+  task: Pick<Task, 'id' | 'assigneeId' | 'teamId' | 'tenantId' | 'parentId'> | null,
   action: 'read' | 'update' | 'delete' | 'assign'
 ): Promise<boolean> {
   if (!task) return false;
@@ -285,6 +289,16 @@ export async function canAccessTask(
       where: { teamId: task.teamId, userId: user.id },
     });
     if (membership) return true;
+  }
+
+  if (task.parentId) {
+    const parentTask = await prisma.task.findUnique({
+      where: { id: task.parentId },
+      select: { id: true, assigneeId: true, teamId: true, tenantId: true, parentId: true }
+    });
+    if (parentTask) {
+      return canAccessTask(user, parentTask, action);
+    }
   }
 
   return false;

@@ -73,7 +73,7 @@ export function TimelineView({
     // Interaction state
     const [draggingTask, setDraggingTask] = useState<{ id: string, type: 'move' | 'resize-end', initialLeft: number, initialWidth: number, startX: number } | null>(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+    const API_URL = '';
 
     const fetchTasks = useCallback(async () => {
         if (initialTasks) return;
