@@ -155,6 +155,15 @@ export async function DELETE(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
+        // Delete related records to prevent foreign key constraint errors
+        await prisma.comment.deleteMany({ where: { taskId: id } });
+        await prisma.taskFile.deleteMany({ where: { taskId: id } });
+        await prisma.taskAssignment.deleteMany({ where: { taskId: id } });
+        await prisma.taskAssignmentHistory.deleteMany({ where: { taskId: id } });
+        
+        // Disconnect parent from child tasks or delete child tasks
+        await prisma.task.deleteMany({ where: { parentId: id } });
+
         await prisma.task.delete({
             where: { id }
         });

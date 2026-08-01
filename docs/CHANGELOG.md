@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 ### Changed
+- **Board Module UI/UX Upgrade**
+  - Completely redesigned the `/board` route (`page.tsx`) header and view/filter bar.
+  - Reduced heavy borders and updated Kanban columns (`KanbanBoard.tsx`) to use subtle light-neutral backgrounds with soft borders and minimal empty states.
+  - Refined Task Cards (`KanbanCard.tsx`) hierarchy, increasing task title prominence, aligning metadata neatly at the bottom, and updating priority styles (Urgent=Red, High=Orange, Medium=Yellow, Low=Blue).
+  - Maintained all existing functionality including drag-and-drop, grouping, sorting, filtering, and quick actions.
 - **Task Module UI/UX Upgrade (Phase 1)**
   - Redesigned `page.tsx` Header, Quick Filters, Stat Cards, and Table Headers to match premium SaaS aesthetics.
   - Replaced heavy borders and background gradients with subtle 1px borders (`#DFE1E6`) and clean backgrounds.
@@ -14,7 +19,9 @@
 - **File Update & Delete**: Added functionality for ADMIN and CEO users to rename and permanently delete files from tasks.
 - **File Delete Modal**: Introduced a confirmation popup for file deletions to match task and subtask deletion flows.
 - **Backend Authorization**: Implemented a PATCH route for renaming files and updated the DELETE route to include CEO role verification.
-- **Bug Fix**: Fixed a 500 Internal Server Error in the file upload route caused by an undefined variable (`fileName`) in the activity log payload.
+- **Bug Fixes**: 
+  - Fixed a 500 Internal Server Error in the file upload route caused by an undefined variable (`fileName`) in the activity log payload.
+  - Fixed task deletion failing due to foreign key constraints on `Comment`, `TaskFile`, and other related tables.
 
 ### 2026-08-01: Delete Confirmation Flow
   - Added conditional logic to `TaskDetailsPanel.tsx` to display a Facebook icon dynamically if a task is named 'Facebook', matching the exact design spec for this content change.

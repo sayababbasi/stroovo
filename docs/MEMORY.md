@@ -10,6 +10,15 @@
   - Modernized the Task Table with better typography, hierarchy, and 1px borders.
   - Revamped `TaskRow.tsx` Status and Priority pills to be minimal.
 
+## Phase 2: Board Module UI/UX Upgrade
+- **Scope**: Complete redesign of the Kanban Board view (`/board`) matching the premium SaaS reference design.
+- **Key Changes**:
+  - Restructured `page.tsx` header layout to separate title, search, and action buttons cleanly.
+  - Updated `KanbanBoard.tsx` to feature light neutral backgrounds and removed heavy board-level scrollbars in favor of clean internal scrolling.
+  - Revamped `KanbanCard.tsx` with a focus on typography hierarchy, semantic priority colors (Red, Orange, Yellow, Blue), and clear drag state shadows.
+  - Re-styled the View/Filter bar to use sleek, active-state segment controls rather than blocky buttons.
+  - Applied the strict single font-family rule, eliminating typography inconsistencies.
+
 ## Recent Task Detail UI Changes
 - **Change**: Conditionally rendering a Facebook icon next to the task name in `TaskDetailsPanel.tsx`.
 - **Where**: `web/src/components/tasks/TaskDetailsPanel.tsx` (Task title display header).

@@ -168,94 +168,119 @@ export function BoardView({ hideHeader }: { hideHeader?: boolean } = {}) {
 
                 {/* Header */}
                 {!hideHeader && (
-                    <div style={{ padding: '20px 32px 16px', background: 'white', borderBottom: '1px solid #E8EAED' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: '#E6EFFF', color: '#0052CC', padding: 8, borderRadius: 10 }}><Inbox size={20} /></div>
-                            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', letterSpacing: '-0.02em', margin: 0 }}>Tasks Board</h1>
-                            {loading && <span style={{ fontSize: '11px', color: '#8A94A6', fontWeight: 600 }}>Refreshing...</span>}
-                        </div>
-
-                        <div style={{ flex: 1, maxWidth: 600, margin: '0 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
-                                <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
-                                <input 
-                                    ref={searchInputRef}
-                                    id="task-search" 
-                                    value={searchQuery} 
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    placeholder="Search tasks... ( / )"
-                                    style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8, border: '1px solid #E8EAED', background: '#FAFBFC', fontSize: '13px', outline: 'none' }} 
-                                />
+                    <div style={{ padding: '28px 40px 16px', background: 'white', display: 'flex', flexDirection: 'column', gap: 24, borderBottom: '1px solid #F1F2F4' }}>
+                        {/* Top Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {/* Left: Title */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 240 }}>
+                                <div style={{ background: '#F0EEFF', color: '#403294', padding: 10, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Inbox size={22} strokeWidth={2.5} />
+                                </div>
+                                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#172B4D', letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    Tasks Board
+                                    {loading && <span style={{ fontSize: '12px', color: '#8A94A6', fontWeight: 600, letterSpacing: 'normal' }}>Refreshing...</span>}
+                                </h1>
                             </div>
 
-                            {/* Rotating Keyboard Tips */}
-                            <div key={activeTipIndex} style={{ 
-                                display: 'flex', alignItems: 'center', gap: 8, 
-                                background: '#F4F5F7', padding: '7px 14px', borderRadius: 20, 
-                                fontSize: '11px', fontWeight: 700, color: '#42526E', 
-                                animation: 'slideUp 0.3s ease-out',
-                                whiteSpace: 'nowrap',
-                                border: '1px solid #EBECF0',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                            }}>
-                                <span style={{ color: '#0052CC', fontSize: '10px', background: '#E6EFFF', padding: '2px 6px', borderRadius: 4, marginRight: 2 }}>PRO TIP</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {tips[activeTipIndex].icon}
-                                    {tips[activeTipIndex].text}
-                                </span>
+                            {/* Center: Search */}
+                            <div style={{ flex: 1, maxWidth: 480, margin: '0 32px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                                <div style={{ position: 'relative', flex: 1 }}>
+                                    <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
+                                    <input 
+                                        ref={searchInputRef}
+                                        id="task-search" 
+                                        value={searchQuery} 
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        placeholder="Search tasks... ( / )"
+                                        style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: 10, border: '1px solid #DFE1E6', background: '#FAFBFC', fontSize: '14px', color: '#172B4D', outline: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }} 
+                                        className="board-search-bar"
+                                    />
+                                </div>
+                                
+                                {/* Rotating Keyboard Tips */}
+                                <div key={activeTipIndex} style={{ 
+                                    display: 'flex', alignItems: 'center', gap: 8, 
+                                    background: '#F4F5F7', padding: '8px 12px', borderRadius: 8, 
+                                    fontSize: '12px', fontWeight: 600, color: '#42526E', 
+                                    animation: 'slideUp 0.3s ease-out',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    <span style={{ color: '#0052CC', fontSize: '11px', background: '#E6EFFF', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>PRO TIP</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        {tips[activeTipIndex].icon}
+                                        {tips[activeTipIndex].text}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 240, justifyContent: 'flex-end' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    {users.slice(0, 4).map((user, i) => (
+                                        <div key={user.id} title={user.name || user.email} style={{ width: '34px', height: '34px', borderRadius: '50%', background: getAvatarColor(user.name), border: '2px solid white', marginLeft: i > 0 ? '-12px' : '0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'white', fontWeight: 700, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', position: 'relative', zIndex: 4 - i }}>
+                                            {user.name?.[0] || user.email[0].toUpperCase()}
+                                        </div>
+                                    ))}
+                                    {users.length > 4 && (
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#F4F5F7', border: '2px solid white', marginLeft: '-12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#42526E', fontWeight: 700, position: 'relative', zIndex: 0 }}>
+                                            +{users.length - 4}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ width: 1, height: 24, background: '#DFE1E6' }} />
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
+                                        Filter
+                                    </button>
+                                    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
+                                        Sort
+                                    </button>
+                                    <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
+                                        ...
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowCreateModal(true)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: 'none', background: '#0052CC', color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0, 82, 204, 0.15)' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#0047B3'}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#0052CC'}
+                                >
+                                    <Plus size={16} strokeWidth={2.5} /> New Task
+                                </button>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ display: 'flex', marginRight: '8px', alignItems: 'center' }}>
-                                {users.slice(0, 4).map((user, i) => (
-                                    <div key={user.id} title={user.name || user.email} style={{ width: '32px', height: '32px', borderRadius: '50%', background: getAvatarColor(user.name), border: '2px solid white', marginLeft: i > 0 ? '-10px' : '0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'white', fontWeight: 700, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                                        {user.name?.[0] || user.email[0].toUpperCase()}
-                                    </div>
+                        {/* Bottom Row: View/Filter Bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#F4F5F7', padding: 4, borderRadius: 8 }}>
+                                <button onClick={() => setFilterStatus('All')} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, border: 'none', background: filterStatus === 'All' ? 'white' : 'transparent', borderRadius: 6, cursor: 'pointer', color: filterStatus === 'All' ? '#0052CC' : '#6B778C', transition: 'all 0.2s', boxShadow: filterStatus === 'All' ? '0 1px 3px rgba(9, 30, 66, 0.08)' : 'none' }}>
+                                    All Tasks
+                                </button>
+                                {Object.keys(STATUS_LABELS).slice(0, 3).map((s) => (
+                                    <button key={s} onClick={() => setFilterStatus(s as any)} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, border: 'none', background: filterStatus === s ? 'white' : 'transparent', borderRadius: 6, cursor: 'pointer', color: filterStatus === s ? '#0052CC' : '#6B778C', transition: 'all 0.2s', boxShadow: filterStatus === s ? '0 1px 3px rgba(9, 30, 66, 0.08)' : 'none' }}>
+                                        {STATUS_LABELS[s as TaskStatus]}
+                                    </button>
                                 ))}
-                                {users.length > 4 && (
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#DFE1E6', border: '2px solid white', marginLeft: '-10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#42526E', fontWeight: 600 }}>
-                                        +{users.length - 4}
-                                    </div>
-                                )}
                             </div>
-
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: '#0052CC', color: 'white', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,82,204,0.2)' }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <Plus size={16} /> New Task
-                            </button>
+                            
+                            <div style={{ position: 'relative' }}>
+                                <select 
+                                    value={groupBy}
+                                    onChange={e => setGroupBy(e.target.value as any)}
+                                    style={{ padding: '8px 32px 8px 12px', border: '1px solid #DFE1E6', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', outline: 'none', appearance: 'none', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}
+                                >
+                                    <option value="Status">Group: Status</option>
+                                    <option value="Priority">Group: Priority</option>
+                                    <option value="Project">Group: Project</option>
+                                    <option value="None">No Grouping</option>
+                                </select>
+                                <ChevronDown size={14} color="#8A94A6" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                            </div>
                         </div>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ display: 'flex', background: '#F4F5F7', padding: 4, borderRadius: 10, border: '1px solid #E8EAED' }}>
-                            <button onClick={() => setFilterStatus('All')} className={`vw-btn ${filterStatus === 'All' ? 'active' : ''}`} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 600, border: 'none', background: filterStatus === 'All' ? 'white' : 'transparent', borderRadius: 6, cursor: 'pointer', color: filterStatus === 'All' ? '#0052CC' : '#6B778C' }}>All Tasks</button>
-                            {Object.keys(STATUS_LABELS).slice(0, 3).map((s) => (
-                                <button key={s} onClick={() => setFilterStatus(s as any)} className={`vw-btn ${filterStatus === s ? 'active' : ''}`} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 600, border: 'none', background: filterStatus === s ? 'white' : 'transparent', borderRadius: 6, cursor: 'pointer', color: filterStatus === s ? '#0052CC' : '#6B778C' }}>{STATUS_LABELS[s as TaskStatus]}</button>
-                            ))}
-                        </div>
-                        
-                        <div style={{ width: 1, height: 20, background: '#E8EAED' }} />
-
-                        <div style={{ position: 'relative' }}>
-                            <select 
-                                value={groupBy}
-                                onChange={e => setGroupBy(e.target.value as any)}
-                                style={{ padding: '8px 12px', border: '1px solid #E8EAED', background: 'white', borderRadius: 8, fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer', outline: 'none' }}
-                            >
-                                <option value="Status">Group: Status</option>
-                                <option value="Priority">Group: Priority</option>
-                                <option value="Project">Group: Project</option>
-                                <option value="None">No Grouping</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
                 )}
 
                 {/* Board Content */}

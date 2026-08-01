@@ -16,3 +16,8 @@
 - **Interactions**:
   - Micro-interactions only (150ms-200ms background or color transitions).
   - No bouncing, glowing, or flashy animations.
+
+## Board Module UI Enhancements
+- **Kanban Columns**: Use very light neutral backgrounds (`#F8FAFC`) with subtle dashed borders (`1px dashed #E2E8F0`).
+- **Empty States**: Present simple, centered icons and text instead of heavy dashed outlines. 
+- **Task Cards**: Prominent hierarchy prioritizing task titles. Use strict semantic colors for priority (Urgent: Red, High: Orange, Medium: Yellow, Low: Blue). Elevated shadow state on drag (`box-shadow: 0 16px 32px rgba(9, 30, 66, 0.08)` and `scale(1.02)`).

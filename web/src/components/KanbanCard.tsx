@@ -28,10 +28,10 @@ interface KanbanCardProps {
 /* ── Style helpers (static — no re-computation) ── */
 
 const PRIORITY: Record<string, { color: string; bg: string; label: string }> = {
-    URGENT: { color: '#e34935', bg: '#fff1f0', label: 'Urgent' },
-    HIGH:   { color: '#ff8b00', bg: '#fff7e6', label: 'High' },
-    MEDIUM: { color: '#36b37e', bg: '#e6fcf5', label: 'Medium' },
-    LOW:    { color: '#8993a4', bg: '#f1f3f7', label: 'Low' },
+    URGENT: { color: '#C53030', bg: '#FED7D7', label: 'Urgent' },
+    HIGH:   { color: '#DD6B20', bg: '#FEEBC8', label: 'High' },
+    MEDIUM: { color: '#D69E2E', bg: '#FEFCBF', label: 'Medium' },
+    LOW:    { color: '#3182CE', bg: '#EBF8FF', label: 'Low' },
 };
 
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
@@ -112,25 +112,26 @@ function KanbanCard({
             <style jsx>{`
                 .kc {
                     background: #ffffff;
-                    border: 1px solid #e3e6ee;
+                    border: 1px solid #E2E8F0;
                     border-radius: 12px;
-                    padding: 13px 15px;
+                    padding: 16px;
                     cursor: grab;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-                    transition: box-shadow 0.15s ease, border-color 0.12s;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+                    transition: box-shadow 0.2s ease, border-color 0.2s;
                     position: relative;
                     display: flex;
                     flex-direction: column;
-                    gap: 9px;
+                    gap: 12px;
                     user-select: none;
                 }
                 .kc:hover {
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-                    border-color: #d0d4dc;
+                    box-shadow: 0 8px 16px rgba(9, 30, 66, 0.05);
+                    border-color: #CBD5E1;
                 }
                 .kc.kc-drag {
-                    box-shadow: 0 14px 36px rgba(0,0,0,0.12);
+                    box-shadow: 0 16px 32px rgba(9, 30, 66, 0.08);
                     cursor: grabbing;
+                    transform: scale(1.02);
                 }
 
                 .kc-hov {
@@ -160,35 +161,36 @@ function KanbanCard({
                     cursor: pointer;
                     transition: all 0.08s;
                 }
-                .kc-ab:hover { background: #f1f3f7; color: #172b4d; }
+                .kc-ab:hover { background: #F1F5F9; color: #172B4D; }
 
                 .kc-proj {
-                    font-size: 10px;
+                    font-size: 11px;
                     font-weight: 600;
-                    color: #8993a4;
+                    color: #64748B;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
+                    margin-bottom: 4px;
                 }
                 .kc-ttl {
-                    font-size: 13.5px;
+                    font-size: 14px;
                     font-weight: 600;
-                    color: #172b4d;
+                    color: #1E293B;
                     line-height: 1.4;
-                    margin: 1px 0 0;
+                    margin: 0;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
                 }
 
-                .kc-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+                .kc-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
                 .kc-pill {
-                    font-size: 10px;
+                    font-size: 11px;
                     font-weight: 700;
                     text-transform: uppercase;
                     letter-spacing: 0.25px;
-                    padding: 2px 6px;
-                    border-radius: 4px;
+                    padding: 2px 8px;
+                    border-radius: 6px;
                 }
 
                 .kc-prog-bg {
@@ -209,25 +211,25 @@ function KanbanCard({
                     align-items: flex-end;
                     margin-top: 1px;
                 }
-                .kc-ml { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+                .kc-ml { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
                 .kc-mi {
                     display: flex;
                     align-items: center;
-                    gap: 3px;
-                    font-size: 11px;
+                    gap: 4px;
+                    font-size: 12px;
                     font-weight: 500;
-                    color: #8993a4;
+                    color: #64748B;
                 }
                 .kc-mi.od { color: #e34935; font-weight: 600; }
 
                 .kc-av {
-                    width: 24px;
-                    height: 24px;
+                    width: 26px;
+                    height: 26px;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 10px;
+                    font-size: 11px;
                     font-weight: 700;
                     color: white;
                     border: 2px solid #fff;

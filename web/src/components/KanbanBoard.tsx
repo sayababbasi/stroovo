@@ -251,14 +251,15 @@ export default function KanbanBoard({
                 /* ── Column: stretches full height ── */
                 .kb-root .kb-col {
                     flex: 1;
-                    min-width: 250px;
+                    min-width: 280px;
                     min-height: 0;
-                    background: #f1f3f7;
+                    background: #F8FAFC;
+                    border: 1px dashed #E2E8F0;
                     border-radius: 12px;
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    transition: box-shadow 0.15s, opacity 0.2s;
+                    transition: all 0.2s;
                 }
                 .kb-root .kb-col.focus { flex: none; width: calc(100% - 64px); max-width: 1200px; }
                 .kb-root .kb-col.dimmed { opacity: 0.3; pointer-events: none; }
@@ -266,13 +267,14 @@ export default function KanbanBoard({
                     flex: none;
                     min-width: 50px;
                     width: 50px;
-                    background: #eaecf0;
+                    background: #F1F5F9;
+                    border: 1px dashed #E2E8F0;
                     cursor: pointer;
                 }
 
                 /* ── Column Header: FIXED inside column ── */
                 .kb-root .kb-head {
-                    padding: 16px 16px 12px;
+                    padding: 16px 20px 12px;
                     flex-shrink: 0;
                 }
                 .kb-root .kb-head-row {
@@ -281,30 +283,29 @@ export default function KanbanBoard({
                     justify-content: space-between;
                 }
                 .kb-root .kb-title {
-                    font-weight: 600;
-                    font-size: 13.5px;
+                    font-weight: 700;
+                    font-size: 14px;
                     color: #172b4d;
                     display: flex;
                     align-items: center;
-                    gap: 7px;
+                    gap: 8px;
                 }
                 .kb-root .kb-badge {
-                    background: #dfe1e6;
-                    padding: 2px 7px;
+                    background: #E2E8F0;
+                    padding: 2px 8px;
                     border-radius: 12px;
                     font-size: 11px;
                     font-weight: 700;
-                    color: #44546f;
-                    min-width: 20px;
+                    color: #475569;
                     text-align: center;
                 }
                 .kb-root .kb-wip {
                     font-size: 11px;
-                    margin-top: 4px;
+                    margin-top: 6px;
                     font-weight: 600;
                 }
                 .kb-root .kb-wip.over { color: #e34935; }
-                .kb-root .kb-wip.ok { color: #8993a4; }
+                .kb-root .kb-wip.ok { color: #64748B; }
 
                 .kb-root .kb-done-bar {
                     height: 4px;
@@ -338,53 +339,78 @@ export default function KanbanBoard({
                 }
                 .kb-root .kb-ibtn:hover { background: #dfe1e6; color: #44546f; }
 
-                /* ── Task List: SCROLLABLE area (the ONLY scrolling part) ── */
+                /* ── Task List: SCROLLABLE area ── */
                 .kb-root .kb-task-list {
                     flex: 1;
                     min-height: 0;
                     overflow-y: auto;
                     overflow-x: hidden;
-                    padding: 2px 12px 8px;
+                    padding: 4px 16px 16px;
                     display: flex;
                     flex-direction: column;
-                    gap: 10px;
+                    gap: 12px;
                 }
                 .kb-root .kb-task-list::-webkit-scrollbar { width: 6px; }
                 .kb-root .kb-task-list::-webkit-scrollbar-track { background: transparent; }
                 .kb-root .kb-task-list::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background 0.2s; }
-                .kb-root .kb-col:hover .kb-task-list::-webkit-scrollbar-thumb { background: #c1c7d0; }
-                .kb-root .kb-task-list::-webkit-scrollbar-thumb:hover { background: #a5adba; }
+                .kb-root .kb-col:hover .kb-task-list::-webkit-scrollbar-thumb { background: #CBD5E1; }
+                .kb-root .kb-task-list::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
                 .kb-root .kb-empty {
-                    padding: 24px 16px;
+                    padding: 40px 16px;
                     text-align: center;
-                    color: #8993a4;
-                    font-size: 13px;
-                    border: 2px dashed #dfe1e6;
-                    border-radius: 10px;
-                    margin: 2px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    flex: 1;
+                }
+                .kb-root .kb-empty-icon {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 50%;
+                    background: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                    margin-bottom: 8px;
+                }
+                .kb-root .kb-empty-title {
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #334155;
+                    margin: 0;
+                }
+                .kb-root .kb-empty-subtitle {
+                    font-size: 12px;
+                    color: #94A3B8;
+                    margin: 0;
+                    line-height: 1.5;
+                    max-width: 180px;
                 }
 
                 /* ── Quick Add: FIXED at column bottom ── */
                 .kb-root .kb-add {
-                    margin: 0;
-                    padding: 12px 16px;
+                    margin: 0 16px 16px;
+                    padding: 10px 14px;
                     background: transparent;
                     border: none;
-                    color: #44546f;
+                    color: #64748B;
                     font-size: 13px;
-                    font-weight: 500;
+                    font-weight: 600;
                     cursor: pointer;
                     flex-shrink: 0;
                     display: flex;
                     align-items: center;
-                    gap: 6px;
-                    transition: all 0.12s;
+                    gap: 8px;
+                    transition: all 0.2s;
                     font-family: inherit;
-                    width: 100%;
                     justify-content: flex-start;
+                    border-radius: 8px;
                 }
-                .kb-root .kb-add:hover { background: rgba(9, 30, 66, 0.08); color: #172b4d; }
+                .kb-root .kb-add:hover { background: #F1F5F9; color: #172B4D; }
 
                 /* ── Collapsed column ── */
                 .kb-root .kb-col-inner {
@@ -519,7 +545,15 @@ export default function KanbanBoard({
                                 <SortableContext items={colTasks.map(t => t.id || '')} strategy={verticalListSortingStrategy}>
                                     <div className="kb-task-list">
                                         {colTasks.length === 0 ? (
-                                            <div className="kb-empty">No tasks yet</div>
+                                            <div className="kb-empty">
+                                                <div className="kb-empty-icon">
+                                                    <Icon size={20} color={col.color} />
+                                                </div>
+                                                <h3 className="kb-empty-title">No tasks yet</h3>
+                                                <p className="kb-empty-subtitle">
+                                                    {col.key === 'DONE' ? 'Completed tasks will appear here.' : 'Tasks that are planned will appear here.'}
+                                                </p>
+                                            </div>
                                         ) : colTasks.map(task => (
                                             <KanbanCard
                                                 key={task.id}
