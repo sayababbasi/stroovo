@@ -82,3 +82,14 @@
   - `AdminMemberDetailDrawer.tsx`: A comprehensive 360-degree view slide-out drawer displaying a member's Profile Info, Administrative Controls (Edit, Suspend), Team Memberships, Project Access, and Recent Administrative Activity.
   - `AdminInviteMemberModal.tsx`: A form to invite a new user to the organization (name, email, role).
   - `AdminSuspendMemberModal.tsx`: A high-risk confirmation modal to safely suspend a member's account, with clear warnings about the impact (revoking active sessions).
+
+### Phase 7: Enterprise Roles & Permissions Module
+
+**Completed Work:**
+- Replaced the Admin Roles & Permissions placeholder at /admin/teams with a fully functional enterprise RBAC UI.
+- Implemented AdminRolesTab.tsx with a two-panel layout.
+- Implemented AdminPermissionMatrix.tsx to handle granular permissions per role.
+- Implemented AdminRoleMembers.tsx with bulk assignment.
+- Expanded RoleService.ts to manage granular module permissions.
+- Added endpoints: PUT /api/admin/roles/[id]/permissions, POST/DELETE /api/admin/roles/[id]/members.
+

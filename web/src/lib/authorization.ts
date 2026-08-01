@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import type { Permission, Role, Task, User } from '@prisma/client';
+import type { Permission, Role, Task, User, TeamMember, ProjectAccess } from '@prisma/client';
 
 export type EffectiveRole =
   | 'SUPER_ADMIN'
@@ -10,9 +10,13 @@ export type EffectiveRole =
   | 'TEAM_LEAD'
   | 'MEMBER';
 
+type RoleWithPermissions = Role & { permissions: Array<{ permission: Permission }> };
+
 type UserWithPermissions = User & {
-  systemRole: (Role & { permissions: Array<{ permission: Permission }> }) | null;
-  additionalRoles?: Array<{ role: Role & { permissions: Array<{ permission: Permission }> } }>;
+  systemRole: RoleWithPermissions | null;
+  additionalRoles?: Array<{ role: RoleWithPermissions }>;
+  teamMembers?: Array<TeamMember & { role: RoleWithPermissions | null }>;
+  projectAccesses?: Array<ProjectAccess & { role: RoleWithPermissions | null }>;
 };
 
 type PermissionContext = {
@@ -20,8 +24,6 @@ type PermissionContext = {
   effectiveRole: EffectiveRole;
   permissionKeys: string[];
 };
-
-type PermissionResult = NextResponse | PermissionContext;
 
 export interface AuthResult {
   success: boolean;
@@ -31,65 +33,6 @@ export interface AuthResult {
   response?: NextResponse;
 }
 
-const DEFAULT_ROLE_PERMISSIONS: Record<EffectiveRole, string[]> = {
-  SUPER_ADMIN: ['*'],
-  ADMIN: ['*'],
-  EXECUTIVE: [
-    'analytics.read',
-    'projects.read',
-    'tasks.read.all',
-    'teams.read',
-    'users.read.all',
-    'system.logs.read',
-    'ai.use',
-    'automations.read',
-  ],
-  MANAGER: [
-    'analytics.read',
-    'projects.read',
-    'projects.update',
-    'tasks.create',
-    'tasks.read.all',
-    'tasks.update.all',
-    'tasks.delete.all',
-    'tasks.assign',
-    'teams.read',
-    'teams.manage',
-    'users.read.all',
-    'ai.use',
-    'automations.read',
-    'automations.create',
-    'automations.update',
-    'automations.execute',
-  ],
-  TEAM_LEAD: [
-    'projects.read',
-    'tasks.create',
-    'tasks.read.team',
-    'tasks.read.own',
-    'tasks.update.team',
-    'tasks.update.own',
-    'tasks.delete.team',
-    'tasks.delete.own',
-    'tasks.assign.team',
-    'teams.read',
-    'users.read.team',
-    'ai.use',
-    'automations.read',
-    'automations.execute',
-  ],
-  MEMBER: [
-    'projects.read',
-    'tasks.create',
-    'tasks.read.own',
-    'tasks.update.own',
-    'tasks.delete.own',
-    'users.read.own',
-    'ai.use',
-    'automations.read',
-  ],
-};
-
 function normalizeRoleName(roleName?: string | null): EffectiveRole | null {
   if (!roleName) return null;
 
@@ -97,7 +40,9 @@ function normalizeRoleName(roleName?: string | null): EffectiveRole | null {
   const aliasMap: Record<string, EffectiveRole> = {
     SUPER_ADMIN: 'SUPER_ADMIN',
     ADMIN: 'ADMIN',
-    CEO: 'ADMIN',
+    CEO: 'EXECUTIVE',
+    CTO: 'EXECUTIVE',
+    COO: 'EXECUTIVE',
     EXECUTIVE: 'EXECUTIVE',
     PROJECT_MANAGER: 'MANAGER',
     MANAGER: 'MANAGER',
@@ -118,57 +63,8 @@ function dedupe(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
-function getDerivedPermissions(role: EffectiveRole): string[] {
-  const base = DEFAULT_ROLE_PERMISSIONS[role] ?? [];
-  const expanded = new Set<string>(base);
-
-  for (const permission of base) {
-    const parts = permission.split('.');
-    if (parts.length < 2) continue;
-
-    const [resource, action, scope] = parts;
-    if (scope === 'all') {
-      expanded.add(`${resource}.${action}`);
-      expanded.add(`${resource}.${action}.team`);
-      expanded.add(`${resource}.${action}.own`);
-    } else if (scope === 'team') {
-      expanded.add(`${resource}.${action}`);
-      expanded.add(`${resource}.${action}.own`);
-    } else if (!scope) {
-      expanded.add(`${resource}.${action}.own`);
-    }
-  }
-
-  return Array.from(expanded);
-}
-
-function permissionVariants(permissionKey: string): string[] {
-  const parts = permissionKey.split('.');
-  if (parts.length < 2) return [permissionKey];
-
-  const [resource, action, scope] = parts;
-  if (!scope) {
-    return [
-      permissionKey,
-      `${resource}.${action}.own`,
-      `${resource}.${action}.team`,
-      `${resource}.${action}.all`,
-    ];
-  }
-
-  if (scope === 'own') {
-    return [permissionKey, `${resource}.${action}`, `${resource}.${action}.team`, `${resource}.${action}.all`];
-  }
-
-  if (scope === 'team') {
-    return [permissionKey, `${resource}.${action}`, `${resource}.${action}.all`];
-  }
-
-  return [permissionKey];
-}
-
 export function permissionSetForUser(user: UserWithPermissions): string[] {
-  const effectiveRole = getEffectiveRole(user);
+  // Compute global permissions (Organization scope)
   let explicit = user.systemRole?.permissions.map((item) => item.permission.key) ?? [];
 
   if (user.additionalRoles) {
@@ -179,73 +75,166 @@ export function permissionSetForUser(user: UserWithPermissions): string[] {
     }
   }
 
-  return dedupe([...getDerivedPermissions(effectiveRole), ...explicit]);
+  // The caller might just check generic visibility (e.g. users.view)
+  // We also aggregate ALL permissions across scopes for the UI boolean checks (can they view tasks AT ALL?)
+  // If they have team-level tasks.view, they effectively have generic tasks.view for the nav menu.
+  if (user.teamMembers) {
+    for (const tm of user.teamMembers) {
+      if (tm.role?.permissions) {
+        explicit = explicit.concat(tm.role.permissions.map((item) => item.permission.key));
+      }
+    }
+  }
+
+  if (user.projectAccesses) {
+    for (const pa of user.projectAccesses) {
+      if (pa.role?.permissions) {
+        explicit = explicit.concat(pa.role.permissions.map((item) => item.permission.key));
+      }
+    }
+  }
+
+  return dedupe(explicit);
 }
 
-export function hasPermission(user: UserWithPermissions | null | undefined, permissionKey: string): boolean {
+// Check if a user has permission within a specific scope
+export function hasPermission(
+  user: UserWithPermissions | null | undefined, 
+  permissionKey: string,
+  scope?: { type: 'organization' | 'team' | 'project', id?: string }
+): boolean {
   if (!user) return false;
 
-  const permissions = permissionSetForUser(user);
-  if (permissions.includes('*')) return true;
+  // 1. Check Global/Organization Level (Always takes precedence if granted globally)
+  let globalPermissions = user.systemRole?.permissions.map(p => p.permission.key) ?? [];
+  if (user.additionalRoles) {
+    globalPermissions = globalPermissions.concat(
+      user.additionalRoles.flatMap(ar => ar.role?.permissions.map(p => p.permission.key) || [])
+    );
+  }
+  
+  if (globalPermissions.includes('*') || globalPermissions.includes(permissionKey)) {
+    return true;
+  }
 
-  return permissionVariants(permissionKey).some((candidate) => permissions.includes(candidate));
+  if (!scope || scope.type === 'organization') {
+    return false; // Already checked global
+  }
+
+  // 2. Check Team Level
+  if (scope.type === 'team' && scope.id && user.teamMembers) {
+    const membership = user.teamMembers.find(tm => tm.teamId === scope.id);
+    if (membership && membership.role) {
+      const teamPerms = membership.role.permissions.map(p => p.permission.key);
+      if (teamPerms.includes(permissionKey) || teamPerms.includes('*')) return true;
+    }
+  }
+
+  // 3. Check Project Level
+  if (scope.type === 'project' && scope.id && user.projectAccesses) {
+    const access = user.projectAccesses.find(pa => pa.projectId === scope.id);
+    if (access && access.role) {
+      const projPerms = access.role.permissions.map(p => p.permission.key);
+      if (projPerms.includes(permissionKey) || projPerms.includes('*')) return true;
+    }
+  }
+
+  return false;
 }
+
+export function explainPermission(
+  user: UserWithPermissions, 
+  permissionKey: string,
+  scope?: { type: 'organization' | 'team' | 'project', id?: string }
+): { granted: boolean; sources: string[] } {
+  const sources: string[] = [];
+
+  let globalPermissions = user.systemRole?.permissions.map(p => p.permission.key) ?? [];
+  if (globalPermissions.includes('*') || globalPermissions.includes(permissionKey)) {
+    sources.push(`Global Role: ${user.systemRole?.name}`);
+  }
+
+  if (user.additionalRoles) {
+    for (const ar of user.additionalRoles) {
+      const perms = ar.role?.permissions.map(p => p.permission.key) || [];
+      if (perms.includes('*') || perms.includes(permissionKey)) {
+        sources.push(`Additional Role: ${ar.role?.name}`);
+      }
+    }
+  }
+
+  if (scope?.type === 'team' && scope.id && user.teamMembers) {
+    const membership = user.teamMembers.find(tm => tm.teamId === scope.id);
+    if (membership?.role) {
+      const perms = membership.role.permissions.map(p => p.permission.key);
+      if (perms.includes(permissionKey) || perms.includes('*')) {
+        sources.push(`Team Role: ${membership.role.name} on Team ${scope.id}`);
+      }
+    }
+  }
+
+  if (scope?.type === 'project' && scope.id && user.projectAccesses) {
+    const access = user.projectAccesses.find(pa => pa.projectId === scope.id);
+    if (access?.role) {
+      const perms = access.role.permissions.map(p => p.permission.key);
+      if (perms.includes(permissionKey) || perms.includes('*')) {
+        sources.push(`Project Role: ${access.role.name} on Project ${scope.id}`);
+      }
+    }
+  }
+
+  return {
+    granted: sources.length > 0,
+    sources
+  };
+}
+
+const userIncludes = {
+  systemRole: {
+    include: {
+      permissions: { include: { permission: true } },
+    },
+  },
+  additionalRoles: {
+    include: {
+      role: {
+        include: { permissions: { include: { permission: true } } }
+      }
+    }
+  },
+  teamMembers: {
+    include: {
+      role: {
+        include: { permissions: { include: { permission: true } } }
+      }
+    }
+  },
+  projectAccesses: {
+    include: {
+      role: {
+        include: { permissions: { include: { permission: true } } }
+      }
+    }
+  }
+};
 
 export async function getUserPermissions(userId: string): Promise<string[]> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      systemRole: {
-        include: {
-          permissions: {
-            include: { permission: true },
-          },
-        },
-      },
-      additionalRoles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: { permission: true }
-              }
-            }
-          }
-        }
-      }
-    },
+    include: userIncludes,
   });
 
   if (!user) return [];
   return permissionSetForUser(user);
 }
 
-async function loadUserFromRequest(request: Request): Promise<UserWithPermissions | null> {
+export async function loadUserFromRequest(request: Request): Promise<UserWithPermissions | null> {
   const userId = request.headers.get('x-user-id');
   if (!userId) return null;
 
   return prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      systemRole: {
-        include: {
-          permissions: {
-            include: { permission: true },
-          },
-        },
-      },
-      additionalRoles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: { permission: true }
-              }
-            }
-          }
-        }
-      }
-    },
+    include: userIncludes,
   });
 }
 
@@ -287,14 +276,16 @@ function unauthorized(message: string) {
   return NextResponse.json({ error: message }, { status: 401 });
 }
 
-export function requirePermission(permissionKey: string) {
+export function requirePermission(permissionKey: string, scopeResolver?: (req: Request) => { type: 'organization'|'team'|'project', id?: string }) {
   return async (request: Request): Promise<AuthResult> => {
     const user = await loadUserFromRequest(request);
     if (!user || !user.isActive) {
       return { success: false, response: unauthorized('Unauthorized') };
     }
 
-    if (!hasPermission(user, permissionKey)) {
+    const scope = scopeResolver ? scopeResolver(request) : undefined;
+
+    if (!hasPermission(user, permissionKey, scope)) {
       await logSecurityEvent(user, request, permissionKey, 'permission_missing');
       return { success: false, response: forbidden('Forbidden: Insufficient permissions') };
     }
@@ -314,19 +305,27 @@ export async function canAccessTask(
   action: 'read' | 'update' | 'delete' | 'assign'
 ): Promise<boolean> {
   if (!task) return false;
-  if (hasPermission(user, `tasks.${action}.all`) || hasPermission(user, `tasks.${action}`)) return true;
 
-  if (task.assigneeId === user.id && hasPermission(user, `tasks.${action}.own`)) {
+  const permMap = {
+    'read': 'tasks.view',
+    'update': 'tasks.edit',
+    'delete': 'tasks.delete',
+    'assign': 'tasks.assign'
+  };
+  const key = permMap[action];
+
+  // Global check
+  if (hasPermission(user, key)) return true;
+
+  // Self check
+  if (task.assigneeId === user.id) return true;
+
+  // Team scope check
+  if (task.teamId && hasPermission(user, key, { type: 'team', id: task.teamId })) {
     return true;
   }
 
-  if (task.teamId && hasPermission(user, `tasks.${action}.team`)) {
-    const membership = await prisma.teamMember.findFirst({
-      where: { teamId: task.teamId, userId: user.id },
-    });
-    if (membership) return true;
-  }
-
+  // Bubble up parent
   if (task.parentId) {
     const parentTask = await prisma.task.findUnique({
       where: { id: task.parentId },
@@ -344,7 +343,7 @@ export async function canAccessUserDirectory(
   user: UserWithPermissions,
   scope: 'own' | 'team' | 'all'
 ): Promise<boolean> {
-  return hasPermission(user, `users.read.${scope}`) || hasPermission(user, 'users.read');
+  return hasPermission(user, 'users.view');
 }
 
 export async function logAdminAction(params: {

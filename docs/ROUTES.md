@@ -25,3 +25,7 @@ This document lists the primary routes for the Stroovo application.
 - `/admin/logs`: Audit activity logs.
 - `/admin/billing`: Subscription and billing management.
 - `/admin/settings`: Global organization settings.
+
+### Admin Teams Routes
+- /admin/teams: Added 'Roles & Permissions' tab rendering AdminRolesTab.
+

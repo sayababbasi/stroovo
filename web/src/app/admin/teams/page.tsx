@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import AdminTeamTable from './components/AdminTeamTable';
 import AdminCreateTeamModal from './components/AdminCreateTeamModal';
 import AdminMembersTab from './components/AdminMembersTab';
+import AdminRolesTab from './components/AdminRolesTab';
 import { toast } from 'react-hot-toast';
 
 function KpiCard({ icon, title, value, trend, color }: {
@@ -177,6 +178,8 @@ export default function AdminTeamsPage() {
                 </div>
             ) : activeTab === 'Members' ? (
                 <AdminMembersTab />
+            ) : activeTab === 'Roles & Permissions' ? (
+                <AdminRolesTab />
             ) : (
                 <div style={{ padding: '64px', textAlign: 'center', background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6' }}>
                     <Shield size={48} color="#DFE1E6" style={{ margin: '0 auto 16px' }} />

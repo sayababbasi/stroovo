@@ -49,3 +49,12 @@
 
 ## `app/teams/components/PermissionMatrix.tsx`
 - **PermissionMatrix**: A complex, grouped grid UI mapped to system modules (Tasks, Projects, Team, Calendar, Billing). Handles the visualization and batch-sync payload structure for assigning No Access / View / Edit / Full Access permissions.
+
+### Admin Roles & Permissions Components
+- **AdminRolesTab.tsx**: Two-panel RBAC UI.
+- **AdminRolesList.tsx**: List of roles with system/custom badges.
+- **AdminRoleDetail.tsx**: Container for role settings.
+- **AdminPermissionMatrix.tsx**: Checkbox matrix of permissions by module with Grant All / Remove All.
+- **AdminRoleMembers.tsx**: Data table of members assigned to a role, and assignment panel.
+- **AdminCreateRoleModal.tsx**: Creation UI supporting role cloning.
+
