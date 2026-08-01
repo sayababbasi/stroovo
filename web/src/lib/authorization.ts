@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 // @ts-ignore - Ignore missing exports if Prisma isn't fully generated
 import type { Permission, Role, Task, User, TeamMember, ProjectAccess } from '@prisma/client';
-import { P } from '@/lib/permissions/registry';
+import { P, normalizePermissionKey } from '@/lib/permissions/registry';
 
 export type EffectiveRole =
   | 'SUPER_ADMIN'
@@ -66,20 +66,6 @@ function dedupe(values: string[]): string[] {
  * e.g. 'tasks.read.own' → 'tasks.view', 'projects.read' → 'projects.view'
  * 'teams.read.all' → 'teams.view', 'users.read.own' → 'users.view'
  */
-function normalizePermissionKey(key: string): string {
-  const ALIASES: Record<string, string> = {
-    'tasks.read.own':    P.TASKS_VIEW,
-    'tasks.read':        P.TASKS_VIEW,
-    'projects.read':     P.PROJECTS_VIEW,
-    'users.read.own':    P.USERS_VIEW,
-    'users.read':        P.USERS_VIEW,
-    'teams.read.all':    P.TEAMS_VIEW,
-    'teams.read':        P.TEAMS_VIEW,
-    'admin.dashboard':   P.DASHBOARD_ADMIN_VIEW,
-    'executive.dashboard.view': P.DASHBOARD_EXECUTIVE_VIEW,
-  };
-  return ALIASES[key] ?? key;
-}
 
 export function permissionSetForUser(user: UserWithPermissions): string[] {
   // Compute global permissions (Organization scope)

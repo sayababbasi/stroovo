@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { normalizePermissionKey } from '@/lib/permissions/registry';
 
 // Global fetch interceptor to automatically append the Authorization header to all api calls
 if (typeof window !== 'undefined') {
@@ -62,11 +63,11 @@ interface AuthContextType {
     hasPermission: (key: string) => boolean;
     hasAnyPermission: (...keys: string[]) => boolean;
     hasAllPermissions: (...keys: string[]) => boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string; requiresMFA?: boolean; sessionId?: string }>;
-    signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string; requiresMFA?: boolean; sessionId?: string; user?: any }>;
+    signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string; user?: any }>;
     logout: () => Promise<void>;
     refreshToken: () => Promise<boolean>;
-    verifyMFA: (sessionId: string, token: string) => Promise<{ success: boolean; error?: string }>;
+    verifyMFA: (sessionId: string, token: string) => Promise<{ success: boolean; error?: string; user?: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -221,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Set cookie for middleware/server-side state for 7 days
             document.cookie = `accessToken=${data.accessToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
             
-            return { success: true };
+            return { success: true, user: data.user };
         } catch (error) {
             console.error('Login error:', error);
             return { success: false, error: 'Network error. Please try again.' };
@@ -370,17 +371,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // ── Permission check methods ──
     const hasPermission = (key: string): boolean => {
-        return permissions.includes('*') || permissions.includes(key);
+        const normalized = normalizePermissionKey(key);
+        return permissions.includes('*') || permissions.includes(normalized);
     };
 
     const hasAnyPermission = (...keys: string[]): boolean => {
         if (permissions.includes('*')) return true;
-        return keys.some(k => permissions.includes(k));
+        return keys.some(k => permissions.includes(normalizePermissionKey(k)));
     };
 
     const hasAllPermissions = (...keys: string[]): boolean => {
         if (permissions.includes('*')) return true;
-        return keys.every(k => permissions.includes(k));
+        return keys.every(k => permissions.includes(normalizePermissionKey(k)));
     };
 
     return (

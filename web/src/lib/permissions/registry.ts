@@ -394,3 +394,54 @@ export const ADMIN_TEAM_TAB_PERMISSIONS: Record<string, string> = {
   'Team Hierarchy':      P.TEAMS_VIEW,
   'Audit Activity':      P.AUDIT_LOGS_VIEW,
 };
+
+/**
+ * Normalize legacy permission keys to the canonical registry format.
+ * e.g. 'tasks.read.own' → 'tasks.view', 'projects.read' → 'projects.view'
+ * 'teams.read.all' → 'teams.view', 'users.read.own' → 'users.view'
+ */
+export function normalizePermissionKey(key: string): string {
+  const ALIASES: Record<string, string> = {
+    // Users
+    'users.read.own':    P.USERS_VIEW,
+    'users.read.all':    P.USERS_VIEW,
+    'users.read':        P.USERS_VIEW,
+    'users.update.all':  P.USERS_EDIT,
+    'users.update.own':  P.USERS_EDIT,
+    'users.update':      P.USERS_EDIT,
+    'admin.users':       P.USERS_VIEW,
+    
+    // Teams
+    'teams.read.all':    P.TEAMS_VIEW,
+    'teams.read':        P.TEAMS_VIEW,
+    
+    // Projects
+    'projects.read':     P.PROJECTS_VIEW,
+    'projects.update':   P.PROJECTS_EDIT,
+    
+    // Tasks
+    'tasks.read.own':    P.TASKS_VIEW,
+    'tasks.read':        P.TASKS_VIEW,
+    'tasks.update.own':  P.TASKS_EDIT,
+    'tasks.update':      P.TASKS_EDIT,
+    'tasks.delete.own':  P.TASKS_DELETE,
+    
+    // AI & Automations
+    'ai.use':            P.AI_VIEW,
+    'ai.read':           P.AI_VIEW,
+    'automations.read':  P.AUTOMATIONS_VIEW,
+    'automations.update':P.AUTOMATIONS_MANAGE,
+    'automations.delete':P.AUTOMATIONS_MANAGE,
+    'automations.create':P.AUTOMATIONS_MANAGE,
+    'analytics.read':    P.DASHBOARD_MANAGER_VIEW,
+    
+    // Roles
+    'roles.read':        P.ROLES_VIEW,
+    
+    // Dashboards
+    'admin.dashboard':   P.DASHBOARD_ADMIN_VIEW,
+    'executive.dashboard.view': P.DASHBOARD_EXECUTIVE_VIEW,
+  };
+  return ALIASES[key] ?? key;
+}
+

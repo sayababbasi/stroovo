@@ -194,14 +194,14 @@ export class RoleService {
             }
         });
 
-        const permissionIds = permissions.map(p => p.id);
+        const permissionIds = permissions.map((p: any) => p.id);
 
         return prisma.$transaction([
             prisma.rolePermission.deleteMany({
                 where: { roleId }
             }),
             prisma.rolePermission.createMany({
-                data: permissionIds.map(pid => ({
+                data: permissionIds.map((pid: string) => ({
                     roleId,
                     permissionId: pid
                 }))
@@ -403,13 +403,13 @@ export class RoleService {
         const dbRoles = await prisma.role.findMany();
         const allPermissions = await prisma.permission.findMany();
         
-        const getPerms = (keys: string[]) => allPermissions.filter(p => keys.includes(p.key)).map(p => p.id);
-        const getAllButDestructive = () => allPermissions.filter(p => 
+        const getPerms = (keys: string[]) => allPermissions.filter((p: any) => keys.includes(p.key)).map((p: any) => p.id);
+        const getAllButDestructive = () => allPermissions.filter((p: any) => 
             !['organization.delete', 'system.reset', 'security.override', 'users.impersonate'].includes(p.key)
-        ).map(p => p.id);
+        ).map((p: any) => p.id);
 
         const roleAssignments: Record<string, string[]> = {
-            'Super Admin': allPermissions.map(p => p.id),
+            'Super Admin': allPermissions.map((p: any) => p.id),
             'Admin': getAllButDestructive(),
             'CEO': getPerms([
                 'executive.dashboard', 'organization.view', 'organization.analytics', 'teams.view', 'members.view', 

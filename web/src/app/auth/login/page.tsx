@@ -81,10 +81,13 @@ function LoginForm() {
           setError(result.error || "Login failed");
         }
       } else {
-        const redirect = searchParams?.get("redirect") || "/dashboard";
+        let redirect = searchParams?.get("redirect");
+        if (!redirect) {
+          redirect = (result.user?.role === 'ADMIN' || result.user?.systemRole?.name === 'Admin') ? '/admin' : '/dashboard';
+        }
         // Give localStorage time to settle
         setTimeout(() => {
-          window.location.href = redirect;
+          window.location.href = redirect as string;
         }, 1000);
       }
     } catch (err) {
@@ -115,8 +118,11 @@ function LoginForm() {
       const data = await response.json();
       
       if (response.ok) {
-        const redirect = searchParams?.get("redirect") || "/dashboard";
-        router.push(redirect);
+        let redirect = searchParams?.get("redirect");
+        if (!redirect) {
+          redirect = (data.user?.role === 'ADMIN' || data.user?.systemRole?.name === 'Admin') ? '/admin' : '/dashboard';
+        }
+        router.push(redirect as string);
       } else {
         setError(data.error || "MFA verification failed");
       }

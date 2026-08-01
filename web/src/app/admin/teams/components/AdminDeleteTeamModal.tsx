@@ -20,7 +20,7 @@ export default function AdminDeleteTeamModal({ team, onClose, onSuccess }: Admin
         setIsDeleting(true);
 
         try {
-            const res = await apiDelete(`/api/admin/teams/${team.id}`);
+            const res = await apiDelete(`/api/admin/teams/${team.id}`, null);
             if (res.success) {
                 toast.success('Team permanently deleted');
                 onSuccess();
