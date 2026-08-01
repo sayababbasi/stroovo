@@ -10,4 +10,5 @@
   - Cleaned up `AIInsightsBanner.tsx` to resemble a subtle context banner rather than a large gradient alert.
   - Updated interactions to feature 150ms subtle background color transitions without heavy shadows or animations.
   - Enforced single font family rule using font weights (500, 600, 700) instead of multiple fonts.
+  - Added conditional logic to `TaskDetailsPanel.tsx` to display a Facebook icon dynamically if a task is named 'Facebook', matching the exact design spec for this content change.
   - **No backend logic, API integration, or functionality was changed.**

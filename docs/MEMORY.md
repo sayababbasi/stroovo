@@ -9,3 +9,8 @@
   - Redesigned Statistic Cards.
   - Modernized the Task Table with better typography, hierarchy, and 1px borders.
   - Revamped `TaskRow.tsx` Status and Priority pills to be minimal.
+
+## Recent Task Detail UI Changes
+- **Change**: Conditionally rendering a Facebook icon next to the task name in `TaskDetailsPanel.tsx`.
+- **Where**: `web/src/components/tasks/TaskDetailsPanel.tsx` (Task title display header).
+- **Why**: To add dynamic support for project-specific branding (e.g. Facebook) in the task detail header, matching the user's explicit request without hardcoding the title or breaking the existing dynamic task data system.

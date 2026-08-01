@@ -47,6 +47,8 @@ export default function FloatingAI() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(420);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +56,20 @@ export default function FloatingAI() {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
   useEffect(() => { setIsOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    const handleOpen = (e: any) => { setIsTaskDetailsOpen(true); setPanelWidth(e.detail?.width || 420); };
+    const handleClose = () => { setIsTaskDetailsOpen(false); setPanelWidth(420); };
+    const handleResize = (e: any) => { setPanelWidth(e.detail?.width || 420); };
+    window.addEventListener('task-details-open', handleOpen);
+    window.addEventListener('task-details-close', handleClose);
+    window.addEventListener('task-details-resize', handleResize);
+    return () => {
+      window.removeEventListener('task-details-open', handleOpen);
+      window.removeEventListener('task-details-close', handleClose);
+      window.removeEventListener('task-details-resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -105,7 +121,9 @@ export default function FloatingAI() {
         aria-label="Open Stroovo AI Assistant"
         aria-expanded={isOpen}
         style={{
-          position: 'fixed', bottom: 24, right: 24, zIndex: 9000,
+          position: 'fixed', bottom: 24, 
+          right: isTaskDetailsOpen ? panelWidth + 24 : 24,
+          zIndex: 9000,
           width: 56, height: 56, borderRadius: '50%', border: 'none', cursor: 'pointer',
           background: 'linear-gradient(135deg, #6554C0 0%, #0052CC 100%)',
           color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -119,12 +137,14 @@ export default function FloatingAI() {
 
       {/* Panel */}
       <div style={{
-        position: 'fixed', bottom: 92, right: 24, zIndex: 8999,
+        position: 'fixed', bottom: 92, 
+        right: isTaskDetailsOpen ? panelWidth + 24 : 24,
+        zIndex: 8999,
         width: 360, maxHeight: '80vh',
         background: 'white', borderRadius: 20, border: '1px solid #E8EAED',
         boxShadow: '0 24px 64px rgba(9,30,66,0.18)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        transformOrigin: 'bottom right',
+        transformOrigin: isTaskDetailsOpen ? 'bottom left' : 'bottom right',
         transform: isOpen ? 'scale(1)' : 'scale(0.92)',
         opacity: isOpen ? 1 : 0,
         pointerEvents: isOpen ? 'auto' : 'none',
