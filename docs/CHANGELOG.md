@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 ### Changed
+- **Timeline Module UI/UX Upgrade**
+  - Completely redesigned the `/timeline` route (`page.tsx`) to match the premium SaaS aesthetics.
+  - Added new summary metric cards (Total Tasks, Overdue, In Progress, Completed, Completion).
+  - Redesigned the left-side task list with a clean hierarchy, task type badges, and clear avatars.
+  - Revamped the Gantt chart area with a detailed top control bar, "Today" line indicator, and pastel-colored task bars.
+  - Moved the task progress indicator to the outside of the Gantt bar and displayed task names cleanly inside the bars.
+  - Added a comprehensive legend at the bottom of the timeline view.
+  - Maintained all existing functionality (drag-and-drop, grouping, filters, views).
 - **Board Module UI/UX Upgrade**
   - Completely redesigned the `/board` route (`page.tsx`) header and view/filter bar.
   - Reduced heavy borders and updated Kanban columns (`KanbanBoard.tsx`) to use subtle light-neutral backgrounds with soft borders and minimal empty states.

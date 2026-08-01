@@ -1,11 +1,26 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import {
     ChevronLeft,
     ChevronRight,
-    Plus
+    Plus,
+    Search,
+    Filter,
+    ChevronDown,
+    MoreVertical,
+    Calendar as CalendarIcon,
+    AlertCircle,
+    CheckCircle2,
+    Target,
+    CheckSquare2,
+    PieChart,
+    Settings,
+    Star,
+    Sparkles,
+    Menu,
+    Check
 } from 'lucide-react';
 import {
     format,
@@ -71,6 +86,62 @@ export function CalendarView({
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    const [selectedCalendars, setSelectedCalendars] = useState<string[]>(['All Tasks', 'My Tasks', 'Quantum UI Overhaul', 'Design', 'Development', 'Marketing']);
+    const [selectedFilters, setSelectedFilters] = useState<string[]>(['Completed']);
+    const [showGroupDropdown, setShowGroupDropdown] = useState(false);
+    const [groupBy, setGroupBy] = useState('Status');
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    const metrics = useMemo(() => {
+        const total = tasks.length;
+        const overdue = tasks.filter(t => {
+            const due = new Date(t.dueDate || t.startDate || t.createdAt);
+            return due < new Date() && t.status !== 'DONE';
+        }).length;
+        const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length;
+        const completed = tasks.filter(t => t.status === 'DONE').length;
+        const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { total, overdue, inProgress, completed, rate };
+    }, [tasks]);
+
+    const uniqueAssignees = useMemo(() => {
+        const map = new Map();
+        tasks.forEach(t => {
+            if (t.assignee && t.assignee.name && !map.has(t.assignee.name)) {
+                map.set(t.assignee.name, t.assignee);
+            }
+        });
+        return Array.from(map.values());
+    }, [tasks]);
+
+    const filteredTasks = useMemo(() => {
+        return tasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [tasks, searchQuery]);
+
+    const upcomingTasks = useMemo(() => {
+        return filteredTasks
+            .filter(t => {
+                const date = new Date(t.dueDate || t.startDate || t.createdAt);
+                return date >= startOfDay(new Date());
+            })
+            .sort((a, b) => {
+                const da = new Date(a.dueDate || a.startDate || a.createdAt);
+                const db = new Date(b.dueDate || b.startDate || b.createdAt);
+                return da.getTime() - db.getTime();
+            });
+    }, [filteredTasks]);
 
     const fetchProjects = async () => {
         const API_URL = '';
@@ -155,9 +226,7 @@ export function CalendarView({
         fetchProjects();
     }, [teamId]);
 
-    const filteredTasks = useMemo(() => {
-        return tasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [tasks, searchQuery]);
+
 
     const days = useMemo(() => {
         const start = startOfWeek(startOfMonth(currentDate));
@@ -238,378 +307,525 @@ export function CalendarView({
     const handleToday = () => setCurrentDate(new Date());
 
     return (
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#F4F5F7', position: 'relative' }}>
-            {/* Left Mini-Calendar Sidebar area */}
-            {!hideSidebar && (
-            <div style={{ width: '280px', flexShrink: 0, background: 'white', borderRight: '1px solid #EDF2F7', display: 'flex', flexDirection: 'column', padding: '32px' }}>
-                <div style={{ marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#172B4D' }}>{format(currentDate, 'MMMM yyyy')}</h3>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={handlePrev} style={{ padding: '4px', borderRadius: '4px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C' }}><ChevronLeft size={18} /></button>
-                            <button onClick={handleNext} style={{ padding: '4px', borderRadius: '4px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C' }}><ChevronRight size={18} /></button>
-                        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: '#FAFBFC', overflow: 'hidden' }}>
+            <style>{`
+                .view-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; color: #6B778C; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+                .view-tab.active { background: white; color: #0052CC; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+                .calendar-event-card:hover { transform: translateY(-1px); }
+                .hide-scrollbar::-webkit-scrollbar { display: none; }
+                .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
+
+            {/* TOP HEADER */}
+            {!hideHeader && (
+            <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', borderBottom: '1px solid #DFE1E6', zIndex: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F0F5FF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CalendarIcon size={20} />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                        {['S','M','T','W','T','F','S'].map((d, i) => (
-                            <div key={`${d}-${i}`} style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#97A0AF', padding: '4px 0' }}>{d}</div>
-                        ))}
-                        {eachDayOfInterval({
-                            start: startOfWeek(startOfMonth(currentDate)),
-                            end: endOfWeek(endOfMonth(currentDate))
-                        }).map((day, i) => {
-                            const isSelected = isSameDay(day, currentDate);
-                            const today = isToday(day);
-                            return (
-                                <div 
-                                    key={day.toString()} 
-                                    onClick={() => setCurrentDate(day)}
-                                    style={{ 
-                                        textAlign: 'center', 
-                                        padding: '8px 0', 
-                                        fontSize: '12px', 
-                                        cursor: 'pointer',
-                                        borderRadius: '50%',
-                                        fontWeight: today || isSelected ? 600 : 400,
-                                        color: isSelected ? 'white' : (today ? '#0052CC' : (isSameMonth(day, currentDate) ? '#172B4D' : '#BFDBFE')),
-                                        background: isSelected ? '#0052CC' : 'transparent',
-                                        position: 'relative'
-                                    }}
-                                >
-                                    {format(day, 'd')}
-                                </div>
-                            );
-                        })}
+                    <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#172B4D', margin: 0, letterSpacing: '-0.02em' }}>Calendar</h1>
+                </div>
+
+                <div style={{ position: 'relative', width: '360px' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8993A4' }} />
+                    <input 
+                        ref={searchInputRef}
+                        type="text" 
+                        placeholder="Search tasks..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{ padding: '8px 12px 8px 36px', borderRadius: '8px', border: '1px solid #DFE1E6', fontSize: '13px', width: '100%', outline: 'none', background: '#FAFBFC', color: '#172B4D' }}
+                    />
+                    <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#0052CC', background: '#F0F5FF', padding: '2px 6px', borderRadius: '4px' }}>PRO TIP</span>
+                        <span style={{ fontSize: '11px', color: '#8993A4', fontWeight: 500 }}>Press / to search</span>
                     </div>
                 </div>
 
-                {/* Project Name at Bottom of Small Calendar */}
-                <div style={{ marginTop: 'auto', borderTop: '1px solid #EDF2F7', paddingTop: '20px' }}>
-                    <h4 style={{ fontSize: '11px', fontWeight: 600, color: '#97A0AF', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Project</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EDF2F7' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#0052CC' }}></div>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {projects[0]?.name || 'Stroovo Cloud'}
-                        </span>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {uniqueAssignees.slice(0, 3).map((assignee: any, idx: number) => (
+                            <div key={assignee.name} title={assignee.name} style={{ width: '28px', height: '28px', borderRadius: '50%', background: ['#403294', '#FF5630', '#FF8B00'][idx % 3], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, border: '2px solid white', marginLeft: idx > 0 ? '-8px' : '0', zIndex: 3 - idx }}>
+                                {assignee.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
+                            </div>
+                        ))}
+                        {uniqueAssignees.length > 3 && (
+                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DFE1E6', color: '#42526E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, border: '2px solid white', marginLeft: '-8px', zIndex: 0 }}>
+                                +{uniqueAssignees.length - 3}
+                            </div>
+                        )}
+                        {uniqueAssignees.length === 0 && (
+                            <div style={{ fontSize: '12px', color: '#8993A4', fontWeight: 500, marginRight: '8px' }}>No assignees</div>
+                        )}
                     </div>
+                    <button 
+                        onClick={() => setQuickAddDay(new Date())}
+                        style={{ padding: '8px 16px', background: '#0052CC', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', boxShadow: '0 2px 4px rgba(0, 82, 204, 0.15)' }}
+                    >
+                        <Plus size={16} /> New Task
+                    </button>
                 </div>
             </div>
             )}
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
-                <style>{`
-                    .view-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; color: #6B778C; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
-                    .view-tab.active { background: white; color: #0052CC; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
-                    .calendar-event-card:hover { transform: translateY(-1px); }
-                    .hide-scrollbar::-webkit-scrollbar { display: none; }
-                    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                `}</style>
+            {/* TOOLBAR */}
+            <div style={{ padding: '12px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAFBFC', borderBottom: '1px solid #DFE1E6', zIndex: 9 }}>
+                <div style={{ display: 'flex', background: 'white', padding: '4px', borderRadius: '8px', border: '1px solid #DFE1E6' }}>
+                    {(['month', 'week', 'day', 'agenda'] as ViewMode[]).map(mode => (
+                        <div key={mode} className={`view-tab ${viewMode === mode ? 'active' : ''}`} onClick={() => setViewMode(mode)}>
+                            {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                        </div>
+                    ))}
+                </div>
 
-                <div style={{ 
-                    padding: hideHeader ? '12px 24px' : '20px 32px', 
-                    borderBottom: '1px solid #EDF2F7', 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center' 
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                        {!hideHeader && <h1 style={{ fontSize: '22px', fontWeight: 600, color: '#172B4D' }}>Calendar</h1>}
-                        
-                        <div style={{ display: 'flex', background: '#F4F5F7', padding: '3px', borderRadius: '6px' }}>
-                            {(['day', 'week', 'month', 'agenda'] as ViewMode[]).map(mode => (
-                                <div 
-                                    key={mode} 
-                                    className={`view-tab ${viewMode === mode ? 'active' : ''}`}
-                                    onClick={() => setViewMode(mode)}
-                                >
-                                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ display: 'flex', background: 'white', borderRadius: '8px', border: '1px solid #DFE1E6', padding: '4px' }}>
+                        <button onClick={handlePrev} style={{ padding: '4px 8px', borderRadius: '4px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C', display: 'flex', alignItems: 'center' }}><ChevronLeft size={16} /></button>
+                        <button onClick={handleToday} style={{ padding: '4px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: 600, color: '#172B4D', cursor: 'pointer' }}>Today</button>
+                        <button onClick={handleNext} style={{ padding: '4px 8px', borderRadius: '4px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C', display: 'flex', alignItems: 'center' }}><ChevronRight size={16} /></button>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#172B4D', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        {viewMode === 'month' ? format(currentDate, 'MMMM yyyy') : format(currentDate, 'MMM d, yyyy')}
+                        <ChevronDown size={16} color="#6B778C" />
+                    </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', border: '1px solid transparent', background: 'transparent', cursor: 'pointer', color: '#6B778C', fontWeight: 600, fontSize: '13px' }}>
+                        <Filter size={14} /><span>Filter</span>
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <div onClick={() => setShowGroupDropdown(!showGroupDropdown)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', border: '1px solid #DFE1E6', borderRadius: '8px', background: '#FFFFFF', cursor: 'pointer' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>Group: {groupBy}</span>
+                            <ChevronDown size={14} color="#6B778C" />
+                        </div>
+                        {showGroupDropdown && (
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: '#FFFFFF', border: '1px solid #DFE1E6', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100 }}>
+                                {['Status', 'Project', 'Assignee'].map(opt => (
+                                    <div key={opt} onClick={() => { setGroupBy(opt); setShowGroupDropdown(false); }} style={{ padding: '8px 12px', fontSize: '13px', cursor: 'pointer', background: groupBy === opt ? '#F4F5F7' : 'white' }}>
+                                        Group by {opt}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <button style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #DFE1E6', background: '#FFFFFF', borderRadius: '8px', cursor: 'pointer', color: '#6B778C' }}>
+                        <MoreVertical size={16} />
+                    </button>
+                </div>
+            </div>
+
+            {/* MAIN 3-COLUMN CONTENT */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                
+                {/* LEFT SIDEBAR PANEL */}
+                {!hideSidebar && (
+                <div style={{ width: '240px', flexShrink: 0, background: '#FAFBFC', borderRight: '1px solid #DFE1E6', display: 'flex', flexDirection: 'column', padding: '24px 20px', overflowY: 'auto' }} className="hide-scrollbar">
+                    {/* Mini Calendar */}
+                    <div style={{ marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#172B4D' }}>{format(currentDate, 'MMMM yyyy')}</h3>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <button onClick={handlePrev} style={{ padding: '2px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C' }}><ChevronLeft size={16} /></button>
+                                <button onClick={handleNext} style={{ padding: '2px', border: 'none', background: 'none', cursor: 'pointer', color: '#6B778C' }}><ChevronRight size={16} /></button>
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                            {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d, i) => (
+                                <div key={`${d}-${i}`} style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#97A0AF', padding: '2px 0' }}>{d}</div>
+                            ))}
+                            {eachDayOfInterval({
+                                start: startOfWeek(startOfMonth(currentDate)),
+                                end: endOfWeek(endOfMonth(currentDate))
+                            }).map((day, i) => {
+                                const isSelected = isSameDay(day, currentDate);
+                                const today = isToday(day);
+                                return (
+                                    <div 
+                                        key={day.toString()} 
+                                        onClick={() => setCurrentDate(day)}
+                                        style={{ 
+                                            textAlign: 'center', 
+                                            padding: '6px 0', 
+                                            fontSize: '11px', 
+                                            cursor: 'pointer',
+                                            borderRadius: '50%',
+                                            fontWeight: today || isSelected ? 600 : 500,
+                                            color: isSelected ? 'white' : (today ? '#0052CC' : (isSameMonth(day, currentDate) ? '#172B4D' : '#8993A4')),
+                                            background: isSelected ? '#0052CC' : 'transparent',
+                                        }}
+                                    >
+                                        {format(day, 'd')}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Calendars List */}
+                    <div style={{ marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h4 style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>Calendars</h4>
+                            <div style={{ display: 'flex', gap: '4px', color: '#6B778C' }}>
+                                <Plus size={14} style={{ cursor: 'pointer' }} />
+                                <Settings size={14} style={{ cursor: 'pointer' }} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {[
+                                { name: 'All Tasks', color: '#0052CC' },
+                                { name: 'My Tasks', color: '#403294' },
+                                { name: 'Quantum UI Overhaul', color: '#36B37E' },
+                                { name: 'Design', color: '#FF8B00' },
+                                { name: 'Development', color: '#00B8D9' },
+                                { name: 'Marketing', color: '#6554C0' },
+                                { name: 'Personal', color: '#8993A4' }
+                            ].map(cal => (
+                                <div key={cal.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => {
+                                    if (selectedCalendars.includes(cal.name)) setSelectedCalendars(selectedCalendars.filter(c => c !== cal.name));
+                                    else setSelectedCalendars([...selectedCalendars, cal.name]);
+                                }}>
+                                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: selectedCalendars.includes(cal.name) ? cal.color : 'white', border: `1px solid ${cal.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {selectedCalendars.includes(cal.name) && <Check size={10} color="white" strokeWidth={3} />}
+                                    </div>
+                                    <span style={{ fontSize: '13px', color: '#172B4D', fontWeight: 500 }}>{cal.name}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                         <div style={{ position: 'relative' }}>
-                            <input 
-                                type="text" 
-                                placeholder="Search..." 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #DFE1E6', fontSize: '13px', width: '180px', outline: 'none' }}
-                            />
+                    {/* Filters List */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h4 style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>Filters</h4>
+                            <div style={{ display: 'flex', gap: '4px', color: '#6B778C' }}>
+                                <Settings size={14} style={{ cursor: 'pointer' }} />
+                            </div>
                         </div>
-                        <button onClick={handleToday} style={{ border: '1px solid #DFE1E6', background: 'white', padding: '6px 16px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#42526E', cursor: 'pointer' }}>Today</button>
-                        {!hideHeader && (
-                        <button 
-                            onClick={() => setQuickAddDay(new Date())}
-                            style={{ padding: '8px 20px', background: '#0052CC', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
-                        >
-                            <Plus size={18} /> Add Event
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {[
+                                { name: 'Overdue', icon: AlertCircle, color: '#FF5630', bg: '#FFEBE6' },
+                                { name: 'Due Today', icon: Target, color: '#FF8B00', bg: '#FFFAE6' },
+                                { name: 'Due This Week', icon: CalendarIcon, color: '#FFC400', bg: '#FFF0B3' },
+                                { name: 'High Priority', icon: AlertCircle, color: '#FF5630', bg: '#FFEBE6' },
+                                { name: 'Completed', icon: CheckSquare2, color: '#36B37E', bg: '#E3FCEF' }
+                            ].map(filter => (
+                                <div key={filter.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', opacity: selectedFilters.includes(filter.name) ? 1 : 0.6 }} onClick={() => {
+                                    if (selectedFilters.includes(filter.name)) setSelectedFilters(selectedFilters.filter(f => f !== filter.name));
+                                    else setSelectedFilters([...selectedFilters, filter.name]);
+                                }}>
+                                    <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: filter.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <filter.icon size={12} color={filter.color} />
+                                    </div>
+                                    <span style={{ fontSize: '13px', color: '#172B4D', fontWeight: 500 }}>{filter.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                )}
+
+                {/* CENTER MAIN GRID */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#FAFBFC', padding: '24px' }} className="hide-scrollbar">
+                    
+                    {/* Summary Cards */}
+                    {viewMode === 'month' && (
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                        {[
+                            { title: 'Total Tasks', value: metrics.total, change: '+12%', color: '#0052CC', isPositive: true },
+                            { title: 'Overdue', value: metrics.overdue, change: '↑ 1', color: '#FF5630', isPositive: false },
+                            { title: 'In Progress', value: metrics.inProgress, change: null, color: '#00B8D9', isPositive: true },
+                            { title: 'Completed', value: metrics.completed, change: '+24%', color: '#36B37E', isPositive: true },
+                            { title: 'Completion Rate', value: metrics.rate + '%', change: '+8%', color: '#6554C0', isPositive: true },
+                        ].map(stat => (
+                            <div key={stat.title} style={{ flex: 1, background: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #DFE1E6', boxShadow: '0 1px 3px rgba(9, 30, 66, 0.03)' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B778C', marginBottom: '8px' }}>{stat.title}</div>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                                    <span style={{ fontSize: '24px', fontWeight: 700, color: '#172B4D', lineHeight: 1 }}>{stat.value}</span>
+                                    {stat.change && (
+                                        <span style={{ fontSize: '11px', fontWeight: 600, color: stat.isPositive ? '#36B37E' : '#FF5630', marginBottom: '2px' }}>
+                                            {stat.change}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    )}
+
+                    {/* Grid Container */}
+                    <div style={{ flex: 1, background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: '600px' }}>
+                        {viewMode === 'month' && (
+                            <>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #DFE1E6' }}>
+                                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, i) => (
+                                        <div key={i} style={{ padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: 700, color: '#172B4D', letterSpacing: '0.05em' }}>{day}</div>
+                                    ))}
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    {(() => {
+                                        const weeks: Date[][] = [];
+                                        for (let i = 0; i < days.length; i += 7) {
+                                            weeks.push(days.slice(i, i + 7));
+                                        }
+
+                                        return weeks.map((week, weekIdx) => (
+                                            <div key={weekIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', flex: 1, minHeight: '120px', borderBottom: weekIdx < weeks.length - 1 ? '1px solid #DFE1E6' : 'none' }}>
+                                                {week.map((day, i) => {
+                                                    const isSelected = isSameDay(day, currentDate);
+                                                    const today = isToday(day);
+                                                    const dayTasks = filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), day));
+                                                    
+                                                    return (
+                                                        <div key={i} onClick={() => setCurrentDate(day)} style={{ 
+                                                            borderRight: i < 6 ? '1px solid #DFE1E6' : 'none',
+                                                            padding: '8px',
+                                                            background: isSelected ? '#F8FAFC' : 'white',
+                                                            opacity: isSameMonth(day, currentDate) ? 1 : 0.4,
+                                                            display: 'flex', flexDirection: 'column', gap: '4px', cursor: 'pointer'
+                                                        }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>
+                                                                <span style={{ 
+                                                                    width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '13px', fontWeight: today ? 700 : 600,
+                                                                    color: today ? 'white' : '#172B4D',
+                                                                    background: today ? '#0052CC' : 'transparent'
+                                                                }}>{format(day, 'd')}</span>
+                                                            </div>
+                                                            {dayTasks.slice(0, 3).map(task => {
+                                                                const bgColor = getStatusColor(task.status);
+                                                                const textColor = getStatusTextColor(task.status);
+                                                                return (
+                                                                    <div key={task.id} style={{ 
+                                                                        background: bgColor, 
+                                                                        borderRadius: '6px', 
+                                                                        padding: '4px 6px',
+                                                                        display: 'flex', flexDirection: 'column', gap: '2px',
+                                                                        transition: 'transform 0.1s ease'
+                                                                    }} className="calendar-event-card" onClick={(e) => { e.stopPropagation(); setSelectedDayTasks({ day, tasks: [task] }); }}>
+                                                                        <div style={{ fontSize: '10px', fontWeight: 600, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                            <span style={{ display: 'inline-block', width: '4px', height: '4px', borderRadius: '50%', background: textColor, marginRight: '4px', verticalAlign: 'middle' }}></span>
+                                                                            {task.title}
+                                                                        </div>
+                                                                        <div style={{ fontSize: '9px', color: textColor, opacity: 0.8, fontWeight: 500, paddingLeft: '8px' }}>
+                                                                            {format(new Date(task.dueDate || task.createdAt), 'hh:mm a')}
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                            {dayTasks.length > 3 && (
+                                                                <div style={{ fontSize: '10px', fontWeight: 600, color: '#0052CC', padding: '2px 4px', cursor: 'pointer' }}>
+                                                                    + {dayTasks.length - 3} more
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        ))
+                                    })()}
+                                </div>
+                            </>
+                        )}
+                        {/* KEEP EXISTING WEEK/DAY/AGENDA VIEWS */}
+                        {viewMode === 'week' && (
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', background: 'white' }}>
+                                 <div style={{ display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', borderBottom: '1px solid #DFE1E6', background: 'white', position: 'sticky', top: 0, zIndex: 100 }}>
+                                    <div style={{ borderRight: '1px solid #DFE1E6' }} />
+                                    {eachDayOfInterval({ start: startOfWeek(currentDate), end: endOfWeek(currentDate) }).map(day => (
+                                        <div key={day.toString()} style={{ padding: '12px', textAlign: 'center', borderRight: '1px solid #DFE1E6' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 600, color: '#97A0AF', textTransform: 'uppercase', marginBottom: '4px' }}>{format(day, 'EEE')}</div>
+                                            <div style={{ 
+                                                fontSize: '18px', fontWeight: 700, 
+                                                color: isToday(day) ? '#0052CC' : '#172B4D'
+                                            }}>{format(day, 'd')}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', position: 'relative' }}>
+                                    <div style={{ borderRight: '1px solid #DFE1E6' }}>
+                                        {Array.from({ length: 24 }).map((_, h) => (
+                                            <div key={h} style={{ height: '80px', padding: '12px', textAlign: 'right', fontSize: '11px', fontWeight: 500, color: '#97A0AF', borderBottom: '1px solid #FAFBFC' }}>
+                                                {format(new Date().setHours(h, 0), 'h aa')}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {eachDayOfInterval({ start: startOfWeek(currentDate), end: endOfWeek(currentDate) }).map(day => (
+                                        <div key={day.toString()} style={{ borderRight: '1px solid #DFE1E6', position: 'relative' }}>
+                                            {isSameDay(day, currentTime) && (
+                                                <div style={{ 
+                                                    position: 'absolute', 
+                                                    top: `${(getHours(currentTime) * 80) + (getMinutes(currentTime) / 60 * 80)}px`,
+                                                    left: 0, right: 0, height: '1px', background: '#FF5630', zIndex: 100, pointerEvents: 'none'
+                                                }} />
+                                            )}
+                                            {Array.from({ length: 24 }).map((_, h) => (
+                                                <div key={h} style={{ height: '80px', borderBottom: '1px solid #DFE1E6' }} />
+                                            ))}
+                                            {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), day)).map((t, idx) => {
+                                                const date = new Date(t.dueDate || t.startDate || t.createdAt);
+                                                const h = date.getHours();
+                                                const m = date.getMinutes();
+                                                return (
+                                                    <div key={t.id} style={{ position: 'absolute', top: `${h * 80 + (m/60) * 80}px`, left: '4px', right: '4px', zIndex: 10 + idx }}>
+                                                        {renderEventCard(t, 'md')}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {viewMode === 'day' && (
+                            <div style={{ flex: 1, display: 'flex', overflow: 'auto', background: 'white' }}>
+                                <div style={{ width: '80px', flexShrink: 0, borderRight: '1px solid #DFE1E6', background: 'white' }}>
+                                    {Array.from({ length: 24 }).map((_, h) => (
+                                        <div key={h} style={{ height: '100px', padding: '12px', textAlign: 'right', fontSize: '11px', fontWeight: 500, color: '#97A0AF', borderBottom: '1px solid #FAFBFC' }}>
+                                            {format(new Date().setHours(h, 0), 'h:00 aa')}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ flex: 1, position: 'relative', background: 'white' }}>
+                                     {isSameDay(currentDate, currentTime) && (
+                                        <div style={{ 
+                                            position: 'absolute', 
+                                            top: `${(getHours(currentTime) * 100) + (getMinutes(currentTime) / 60 * 100)}px`,
+                                            left: 0, right: 0, height: '1px', background: '#FF5630', zIndex: 100, pointerEvents: 'none'
+                                        }} />
+                                    )}
+                                    {Array.from({ length: 24 }).map((_, h) => (
+                                        <div key={h} style={{ height: '100px', borderBottom: '1px solid #DFE1E6', width: '100%' }} />
+                                    ))}
+                                    {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), currentDate)).map((t, idx) => {
+                                        const date = new Date(t.dueDate || t.startDate || t.createdAt);
+                                        const h = date.getHours();
+                                        const m = date.getMinutes();
+                                        return (
+                                            <div key={t.id} style={{ 
+                                                position: 'absolute', 
+                                                top: `${h * 100 + (m/60) * 100}px`,
+                                                left: '20px', width: '80%', zIndex: 50 + idx
+                                            }}>
+                                                {renderEventCard(t, 'lg')}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                        {viewMode === 'agenda' && (
+                            <div style={{ flex: 1, overflow: 'auto', padding: '40px 80px', background: 'white' }}>
+                                <div style={{ maxWidth: '700px' }}>
+                                    {filteredTasks.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '100px', color: '#97A0AF' }}>
+                                            <p style={{ fontSize: '14px' }}>No upcoming events.</p>
+                                        </div>
+                                    ) : (
+                                        (() => {
+                                            const grouped = filteredTasks.reduce((acc, t) => {
+                                                const d = format(new Date(t.startDate || t.createdAt), 'yyyy-MM-dd');
+                                                if (!acc[d]) acc[d] = [];
+                                                acc[d].push(t);
+                                                return acc;
+                                            }, {} as Record<string, Task[]>);
+
+                                            return Object.entries(grouped)
+                                                .sort(([a], [b]) => a.localeCompare(b))
+                                                .map(([dateStr, dayTasks]) => {
+                                                    const d = new Date(dateStr);
+                                                    return (
+                                                        <div key={dateStr} style={{ marginBottom: '40px' }}>
+                                                            <div style={{ fontSize: '12px', fontWeight: 600, color: '#0052CC', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>
+                                                                {format(d, 'EEEE, MMM d')}
+                                                            </div>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                {dayTasks.map(t => (
+                                                                    <div key={t.id} style={{ width: '100%' }}>
+                                                                        {renderEventCard(t, 'md')}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                        })()
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* Secondary Navigation */}
-                <div style={{ padding: '12px 32px', borderBottom: '1px solid #EDF2F7', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button onClick={handlePrev} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#6B778C' }}><ChevronLeft size={20} /></button>
-                    <span style={{ fontSize: '16px', fontWeight: 600, color: '#172B4D', minWidth: '160px', textAlign: 'center' }}>
-                        {viewMode === 'month' ? format(currentDate, 'MMMM yyyy') : format(currentDate, 'MMM d, yyyy')}
-                    </span>
-                    <button onClick={handleNext} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#6B778C' }}><ChevronRight size={20} /></button>
-                </div>
-
-                {/* Calendar Content */}
-                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    {viewMode === 'month' && (
-                        <>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#F4F5F7', borderBottom: '1px solid #EDF2F7' }}>
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-                                    <div key={i} style={{ padding: '10px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#97A0AF', textTransform: 'uppercase' }}>{day}</div>
-                                ))}
+                {/* RIGHT SIDEBAR PANEL */}
+                {!hideSidebar && (
+                <div style={{ width: '320px', flexShrink: 0, background: 'white', borderLeft: '1px solid #DFE1E6', display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="hide-scrollbar">
+                    
+                    {/* Selected Day Agenda */}
+                    <div style={{ padding: '24px 20px', borderBottom: '1px solid #DFE1E6' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#172B4D', margin: 0, lineHeight: 1.3 }}>{format(currentDate, 'EEE, MMM d, yyyy')}</h3>
+                            <div style={{ background: '#F4F5F7', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#6B778C' }}>
+                                {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), currentDate)).length} tasks
                             </div>
-                            <div style={{ flex: 1, overflow: 'auto', background: 'white', display: 'flex', flexDirection: 'column' }}>
-                                {(() => {
-                                    const weeks: Date[][] = [];
-                                    for (let i = 0; i < days.length; i += 7) {
-                                        weeks.push(days.slice(i, i + 7));
-                                    }
-
-                                    return weeks.map((week, weekIdx) => {
-                                        const weekStart = week[0];
-                                        const weekEnd = week[6];
-                                        
-                                        const weekTasks = filteredTasks.filter(t => {
-                                            const start = new Date(t.startDate || t.createdAt);
-                                            const end = new Date(t.dueDate || t.startDate || t.createdAt);
-                                            return (start <= weekEnd && end >= weekStart);
-                                        }).sort((a, b) => {
-                                            const d1 = differenceInDays(new Date(a.dueDate || a.createdAt), new Date(a.startDate || a.createdAt));
-                                            const d2 = differenceInDays(new Date(b.dueDate || b.createdAt), new Date(b.startDate || b.createdAt));
-                                            return d2 - d1;
-                                        });
-
-                                        const taskPositions: { task: Task, colStart: number, span: number, row: number }[] = [];
-                                        const occupied = new Set<string>();
-
-                                        weekTasks.forEach(t => {
-                                            const start = new Date(t.startDate || t.createdAt);
-                                            const end = new Date(t.dueDate || t.startDate || t.createdAt);
-                                            const startInWeek = start < weekStart ? weekStart : start;
-                                            const endInWeek = end > weekEnd ? weekEnd : end;
-                                            const colStart = week.findIndex(d => isSameDay(d, startInWeek));
-                                            const colEnd = week.findIndex(d => isSameDay(d, endInWeek));
-                                            const span = colEnd - colStart + 1;
-
-                                            let row = 0;
-                                            while (true) {
-                                                let isFree = true;
-                                                for (let c = colStart; c <= colEnd; c++) {
-                                                    if (occupied.has(`${row}-${c}`)) { isFree = false; break; }
-                                                }
-                                                if (isFree) break;
-                                                row++;
-                                            }
-                                            for (let c = colStart; c <= colEnd; c++) { occupied.add(`${row}-${c}`); }
-                                            taskPositions.push({ task: t, colStart, span, row });
-                                        });
-
-                                         return (
-                                            <div key={weekIdx} style={{ 
-                                                display: 'grid', 
-                                                gridTemplateColumns: 'repeat(7, 1fr)', 
-                                                minHeight: '140px',
-                                                borderBottom: '1px solid #EDF2F7',
-                                                position: 'relative',
-                                                background: 'white',
-                                                overflow: 'hidden'
-                                            }}>
-                                                {week.map((day, i) => (
-                                                    <div key={i} onClick={() => setQuickAddDay(day)} style={{ 
-                                                        borderRight: i < 6 ? '1px solid #EDF2F7' : 'none',
-                                                        padding: '10px',
-                                                        position: 'relative',
-                                                        opacity: isSameMonth(day, currentDate) ? 1 : 0.4
-                                                    }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                            <span style={{ 
-                                                                width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '13px', fontWeight: isToday(day) ? 700 : 500,
-                                                                color: isToday(day) ? 'white' : '#172B4D',
-                                                                background: isToday(day) ? '#0052CC' : 'transparent'
-                                                            }}>{format(day, 'd')}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-
-                                                <div style={{ 
-                                                    position: 'absolute', 
-                                                    top: '40px', 
-                                                    left: 0, 
-                                                    right: 0, 
-                                                    bottom: 0, 
-                                                    pointerEvents: 'none', 
-                                                    display: 'grid', 
-                                                    gridTemplateColumns: 'repeat(7, 1fr)', 
-                                                    gridAutoRows: '30px',
-                                                    overflowY: 'auto',
-                                                    overflowX: 'hidden',
-                                                    paddingBottom: '10px'
-                                                }} className="hide-scrollbar">
-                                                    {taskPositions.map((pos, idx) => {
-                                                        const { task, colStart, span, row } = pos;
-                                                        return (
-                                                            <div 
-                                                                key={`${task.id}-${weekIdx}`} 
-                                                                onClick={(e) => { e.stopPropagation(); setSelectedDayTasks({ day: week[colStart], tasks: [task] }); }}
-                                                                style={{
-                                                                    gridColumn: `${colStart + 1} / span ${span}`,
-                                                                    gridRow: `${row + 1}`,
-                                                                    pointerEvents: 'auto',
-                                                                    padding: '1px 4px',
-                                                                    zIndex: 10 + row
-                                                                }}
-                                                            >
-                                                                {renderEventCard(task, 'sm')}
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                            </div>
-                        </>
-                    )}
-                    {viewMode === 'week' && (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', background: 'white' }}>
-                             <div style={{ display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', borderBottom: '1px solid #EDF2F7', background: 'white', position: 'sticky', top: 0, zIndex: 100 }}>
-                                <div style={{ borderRight: '1px solid #EDF2F7' }} />
-                                {eachDayOfInterval({ start: startOfWeek(currentDate), end: endOfWeek(currentDate) }).map(day => (
-                                    <div key={day.toString()} style={{ padding: '12px', textAlign: 'center', borderRight: '1px solid #EDF2F7' }}>
-                                        <div style={{ fontSize: '11px', fontWeight: 600, color: '#97A0AF', textTransform: 'uppercase', marginBottom: '4px' }}>{format(day, 'EEE')}</div>
-                                        <div style={{ 
-                                            fontSize: '18px', fontWeight: 700, 
-                                            color: isToday(day) ? '#0052CC' : '#172B4D'
-                                        }}>{format(day, 'd')}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), currentDate)).map(t => (
+                                <div key={t.id} style={{ display: 'flex', gap: '12px' }}>
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B778C', minWidth: '60px', paddingTop: '2px' }}>
+                                        {format(new Date(t.dueDate || t.createdAt), 'hh:mm a')}
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', position: 'relative' }}>
-                                <div style={{ borderRight: '1px solid #EDF2F7' }}>
-                                    {Array.from({ length: 24 }).map((_, h) => (
-                                        <div key={h} style={{ height: '80px', padding: '12px', textAlign: 'right', fontSize: '11px', fontWeight: 500, color: '#97A0AF', borderBottom: '1px solid #F4F5F7' }}>
-                                            {format(new Date().setHours(h, 0), 'h aa')}
+                                    <div style={{ flex: 1, borderLeft: `2px solid ${getStatusTextColor(t.status)}`, paddingLeft: '12px' }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', marginBottom: '4px' }}>{t.title}</div>
+                                        <div style={{ fontSize: '11px', color: '#6B778C', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span>{t.status === 'DONE' ? 'Completed' : t.status === 'IN_PROGRESS' ? 'In Progress' : 'To Do'}</span>
+                                            {t.assignee && (
+                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#0052CC', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700 }}>
+                                                    {t.assignee.name?.substring(0, 2).toUpperCase() || 'A'}
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
-                                {eachDayOfInterval({ start: startOfWeek(currentDate), end: endOfWeek(currentDate) }).map(day => (
-                                    <div key={day.toString()} style={{ borderRight: '1px solid #EDF2F7', position: 'relative' }}>
-                                        {isSameDay(day, currentTime) && (
-                                            <div style={{ 
-                                                position: 'absolute', 
-                                                top: `${(getHours(currentTime) * 80) + (getMinutes(currentTime) / 60 * 80)}px`,
-                                                left: 0, right: 0, height: '1px', background: '#FF5630', zIndex: 100, pointerEvents: 'none'
-                                            }} />
-                                        )}
-                                        {Array.from({ length: 24 }).map((_, h) => (
-                                            <div key={h} style={{ height: '80px', borderBottom: '1px solid #EDF2F7' }} />
-                                        ))}
-                                        {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), day)).map((t, idx) => {
-                                            const date = new Date(t.dueDate || t.startDate || t.createdAt);
-                                            const h = date.getHours();
-                                            const m = date.getMinutes();
-                                            return (
-                                                <div key={t.id} style={{ position: 'absolute', top: `${h * 80 + (m/60) * 80}px`, left: '4px', right: '4px', zIndex: 10 + idx }}>
-                                                    {renderEventCard(t, 'md')}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
+                            ))}
+                            {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), currentDate)).length === 0 && (
+                                <div style={{ fontSize: '13px', color: '#8993A4', fontWeight: 500 }}>No tasks scheduled.</div>
+                            )}
+                            <button 
+                                onClick={() => setQuickAddDay(currentDate)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', border: 'none', background: 'none', color: '#0052CC', fontWeight: 600, fontSize: '13px', cursor: 'pointer', marginTop: '8px' }}
+                            >
+                                <Plus size={16} /> Add Task
+                            </button>
                         </div>
-                    )}
+                    </div>
 
-                    {viewMode === 'day' && (
-                        <div style={{ flex: 1, display: 'flex', overflow: 'auto', background: 'white' }}>
-                            <div style={{ width: '80px', flexShrink: 0, borderRight: '1px solid #EDF2F7', background: 'white' }}>
-                                {Array.from({ length: 24 }).map((_, h) => (
-                                    <div key={h} style={{ height: '100px', padding: '12px', textAlign: 'right', fontSize: '11px', fontWeight: 500, color: '#97A0AF', borderBottom: '1px solid #F4F5F7' }}>
-                                        {format(new Date().setHours(h, 0), 'h:00 aa')}
+                    {/* Upcoming Tasks */}
+                    <div style={{ padding: '24px 20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D', margin: 0 }}>Upcoming</h3>
+                            <button style={{ background: 'none', border: 'none', color: '#0052CC', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>View all</button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {upcomingTasks.slice(0, 5).map(t => {
+                                const d = new Date(t.dueDate || t.startDate || t.createdAt);
+                                return (
+                                <div key={t.id} style={{ display: 'flex', gap: '12px' }}>
+                                    <div style={{ minWidth: '40px' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#172B4D' }}>{format(d, 'MMM d')}</div>
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ flex: 1, position: 'relative', background: 'white' }}>
-                                 {isSameDay(currentDate, currentTime) && (
-                                    <div style={{ 
-                                        position: 'absolute', 
-                                        top: `${(getHours(currentTime) * 100) + (getMinutes(currentTime) / 60 * 100)}px`,
-                                        left: 0, right: 0, height: '1px', background: '#FF5630', zIndex: 100, pointerEvents: 'none'
-                                    }} />
-                                )}
-                                {Array.from({ length: 24 }).map((_, h) => (
-                                    <div key={h} style={{ height: '100px', borderBottom: '1px solid #EDF2F7', width: '100%' }} />
-                                ))}
-                                {filteredTasks.filter(t => isSameDay(new Date(t.dueDate || t.startDate || t.createdAt), currentDate)).map((t, idx) => {
-                                    const date = new Date(t.dueDate || t.startDate || t.createdAt);
-                                    const h = date.getHours();
-                                    const m = date.getMinutes();
-                                    return (
-                                        <div key={t.id} style={{ 
-                                            position: 'absolute', 
-                                            top: `${h * 100 + (m/60) * 100}px`,
-                                            left: '20px', width: '80%', zIndex: 50 + idx
-                                        }}>
-                                            {renderEventCard(t, 'lg')}
+                                    <div style={{ flex: 1, borderLeft: `2px solid ${getStatusTextColor(t.status)}`, paddingLeft: '12px' }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', marginBottom: '4px' }}>{t.title}</div>
+                                        <div style={{ fontSize: '11px', color: '#6B778C', fontWeight: 500 }}>
+                                            {format(d, 'hh:mm a')}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {viewMode === 'agenda' && (
-                        <div style={{ flex: 1, overflow: 'auto', padding: '40px 80px', background: 'white' }}>
-                            <div style={{ maxWidth: '700px' }}>
-                                {filteredTasks.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '100px', color: '#97A0AF' }}>
-                                        <p style={{ fontSize: '14px' }}>No upcoming events.</p>
                                     </div>
-                                ) : (
-                                    (() => {
-                                        const grouped = filteredTasks.reduce((acc, t) => {
-                                            const d = format(new Date(t.startDate || t.createdAt), 'yyyy-MM-dd');
-                                            if (!acc[d]) acc[d] = [];
-                                            acc[d].push(t);
-                                            return acc;
-                                        }, {} as Record<string, Task[]>);
-
-                                        return Object.entries(grouped)
-                                            .sort(([a], [b]) => a.localeCompare(b))
-                                            .map(([dateStr, dayTasks]) => {
-                                                const d = new Date(dateStr);
-                                                return (
-                                                    <div key={dateStr} style={{ marginBottom: '40px' }}>
-                                                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#0052CC', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>
-                                                            {format(d, 'EEEE, MMM d')}
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                            {dayTasks.map(t => (
-                                                                <div key={t.id} style={{ width: '100%' }}>
-                                                                    {renderEventCard(t, 'md')}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            });
-                                    })()
-                                )}
-                            </div>
+                                </div>
+                                );
+                            })}
                         </div>
-                    )}
+                    </div>
                 </div>
+                )}
             </div>
 
             {/* Modals */}
@@ -651,6 +867,8 @@ export function CalendarView({
                     </div>
                 </div>
             )}
+
+
         </div>
     );
 }

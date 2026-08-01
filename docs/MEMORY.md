@@ -19,6 +19,16 @@
   - Re-styled the View/Filter bar to use sleek, active-state segment controls rather than blocky buttons.
   - Applied the strict single font-family rule, eliminating typography inconsistencies.
 
+## Phase 3: Timeline Module UI/UX Upgrade
+- **Scope**: Complete redesign of the Timeline view (`/timeline`) matching the premium SaaS reference design.
+- **Key Changes**:
+  - Restructured `page.tsx` header layout to separate title, search, and action buttons cleanly, adding new metric cards.
+  - Redesigned the left-side task list with a clean hierarchy, task type badges, and clear avatars.
+  - Revamped the Gantt chart area with a detailed top control bar, "Today" line indicator, and pastel-colored task bars.
+  - Moved the task progress indicator to the outside of the Gantt bar and displayed task names cleanly inside the bars.
+  - Added a comprehensive legend at the bottom of the timeline view.
+  - Preserved all existing timeline functionality including drag-and-drop, grouping, filters, and views.
+
 ## Recent Task Detail UI Changes
 - **Change**: Conditionally rendering a Facebook icon next to the task name in `TaskDetailsPanel.tsx`.
 - **Where**: `web/src/components/tasks/TaskDetailsPanel.tsx` (Task title display header).
