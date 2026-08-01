@@ -42,6 +42,9 @@ model Tenant {
   tasks                Task[]
   teams                Team[]
   users                User[]
+  accessPolicies       AccessPolicy[]
+  domainRestrictions   DomainRestriction[]
+  orgInvitations       OrganizationInvitation[]
 }
 
 model Team {
@@ -63,6 +66,15 @@ model Team {
   members     TeamMember[]
   messages    TeamMessage[]
   spaces      TeamSpace[]
+  accessPolicies   AccessPolicyTeam[]
+  policyExceptions AccessPolicyException[]
+  orgInvitations   InvitationTeam[]
+  teamType         String           @default("TEAM") // e.g., DEPARTMENT, TEAM, SUB_TEAM, PROJECT_TEAM
+  parentTeamId     String?
+  parent           Team?            @relation("TeamHierarchy", fields: [parentTeamId], references: [id])
+  children         Team[]           @relation("TeamHierarchy")
+  leadId           String?
+  lead             User?            @relation("TeamLead", fields: [leadId], references: [id])
 }
 
 model TeamMember {
@@ -179,10 +191,14 @@ model User {
   teamInvitations        TeamInvitation[]
   teamMembers            TeamMember[]
   teamMessages           TeamMessage[]
+  ledTeams               Team[]                @relation("TeamLead")
   systemRole             Role?                 @relation(fields: [roleId], references: [id])
   tenant                 Tenant?               @relation(fields: [tenantId], references: [id])
   additionalRoles        MemberRole[]
   projectAccesses        ProjectAccess[]
+  accessPolicies         AccessPolicyUser[]
+  policyExceptions       AccessPolicyException[]
+  sentOrgInvitations     OrganizationInvitation[] @relation("OrgInvitedBy")
 }
 
 model Role {
@@ -197,6 +213,9 @@ model Role {
   additionalUsers MemberRole[]
   teamMembers     TeamMember[]
   projectAccesses ProjectAccess[]
+  accessPolicies  AccessPolicyRole[]
+  policyExceptions AccessPolicyException[]
+  orgInvitations   OrganizationInvitation[]
 }
 
 model Permission {
@@ -1254,6 +1273,169 @@ model ExecutiveInsight {
   updatedAt   DateTime @updatedAt
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
 }
+
+// ─────────────────────────────────────────────────────────────
+// Access Policies Module
+// ─────────────────────────────────────────────────────────────
+
+model AccessPolicy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, DRAFT, PAUSED, EXPIRED, ARCHIVED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  effect      String   @default("ALLOW")  // ALLOW, DENY
+  
+  // Scope - Who does this apply to
+  appliesToAll     Boolean  @default(false)
+  users            AccessPolicyUser[]
+  roles            AccessPolicyRole[]
+  teams            AccessPolicyTeam[]
+
+  // Resources - What does this control
+  resources        AccessPolicyResource[]
+  actions          String[]  // E.g. ['*'] or ['view', 'create'] or raw keys
+  
+  // Conditions
+  mfaRequired      String   @default("OPTIONAL") // REQUIRED, OPTIONAL, NOT_REQUIRED
+  approvalRequired Boolean  @default(false)
+  readOnly         Boolean  @default(false)
+  
+  // Time conditions
+  startTime        String?
+  endTime          String?
+  allowedDays      Int[]    // 0-6 (Sun-Sat)
+  timezone         String?
+  startDate        DateTime?
+  endDate          DateTime?
+
+  // Network/Location
+  allowedIps       String[]
+  blockedIps       String[]
+  allowedCountries String[]
+  blockedCountries String[]
+  
+  // Device
+  requireManagedDevice Boolean @default(false)
+  requireTrustedDevice Boolean @default(false)
+
+  // Exceptions
+  exceptions       AccessPolicyException[]
+
+  // Audit
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdBy        String
+  updatedBy        String
+  tenantId         String?
+
+  tenant           Tenant?  @relation(fields: [tenantId], references: [id])
+}
+
+model AccessPolicyUser {
+  policyId String
+  userId   String
+  policy   AccessPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([policyId, userId])
+}
+
+model AccessPolicyRole {
+  policyId String
+  roleId   String
+  policy   AccessPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  role     Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  @@id([policyId, roleId])
+}
+
+model AccessPolicyTeam {
+  policyId String
+  teamId   String
+  policy   AccessPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  team     Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  @@id([policyId, teamId])
+}
+
+model AccessPolicyResource {
+  policyId String
+  resource String       // e.g. "tasks", "projects", "users", "billing", "*"
+  policy   AccessPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  @@id([policyId, resource])
+}
+
+model AccessPolicyException {
+  id       String   @id @default(cuid())
+  policyId String
+  userId   String?
+  roleId   String?
+  teamId   String?
+  reason   String?
+  policy   AccessPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user     User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     Role?        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  team     Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Invitations & Access Module
+// ─────────────────────────────────────────────────────────────
+
+model OrganizationInvitation {
+  id                  String   @id @default(cuid())
+  email               String
+  tenantId            String
+  roleId              String?  // Reference to the Role system
+  invitedBy           String
+  status              String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED, REVOKED, FAILED
+  token               String   @unique // The secure one-time link token
+  expiresAt           DateTime
+  
+  // Security
+  requireEmailVerification Boolean @default(true)
+  requireMFA               Boolean @default(false)
+  requireAdminApproval     Boolean @default(false)
+  
+  // Audit
+  deliveryStatus      String   @default("PENDING") // DELIVERED, OPENED, FAILED
+  failureReason       String?
+  lastSentAt          DateTime?
+  acceptedAt          DateTime?
+  revokedAt           DateTime?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  inviter             User     @relation("OrgInvitedBy", fields: [invitedBy], references: [id])
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  systemRole          Role?    @relation(fields: [roleId], references: [id])
+  
+  teams               InvitationTeam[]
+  
+  @@unique([email, tenantId]) // A user can only have one active invitation per tenant
+  @@index([status])
+  @@index([token])
+}
+
+model InvitationTeam {
+  invitationId String
+  teamId       String
+  invitation   OrganizationInvitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  team         Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@id([invitationId, teamId])
+}
+
+model DomainRestriction {
+  id          String   @id @default(cuid())
+  tenantId    String
+  domain      String
+  type        String   @default("ALLOW") // ALLOW, BLOCK
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  @@unique([tenantId, domain])
+}
+
 
 enum UserRole {
   ADMIN

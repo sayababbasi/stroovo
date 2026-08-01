@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { name, description, ownerId, status, visibility } = body;
+        const { name, description, ownerId, status, visibility, parentTeamId, teamType, leadId } = body;
         const tenantId = authResult.user.tenantId;
 
         if (!name) {
@@ -105,7 +105,10 @@ export async function POST(request: Request) {
                     description,
                     status: status || 'ACTIVE',
                     tenantId,
-                    createdBy: authResult.user.id
+                    createdBy: authResult.user.id,
+                    parentTeamId: parentTeamId || null,
+                    teamType: teamType || 'TEAM',
+                    leadId: leadId || null
                     // visibility is not in schema currently, omit or map to a JSON field if added
                 }
             });

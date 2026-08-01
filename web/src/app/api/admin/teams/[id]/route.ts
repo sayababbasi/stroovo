@@ -46,7 +46,7 @@ export async function PATCH(
         const { id } = await params;
         const tenantId = authResult.user.tenantId;
         const body = await request.json();
-        const { name, description, status, newOwnerId } = body;
+        const { name, description, status, newOwnerId, parentTeamId, teamType, leadId } = body;
 
         const team = await prisma.team.findUnique({ where: { id, tenantId } });
         if (!team) {
@@ -57,6 +57,9 @@ export async function PATCH(
         if (name !== undefined) updateData.name = name;
         if (description !== undefined) updateData.description = description;
         if (status !== undefined) updateData.status = status;
+        if (parentTeamId !== undefined) updateData.parentTeamId = parentTeamId;
+        if (teamType !== undefined) updateData.teamType = teamType;
+        if (leadId !== undefined) updateData.leadId = leadId;
 
         const updatedTeam = await prisma.$transaction(async (tx) => {
             let t = await tx.team.update({

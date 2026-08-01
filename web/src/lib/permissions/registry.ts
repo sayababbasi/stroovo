@@ -25,6 +25,14 @@ export const P = {
   USERS_SUSPEND:     'users.suspend',
   USERS_IMPERSONATE: 'users.impersonate',
 
+  // ── Invitations ──
+  INVITATIONS_VIEW:          'invitations.view',
+  INVITATIONS_CREATE:        'invitations.create',
+  INVITATIONS_REVOKE:        'invitations.revoke',
+  INVITATIONS_MANAGE_ACCESS: 'invitations.manage_access',
+  INVITATIONS_BULK_CREATE:   'invitations.bulk_create',
+  INVITATIONS_EXPORT:        'invitations.export',
+
   // ── Teams ──
   TEAMS_VIEW:           'teams.view',
   TEAMS_CREATE:         'teams.create',
@@ -33,6 +41,19 @@ export const P = {
   TEAMS_ARCHIVE:        'teams.archive',
   TEAMS_RESTORE:        'teams.restore',
   TEAMS_MANAGE_MEMBERS: 'teams.manage_members',
+
+  // ── Team Hierarchy ──
+  TEAMS_HIERARCHY_VIEW:              'teams.hierarchy.view',
+  TEAMS_HIERARCHY_CREATE:            'teams.hierarchy.create',
+  TEAMS_HIERARCHY_EDIT:              'teams.hierarchy.edit',
+  TEAMS_HIERARCHY_MOVE:              'teams.hierarchy.move',
+  TEAMS_HIERARCHY_DELETE:            'teams.hierarchy.delete',
+  TEAMS_HIERARCHY_ARCHIVE:           'teams.hierarchy.archive',
+  TEAMS_HIERARCHY_MANAGE_MEMBERS:    'teams.hierarchy.manage_members',
+  TEAMS_HIERARCHY_MANAGE_ACCESS:     'teams.hierarchy.manage_access',
+  TEAMS_HIERARCHY_MANAGE_LEADERSHIP: 'teams.hierarchy.manage_leadership',
+  TEAMS_HIERARCHY_EXPORT:            'teams.hierarchy.export',
+  TEAMS_HIERARCHY_AUDIT:             'teams.hierarchy.audit',
 
   // ── Projects ──
   PROJECTS_VIEW:    'projects.view',
@@ -49,13 +70,15 @@ export const P = {
   TASKS_ASSIGN:   'tasks.assign',
   TASKS_COMPLETE: 'tasks.complete',
 
-  // ── Roles ──
-  ROLES_VIEW:          'roles.view',
-  ROLES_CREATE:        'roles.create',
-  ROLES_EDIT:          'roles.edit',
-  ROLES_DELETE:        'roles.delete',
-  ROLES_ASSIGN:        'roles.assign',
-  ROLES_MANAGE_SYSTEM: 'roles.manage_system',
+  // ── Roles & Policies ──
+  ROLES_VIEW:             'roles.view',
+  ROLES_CREATE:           'roles.create',
+  ROLES_EDIT:             'roles.edit',
+  ROLES_DELETE:           'roles.delete',
+  ROLES_ASSIGN:           'roles.assign',
+  ROLES_MANAGE_SYSTEM:    'roles.manage_system',
+  ACCESS_POLICIES_VIEW:   'accessPolicies.view',
+  ACCESS_POLICIES_MANAGE: 'accessPolicies.manage',
 
   // ── Permissions ──
   PERMISSIONS_VIEW:   'permissions.view',
@@ -132,14 +155,35 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   { key: P.USERS_SUSPEND,     module: 'users',        action: 'suspend',     description: 'Suspend user accounts' },
   { key: P.USERS_IMPERSONATE, module: 'users',        action: 'impersonate', description: 'Impersonate another user for debugging' },
 
+  // Invitations
+  { key: P.INVITATIONS_VIEW,          module: 'invitations', action: 'view',          description: 'View invitations' },
+  { key: P.INVITATIONS_CREATE,        module: 'invitations', action: 'create',        description: 'Create invitations' },
+  { key: P.INVITATIONS_REVOKE,        module: 'invitations', action: 'revoke',        description: 'Revoke invitations' },
+  { key: P.INVITATIONS_MANAGE_ACCESS, module: 'invitations', action: 'manage_access', description: 'Manage invitation access' },
+  { key: P.INVITATIONS_BULK_CREATE,   module: 'invitations', action: 'bulk_create',   description: 'Bulk create invitations' },
+  { key: P.INVITATIONS_EXPORT,        module: 'invitations', action: 'export',        description: 'Export invitations' },
+
   // Teams
-  { key: P.TEAMS_VIEW,           module: 'teams', action: 'view',           description: 'View teams and team details' },
+  { key: P.TEAMS_VIEW,           module: 'teams', action: 'view',           description: 'View teams and details' },
   { key: P.TEAMS_CREATE,         module: 'teams', action: 'create',         description: 'Create new teams' },
-  { key: P.TEAMS_EDIT,           module: 'teams', action: 'edit',           description: 'Edit team settings and details' },
+  { key: P.TEAMS_EDIT,           module: 'teams', action: 'edit',           description: 'Edit team details' },
   { key: P.TEAMS_DELETE,         module: 'teams', action: 'delete',         description: 'Delete teams permanently' },
-  { key: P.TEAMS_ARCHIVE,        module: 'teams', action: 'archive',        description: 'Archive inactive teams' },
+  { key: P.TEAMS_ARCHIVE,        module: 'teams', action: 'archive',        description: 'Archive teams' },
   { key: P.TEAMS_RESTORE,        module: 'teams', action: 'restore',        description: 'Restore archived teams' },
-  { key: P.TEAMS_MANAGE_MEMBERS, module: 'teams', action: 'manage_members', description: 'Add, remove, and manage team members' },
+  { key: P.TEAMS_MANAGE_MEMBERS, module: 'teams', action: 'manage_members', description: 'Manage team members' },
+
+  // Team Hierarchy
+  { key: P.TEAMS_HIERARCHY_VIEW,              module: 'teams.hierarchy', action: 'view',              description: 'View team hierarchy' },
+  { key: P.TEAMS_HIERARCHY_CREATE,            module: 'teams.hierarchy', action: 'create',            description: 'Create teams within hierarchy' },
+  { key: P.TEAMS_HIERARCHY_EDIT,              module: 'teams.hierarchy', action: 'edit',              description: 'Edit hierarchy teams' },
+  { key: P.TEAMS_HIERARCHY_MOVE,              module: 'teams.hierarchy', action: 'move',              description: 'Move teams in hierarchy' },
+  { key: P.TEAMS_HIERARCHY_DELETE,            module: 'teams.hierarchy', action: 'delete',            description: 'Delete hierarchy teams' },
+  { key: P.TEAMS_HIERARCHY_ARCHIVE,           module: 'teams.hierarchy', action: 'archive',           description: 'Archive hierarchy teams' },
+  { key: P.TEAMS_HIERARCHY_MANAGE_MEMBERS,    module: 'teams.hierarchy', action: 'manage_members',    description: 'Manage hierarchy team members' },
+  { key: P.TEAMS_HIERARCHY_MANAGE_ACCESS,     module: 'teams.hierarchy', action: 'manage_access',     description: 'Manage access inheritance in hierarchy' },
+  { key: P.TEAMS_HIERARCHY_MANAGE_LEADERSHIP, module: 'teams.hierarchy', action: 'manage_leadership', description: 'Manage hierarchy leadership' },
+  { key: P.TEAMS_HIERARCHY_EXPORT,            module: 'teams.hierarchy', action: 'export',            description: 'Export hierarchy data' },
+  { key: P.TEAMS_HIERARCHY_AUDIT,             module: 'teams.hierarchy', action: 'audit',             description: 'View hierarchy audit activity' },
 
   // Projects
   { key: P.PROJECTS_VIEW,    module: 'projects', action: 'view',    description: 'View projects and project details' },
@@ -168,6 +212,8 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   { key: P.PERMISSIONS_VIEW,   module: 'permissions', action: 'view',   description: 'View permission configurations' },
   { key: P.PERMISSIONS_GRANT,  module: 'permissions', action: 'grant',  description: 'Grant permissions to roles' },
   { key: P.PERMISSIONS_REVOKE, module: 'permissions', action: 'revoke', description: 'Revoke permissions from roles' },
+  { key: P.ACCESS_POLICIES_VIEW,   module: 'access_policies', action: 'view',   description: 'View access policies' },
+  { key: P.ACCESS_POLICIES_MANAGE, module: 'access_policies', action: 'manage', description: 'Manage access policies' },
 
   // Billing
   { key: P.BILLING_VIEW,   module: 'billing', action: 'view',   description: 'View billing information and invoices' },
@@ -389,9 +435,9 @@ export const ADMIN_TEAM_TAB_PERMISSIONS: Record<string, string> = {
   'Teams':               P.TEAMS_VIEW,
   'Members':             P.USERS_VIEW,
   'Roles & Permissions': P.ROLES_VIEW,
-  'Access Policies':     P.PERMISSIONS_VIEW,
-  'Invitations':         P.TEAMS_MANAGE_MEMBERS,
-  'Team Hierarchy':      P.TEAMS_VIEW,
+  'Access Policies':     P.ACCESS_POLICIES_VIEW,
+  'Invitations':         P.INVITATIONS_VIEW,
+  'Team Hierarchy':      P.TEAMS_HIERARCHY_VIEW,
   'Audit Activity':      P.AUDIT_LOGS_VIEW,
 };
 

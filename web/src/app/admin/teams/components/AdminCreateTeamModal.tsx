@@ -9,13 +9,17 @@ interface AdminCreateTeamModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    isHierarchyContext?: boolean;
+    allTeams?: any[];
 }
 
-export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess }: AdminCreateTeamModalProps) {
+export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess, isHierarchyContext, allTeams }: AdminCreateTeamModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState('ACTIVE');
     const [visibility, setVisibility] = useState('PRIVATE');
+    const [parentTeamId, setParentTeamId] = useState('');
+    const [teamType, setTeamType] = useState('TEAM');
     
     // For selecting owner
     const [users, setUsers] = useState<any[]>([]);
@@ -32,6 +36,8 @@ export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess }: Adm
             setDescription('');
             setStatus('ACTIVE');
             setVisibility('PRIVATE');
+            setParentTeamId('');
+            setTeamType('TEAM');
             setOwnerId('');
         }
     }, [isOpen]);
@@ -61,7 +67,11 @@ export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess }: Adm
                 description: description.trim(),
                 status,
                 visibility,
-                ownerId: ownerId || undefined
+                ownerId: ownerId || undefined,
+                leadId: ownerId || undefined, // Send leadId if in hierarchy context
+                parentTeamId: parentTeamId || undefined,
+                teamType: teamType
+
             });
 
             if (res.success) {
@@ -148,6 +158,38 @@ export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess }: Adm
                             </select>
                         </div>
                     </div>
+
+                    {isHierarchyContext && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', display: 'block', marginBottom: '8px' }}>Parent Team</label>
+                                <select
+                                    value={parentTeamId}
+                                    onChange={(e) => setParentTeamId(e.target.value)}
+                                    style={{ width: '100%', height: '40px', padding: '0 12px', borderRadius: '6px', border: '1px solid #DFE1E6', fontSize: '14px', outline: 'none', background: 'white' }}
+                                >
+                                    <option value="">None (Root Team)</option>
+                                    {allTeams?.map(t => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', display: 'block', marginBottom: '8px' }}>Team Type</label>
+                                <select
+                                    value={teamType}
+                                    onChange={(e) => setTeamType(e.target.value)}
+                                    style={{ width: '100%', height: '40px', padding: '0 12px', borderRadius: '6px', border: '1px solid #DFE1E6', fontSize: '14px', outline: 'none', background: 'white' }}
+                                >
+                                    <option value="DEPARTMENT">Department</option>
+                                    <option value="TRIBE">Tribe</option>
+                                    <option value="SQUAD">Squad</option>
+                                    <option value="TEAM">Team</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
 
                     <div>
                         <label style={{ fontSize: '13px', fontWeight: 600, color: '#172B4D', display: 'block', marginBottom: '8px' }}>Visibility & Security Policy</label>

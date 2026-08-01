@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 // @ts-ignore - Ignore missing exports if Prisma isn't fully generated
 import type { Permission, Role, Task, User, TeamMember, ProjectAccess } from '@prisma/client';
 import { P, normalizePermissionKey } from '@/lib/permissions/registry';
+import { evaluateAccessPolicies } from '@/lib/permissions/policyEngine';
 
 export type EffectiveRole =
   | 'SUPER_ADMIN'
@@ -14,7 +15,7 @@ export type EffectiveRole =
 
 type RoleWithPermissions = Role & { permissions: Array<{ permission: Permission }> };
 
-type UserWithPermissions = User & {
+export type UserWithPermissions = User & {
   systemRole: RoleWithPermissions | null;
   additionalRoles?: Array<{ role: RoleWithPermissions }>;
   teamMembers?: Array<TeamMember & { systemRole: RoleWithPermissions | null }>;
@@ -303,6 +304,13 @@ export function requirePermission(permissionKey: string, scopeResolver?: (req: R
     if (!hasPermission(user, permissionKey, scope)) {
       await logSecurityEvent(user, request, permissionKey, 'permission_missing');
       return { success: false, response: forbidden('Forbidden: Insufficient permissions') };
+    }
+
+    // Evaluate Access Policies
+    const policyResult = await evaluateAccessPolicies(user, request, permissionKey);
+    if (!policyResult.granted) {
+      await logSecurityEvent(user, request, permissionKey, policyResult.reason || 'blocked_by_policy');
+      return { success: false, response: forbidden(`Forbidden: ${policyResult.reason || 'Blocked by Access Policy'}`) };
     }
 
     return {
