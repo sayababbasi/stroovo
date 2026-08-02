@@ -12,6 +12,7 @@ import AdminRolesTab from './components/AdminRolesTab';
 import AdminAccessPoliciesTab from './components/AdminAccessPoliciesTab';
 import AdminInvitationsTab from './components/AdminInvitationsTab';
 import AdminTeamHierarchyTab from './components/AdminTeamHierarchyTab';
+import AdminAuditTab from './components/AdminAuditTab';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { P, ADMIN_TEAM_TAB_PERMISSIONS } from '@/lib/permissions/registry';
@@ -201,6 +202,8 @@ export default function AdminTeamsPage() {
                 <AdminInvitationsTab />
             ) : activeTab === 'Team Hierarchy' ? (
                 <AdminTeamHierarchyTab />
+            ) : activeTab === 'Audit Activity' ? (
+                <AdminAuditTab />
             ) : (
                 <div style={{ padding: '64px', textAlign: 'center', background: 'white', borderRadius: '12px', border: '1px solid #DFE1E6' }}>
                     <Shield size={48} color="#DFE1E6" style={{ margin: '0 auto 16px' }} />

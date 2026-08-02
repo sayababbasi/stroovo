@@ -22,6 +22,7 @@ interface ApiResponse<T = any> {
   error?: string;
   message?: string;
   details?: any;
+  meta?: any;
 }
 
 /**
@@ -136,7 +137,7 @@ export async function apiGet<T = any>(
     
     if (response.ok) {
       const result = await response.json();
-      return { success: true, data: result.data !== undefined ? result.data : result, message: result.message };
+      return { success: true, data: result.data !== undefined ? result.data : result, message: result.message, meta: result.meta };
     } else {
       const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
       return { 

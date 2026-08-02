@@ -24,7 +24,7 @@ export default function AdminTransferOwnershipModal({ team, onClose, onSuccess }
     const fetchUsers = async () => {
         setIsLoadingUsers(true);
         try {
-            const res = await apiGet<any>('/api/admin/users');
+            const res = await apiGet<any>('/api/admin/users', null);
             if (res.success && res.data) {
                 setUsers(res.data.users || res.data || []);
             }

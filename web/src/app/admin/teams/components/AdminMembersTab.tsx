@@ -48,7 +48,7 @@ export default function AdminMembersTab() {
             params.append('page', page.toString());
             params.append('limit', limit.toString());
 
-            const res = await apiGet<any>(`/api/admin/users?${params.toString()}`);
+            const res = await apiGet<any>(`/api/admin/users?${params.toString()}`, null);
             if (res.success && res.data) {
                 setUsers(res.data.users || []);
                 setTotal(res.data.pagination?.total || 0);

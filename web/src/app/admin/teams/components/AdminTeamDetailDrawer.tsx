@@ -30,7 +30,7 @@ export default function AdminTeamDetailDrawer({ team, onClose, onRefresh }: Admi
     const fetchTeamDetails = async () => {
         setLoading(true);
         try {
-            const res = await apiGet<any>(`/api/admin/teams/${team.id}`);
+            const res = await apiGet<any>(`/api/admin/teams/${team.id}`, null);
             if (res.success && res.data) {
                 setFullTeam(res.data);
             }

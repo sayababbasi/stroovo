@@ -6,14 +6,15 @@ import { updateAccessPolicySchema } from '@/lib/validation/access-policy';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requirePermission('teams.read.all')(request as any);
   if (!authResult.success) return authResult.response;
 
   try {
+    const { id } = await params;
     const policy = await prisma.accessPolicy.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         users: { include: { user: true } },
         roles: { include: { role: true } },
@@ -31,19 +32,20 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: policy });
   } catch (error: any) {
-    console.error(`[GET /api/admin/access-policies/${params.id}]`, error);
+    console.error(`[GET /api/admin/access-policies]`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requirePermission('teams.create')(request as any);
   if (!authResult.success) return authResult.response;
 
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = updateAccessPolicySchema.parse(body);
     const headerList = await headers();
@@ -79,32 +81,33 @@ export async function PATCH(
     Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
     const policy = await prisma.accessPolicy.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData
     });
 
     return NextResponse.json({ success: true, data: policy });
   } catch (error: any) {
-    console.error(`[PATCH /api/admin/access-policies/${params.id}]`, error);
+    console.error(`[PATCH /api/admin/access-policies]`, error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requirePermission('teams.create')(request as any);
   if (!authResult.success) return authResult.response;
 
   try {
+    const { id } = await params;
     await prisma.accessPolicy.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error(`[DELETE /api/admin/access-policies/${params.id}]`, error);
+    console.error(`[DELETE /api/admin/access-policies]`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

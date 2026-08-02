@@ -29,7 +29,7 @@ export default function AdminAddTeamMemberModal({ team, isOpen, onClose, onSucce
     const fetchUsers = async () => {
         setLoadingUsers(true);
         try {
-            const res = await apiGet<any>('/api/admin/users');
+            const res = await apiGet<any>('/api/admin/users', null);
             if (res.success && res.data) {
                 setUsers(res.data.users || res.data || []);
             }

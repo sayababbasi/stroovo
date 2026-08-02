@@ -96,6 +96,8 @@ export const P = {
   // ── System Logs ──
   SYSTEM_LOGS_VIEW: 'system_logs.view',
   AUDIT_LOGS_VIEW:  'audit_logs.view',
+  AUDIT_LOGS_VIEW_SENSITIVE: 'audit_logs.view_sensitive',
+  AUDIT_LOGS_EXPORT: 'audit_logs.export',
 
   // ── Settings ──
   SETTINGS_VIEW:   'settings.view',
@@ -226,6 +228,8 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   // System Logs
   { key: P.SYSTEM_LOGS_VIEW, module: 'system_logs', action: 'view', description: 'View system logs and error reports' },
   { key: P.AUDIT_LOGS_VIEW,  module: 'audit_logs',  action: 'view', description: 'View audit trail and security events' },
+  { key: P.AUDIT_LOGS_VIEW_SENSITIVE, module: 'audit_logs', action: 'view_sensitive', description: 'View sensitive audit info (IPs, sessions)' },
+  { key: P.AUDIT_LOGS_EXPORT, module: 'audit_logs', action: 'export', description: 'Export audit logs' },
 
   // Settings
   { key: P.SETTINGS_VIEW,   module: 'settings', action: 'view',   description: 'View organization settings' },

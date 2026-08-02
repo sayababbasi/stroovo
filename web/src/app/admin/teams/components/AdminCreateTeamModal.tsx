@@ -45,7 +45,7 @@ export default function AdminCreateTeamModal({ isOpen, onClose, onSuccess, isHie
     const fetchUsers = async () => {
         setLoadingUsers(true);
         try {
-            const res = await apiGet<any>('/api/admin/users'); // Assuming this endpoint exists based on earlier phases
+            const res = await apiGet<any>('/api/admin/users', null); // Assuming this endpoint exists based on earlier phases
             if (res.success && res.data) {
                 setUsers(res.data.users || res.data || []);
             }

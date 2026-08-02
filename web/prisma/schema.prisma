@@ -454,8 +454,18 @@ model ActivityLog {
   action    String
   entity    String
   entityId  String
-  metadata  Json?
-  createdAt DateTime @default(now())
+  metadata      Json?
+  severity      String   @default("INFO")
+  result        String   @default("SUCCESS")
+  teamId        String?
+  ipAddress     String?
+  userAgent     String?
+  location      String?
+  previousValue Json?
+  newValue      Json?
+  correlationId String?
+  sessionId     String?
+  createdAt     DateTime @default(now())
   tenantId  String
   userId    String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])

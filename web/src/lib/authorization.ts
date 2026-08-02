@@ -376,6 +376,16 @@ export async function logAdminAction(params: {
   entity: string;
   entityId: string;
   metadata?: Record<string, unknown>;
+  severity?: string;
+  result?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string;
+  previousValue?: any;
+  newValue?: any;
+  correlationId?: string;
+  sessionId?: string;
+  teamId?: string;
 }): Promise<void> {
   try {
     const tenantId = params.request.headers.get('x-tenant-id') ?? params.user.tenantId;
@@ -388,6 +398,16 @@ export async function logAdminAction(params: {
         entityId: params.entityId,
         tenantId,
         userId: params.user.id,
+        severity: params.severity,
+        result: params.result,
+        ipAddress: params.ipAddress ?? params.request.headers.get('x-forwarded-for') ?? undefined,
+        userAgent: params.userAgent ?? params.request.headers.get('user-agent') ?? undefined,
+        location: params.location,
+        previousValue: params.previousValue,
+        newValue: params.newValue,
+        correlationId: params.correlationId ?? params.request.headers.get('x-correlation-id') ?? undefined,
+        sessionId: params.sessionId,
+        teamId: params.teamId,
         metadata: {
           role: getEffectiveRole(params.user),
           path: new URL(params.request.url).pathname,

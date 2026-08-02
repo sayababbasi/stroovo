@@ -28,7 +28,7 @@ export default function AdminMemberDetailDrawer({ user, onClose, onRefresh }: Ad
         setLoading(true);
         try {
             // Get full user with activity using new endpoint
-            const res = await apiGet<any>(`/api/admin/users/${user.id}/activity`);
+            const res = await apiGet<any>(`/api/admin/users/${user.id}/activity`, null);
             if (res.success && res.data) {
                 setFullUser(res.data.user);
                 setActivityLogs(res.data.activityLogs || []);
