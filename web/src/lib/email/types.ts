@@ -7,6 +7,7 @@ export interface EmailOptions {
   cc?: string | string[];
   bcc?: string | string[];
   replyTo?: string;
+  attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
 }
 
 export interface EmailProviderResponse {

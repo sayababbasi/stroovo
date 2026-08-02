@@ -1526,6 +1526,7 @@ model EmailLog {
   status    String   @default("SENT") // "SENT" or "FAILED"
   error     String?  @db.Text
   provider  String   @default("SMTP")
+  providerId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tenantId  String?

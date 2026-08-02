@@ -1,6 +1,7 @@
 import { EmailProvider, EmailOptions, EmailProviderResponse } from './types';
 import { SMTPProvider } from './providers/smtp';
 import { MockProvider } from './providers/mock';
+import { ResendProvider } from './providers/resend';
 import { emailQueue } from './queue';
 import { startEmailWorker } from './worker';
 import prisma from '../prisma';
@@ -22,6 +23,12 @@ class EmailService {
       case 'mock':
       case 'console':
         return new MockProvider();
+      case 'resend':
+        if (!process.env.RESEND_API_KEY) {
+          console.warn('⚠️ EMAIL_PROVIDER is resend but RESEND_API_KEY is missing. Falling back to SMTP.');
+          return new SMTPProvider();
+        }
+        return new ResendProvider();
       case 'smtp':
       default:
         return new SMTPProvider();
@@ -76,14 +83,15 @@ class EmailService {
       }
       
       try {
-        await prisma.emailLog.create({
+        await (prisma as any).emailLog.create({
           data: {
             to: Array.isArray(options.to) ? options.to.join(',') : options.to,
             subject: options.subject,
             status: response.success ? 'SENT' : 'FAILED',
             error: typeof response.error === 'string' ? response.error : response.error?.message || null,
             provider: this.provider.name,
-          }
+            providerId: response.messageId || null,
+          } as any
         });
       } catch (dbErr) {
         console.error('[EmailService] Failed to save EmailLog:', dbErr);
@@ -94,14 +102,14 @@ class EmailService {
       console.error('[EmailService] Unexpected error sending email:', error);
       
       try {
-        await prisma.emailLog.create({
+        await (prisma as any).emailLog.create({
           data: {
             to: Array.isArray(options.to) ? options.to.join(',') : options.to,
             subject: options.subject,
             status: 'FAILED',
             error: error.message || String(error),
             provider: this.provider.name,
-          }
+          } as any
         });
       } catch (dbErr) {}
 
