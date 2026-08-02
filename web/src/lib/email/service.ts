@@ -17,9 +17,11 @@ class EmailService {
    * Determine and instantiate the correct provider based on environment variables
    */
   private initializeProvider(): EmailProvider {
-    const providerName = process.env.EMAIL_PROVIDER || 'smtp';
+    // If EMAIL_PROVIDER is missing, check if they have a Resend key as a fallback
+    const defaultProvider = process.env.RESEND_API_KEY ? 'resend' : 'smtp';
+    const providerName = (process.env.EMAIL_PROVIDER || defaultProvider).toLowerCase();
     
-    switch (providerName.toLowerCase()) {
+    switch (providerName) {
       case 'mock':
       case 'console':
         return new MockProvider();

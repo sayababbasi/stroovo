@@ -37,6 +37,7 @@ export default function AdminInvitationsTab() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isBulkOpen, setIsBulkOpen] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'RESEND' | 'REVOKE' } | null>(null);
 
     // Filters
     const [search, setSearch] = useState('');
@@ -65,30 +66,26 @@ export default function AdminInvitationsTab() {
         fetchInvitations();
     }, [fetchInvitations]);
 
-    const handleRevoke = async (id: string) => {
-        if (!confirm('Are you sure you want to revoke this invitation? The link will immediately stop working.')) return;
-        try {
-            const res = await apiPatch(`/api/admin/invitations/${id}`, null, { action: 'REVOKE' });
-            if (res.success) {
-                toast.success('Invitation revoked');
-                fetchInvitations();
-            } else {
-                toast.error(res.error || 'Failed to revoke');
-            }
-        } catch (e) {
-            toast.error('Network error');
-        }
+    const handleRevoke = (id: string) => {
+        setConfirmAction({ id, type: 'REVOKE' });
     };
 
-    const handleResend = async (id: string) => {
-        if (!confirm('Are you sure you want to resend this invitation? A new email will be dispatched.')) return;
+    const handleResend = (id: string) => {
+        setConfirmAction({ id, type: 'RESEND' });
+    };
+
+    const executeConfirmAction = async () => {
+        if (!confirmAction) return;
+        const { id, type } = confirmAction;
+        setConfirmAction(null);
+        
         try {
-            const res = await apiPatch(`/api/admin/invitations/${id}`, null, { action: 'RESEND' });
+            const res = await apiPatch(`/api/admin/invitations/${id}`, null, { action: type });
             if (res.success) {
-                toast.success('Invitation resent successfully');
+                toast.success(`Invitation ${type === 'RESEND' ? 'resent' : 'revoked'} successfully`);
                 fetchInvitations();
             } else {
-                toast.error(res.error || 'Failed to resend');
+                toast.error(res.error || `Failed to ${type.toLowerCase()}`);
             }
         } catch (e) {
             toast.error('Network error');
@@ -205,6 +202,41 @@ export default function AdminInvitationsTab() {
                 onClose={() => setSelectedId(null)}
                 onRefresh={fetchInvitations}
             />
+
+            {/* Custom Confirmation Modal */}
+            {confirmAction && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(9, 30, 66, 0.54)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: 'white', borderRadius: '8px', padding: '24px', width: '400px', maxWidth: '90%', boxShadow: '0 8px 16px -4px rgba(9,30,66,0.25)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: confirmAction.type === 'REVOKE' ? '#FFEBE6' : '#E6FCFF', color: confirmAction.type === 'REVOKE' ? '#DE350B' : '#00B8D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {confirmAction.type === 'REVOKE' ? <AlertTriangle size={20} /> : <Mail size={20} />}
+                            </div>
+                            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#172B4D' }}>
+                                {confirmAction.type === 'REVOKE' ? 'Revoke Invitation' : 'Resend Invitation'}
+                            </h2>
+                        </div>
+                        <p style={{ margin: '0 0 24px 0', color: '#42526E', fontSize: '14px', lineHeight: 1.5 }}>
+                            {confirmAction.type === 'REVOKE' 
+                                ? 'Are you sure you want to revoke this invitation? The link will immediately become invalid.'
+                                : 'Are you sure you want to resend this invitation? A new email will be dispatched to the recipient.'}
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button
+                                onClick={() => setConfirmAction(null)}
+                                style={{ padding: '8px 16px', background: 'transparent', border: 'none', color: '#42526E', fontWeight: 500, cursor: 'pointer', borderRadius: '4px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeConfirmAction}
+                                style={{ padding: '8px 16px', background: confirmAction.type === 'REVOKE' ? '#DE350B' : '#0052CC', border: 'none', color: 'white', fontWeight: 500, cursor: 'pointer', borderRadius: '4px' }}
+                            >
+                                {confirmAction.type === 'REVOKE' ? 'Revoke' : 'Resend Email'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

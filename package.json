@@ -17,6 +17,10 @@
     "prisma:generate": "cd server && npx prisma generate"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "prisma": "^7.9.1"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.9.1"
   }
 }

@@ -3,6 +3,10 @@ import prisma from '@/lib/prisma';
 import { P } from '@/lib/permissions/registry';
 import { requirePermission } from '@/lib/authorization';
 import crypto from 'crypto';
+import * as React from 'react';
+import { render } from '@react-email/render';
+import { InvitationEmail } from '@/lib/email/templates/InvitationEmail';
+import { emailService } from '@/lib/email/service';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requirePermission(P.INVITATIONS_VIEW)(request);
@@ -57,9 +61,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } 
   else if (action === 'RESEND') {
     const token = crypto.randomBytes(32).toString('hex'); // Invalidate old token on resend
+    
+    // Render the Email HTML
+    const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const inviteUrl = `${appUrl}/invite/${token}`;
+    
+    let deliveryStatus = 'SENDING';
+    let failureReason = null;
+    
+    const html = await render(
+      React.createElement(InvitationEmail, {
+        inviteUrl,
+        inviterName: auth.user.name || 'An administrator',
+        roleName: 'Team Member', // Or fetch the actual role if available
+      })
+    );
+
+    try {
+      const emailResponse = await emailService.sendEmail({
+        to: invitation.email,
+        subject: `You've been invited to join Stroovo`,
+        html,
+      });
+
+      if (emailResponse.success) {
+        deliveryStatus = 'DELIVERED';
+      } else {
+        deliveryStatus = 'FAILED';
+        failureReason = emailResponse.error as string || 'Delivery failed via provider';
+      }
+    } catch (err: any) {
+      console.error(`[INVITE ERROR] Failed to deliver to ${invitation.email}:`, err);
+      deliveryStatus = 'FAILED';
+      failureReason = err.message || 'Unknown Delivery Error';
+    }
+    
     updated = await prisma.organizationInvitation.update({
       where: { id },
-      data: { status: 'PENDING', token, lastSentAt: new Date(), deliveryStatus: 'DELIVERED' }
+      data: { status: 'PENDING', token, lastSentAt: new Date(), deliveryStatus, failureReason }
     });
     
     await prisma.activityLog.create({
