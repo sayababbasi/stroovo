@@ -6,6 +6,7 @@ import { apiGet, apiPatch, apiDelete } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import PermissionMatrix, { Permission } from './PermissionMatrix';
+import { getRoleIcon } from '@/lib/iconMap';
 
 interface Role {
   id: string;
@@ -44,26 +45,7 @@ function Avatar({ name, size = 32 }: { name: string | null; size?: number }) {
   );
 }
 
-const ROLE_ICONS: Record<string, { icon: string; color: string; bg: string }> = {
-  admin: { icon: '👑', color: '#FF8B00', bg: '#FFF0B3' },
-  manager: { icon: '🎯', color: '#0052CC', bg: '#EEF2FF' },
-  'team lead': { icon: '⭐', color: '#6554C0', bg: '#F4F1FD' },
-  member: { icon: '👤', color: '#36B37E', bg: '#E3FCEF' },
-  viewer: { icon: '👁️', color: '#42526E', bg: '#F4F5F7' },
-  developer: { icon: '💻', color: '#0052CC', bg: '#EEF2FF' },
-  designer: { icon: '🎨', color: '#FF8B00', bg: '#FFF7D0' },
-  'qa engineer': { icon: '🔍', color: '#36B37E', bg: '#E3FCEF' },
-  'product manager': { icon: '📋', color: '#6554C0', bg: '#F4F1FD' },
-  stakeholder: { icon: '💼', color: '#42526E', bg: '#F4F5F7' },
-};
 
-function getRoleIcon(name: string) {
-  const key = name.toLowerCase();
-  for (const [k, v] of Object.entries(ROLE_ICONS)) {
-    if (key.includes(k)) return v;
-  }
-  return { icon: '🛡️', color: '#0052CC', bg: '#EEF2FF' };
-}
 
 export default function RoleDetail({ role, allPermissions, onRoleUpdated, onRoleDeleted }: RoleDetailProps) {
   const { accessToken } = useAuth();
@@ -168,7 +150,7 @@ export default function RoleDetail({ role, allPermissions, onRoleUpdated, onRole
     );
   }
 
-  const roleIcon = getRoleIcon(role.name);
+  const RoleIcon = getRoleIcon(role.name);
   const existingKeys = fullRole?.permissions?.map((rp) => rp.permission.key) || [];
   const memberCount = fullRole?.users?.length ?? fullRole?._count?.users ?? role._count?.users ?? 0;
   const permCount = fullRole?.permissions?.length ?? fullRole?._count?.permissions ?? role._count?.permissions ?? 0;
@@ -187,10 +169,10 @@ export default function RoleDetail({ role, allPermissions, onRoleUpdated, onRole
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{
               width: '48px', height: '48px', borderRadius: '12px',
-              background: roleIcon.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '22px',
+              background: '#E9F2FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '22px', color: '#0052CC'
             }}>
-              {roleIcon.icon}
+              <RoleIcon size={24} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -240,14 +222,12 @@ export default function RoleDetail({ role, allPermissions, onRoleUpdated, onRole
                     background: 'white', border: '1px solid #DFE1E6', borderRadius: '10px',
                     boxShadow: '0 8px 24px rgba(9,30,66,0.15)', minWidth: '180px', overflow: 'hidden',
                   }}>
-                    {!role.isSystem && (
-                      <button
-                        onClick={() => { setEditingName(true); setActiveTab('settings'); setShowMenu(false); }}
-                        style={menuItemStyle}
-                      >
-                        <Edit2 size={14} /> Edit Role
-                      </button>
-                    )}
+                    <button
+                      onClick={() => { setEditingName(true); setActiveTab('settings'); setShowMenu(false); }}
+                      style={menuItemStyle}
+                    >
+                      <Edit2 size={14} /> Edit Role
+                    </button>
                     <button onClick={() => setShowMenu(false)} style={menuItemStyle}>
                       <Copy size={14} /> Duplicate Role
                     </button>
@@ -415,7 +395,7 @@ export default function RoleDetail({ role, allPermissions, onRoleUpdated, onRole
                     </button>
                   </div>
                 )}
-                {!editingName && !role.isSystem && (
+                {!editingName && (
                   <button onClick={() => setEditingName(true)} style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: '8px', border: '1px solid #DFE1E6', background: 'white', color: '#0052CC', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Edit2 size={14} /> Edit Role
                   </button>

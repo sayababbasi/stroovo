@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Shield, Trash2, Edit2, Archive, RefreshCw, Users, ArrowRightLeft, Plus } from 'lucide-react';
-import { apiGet, apiPatch } from '@/lib/api';
+import { apiGet, apiPatch, apiDelete } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import AdminDeleteTeamModal from './AdminDeleteTeamModal';
 import AdminTransferOwnershipModal from './AdminTransferOwnershipModal';
 import AdminAddTeamMemberModal from './AdminAddTeamMemberModal';
+import AdminRemoveMemberModal from './AdminRemoveMemberModal';
 
 interface AdminTeamDetailDrawerProps {
     team: any;
@@ -22,6 +23,7 @@ export default function AdminTeamDetailDrawer({ team, onClose, onRefresh }: Admi
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isStatusChanging, setIsStatusChanging] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState<any>(null);
 
     useEffect(() => {
         fetchTeamDetails();
@@ -83,8 +85,10 @@ export default function AdminTeamDetailDrawer({ team, onClose, onRefresh }: Admi
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B778C' }}><X size={20} /></button>
                 </div>
 
-                {loading || !fullTeam ? (
+                {loading ? (
                     <div style={{ padding: '48px', textAlign: 'center', color: '#6B778C' }}>Loading details...</div>
+                ) : !fullTeam ? (
+                    <div style={{ padding: '48px', textAlign: 'center', color: '#DE350B' }}>Failed to load team details.</div>
                 ) : (
                     <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
                         
@@ -160,9 +164,20 @@ export default function AdminTeamDetailDrawer({ team, onClose, onRefresh }: Admi
                                                 <div style={{ fontSize: '12px', color: '#6B778C' }}>{m.user.email}</div>
                                             </div>
                                         </div>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: m.role === 'OWNER' ? '#6554C0' : '#42526E', background: m.role === 'OWNER' ? '#EAE6FF' : '#F4F5F7', padding: '2px 8px', borderRadius: '4px' }}>
-                                            {m.role}
-                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '11px', fontWeight: 700, color: m.role === 'OWNER' ? '#6554C0' : '#42526E', background: m.role === 'OWNER' ? '#EAE6FF' : '#F4F5F7', padding: '2px 8px', borderRadius: '4px' }}>
+                                                {m.role}
+                                            </span>
+                                            {m.role !== 'OWNER' && (
+                                                <button
+                                                    onClick={() => setMemberToRemove(m)}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#DE350B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    title="Remove Member"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                                 {fullTeam.members?.length > 5 && (
@@ -208,6 +223,19 @@ export default function AdminTeamDetailDrawer({ team, onClose, onRefresh }: Admi
                     onClose={() => setIsTransferModalOpen(false)}
                     onSuccess={() => {
                         setIsTransferModalOpen(false);
+                        fetchTeamDetails();
+                        onRefresh();
+                    }}
+                />
+            )}
+
+            {memberToRemove && (
+                <AdminRemoveMemberModal
+                    team={fullTeam || team}
+                    member={memberToRemove}
+                    onClose={() => setMemberToRemove(null)}
+                    onSuccess={() => {
+                        setMemberToRemove(null);
                         fetchTeamDetails();
                         onRefresh();
                     }}

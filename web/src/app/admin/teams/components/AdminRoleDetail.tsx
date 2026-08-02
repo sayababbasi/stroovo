@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Users, Activity, Settings, Edit2, Copy, Trash2, CalendarDays } from 'lucide-react';
+import { getRoleIcon } from '@/lib/iconMap';
 import AdminPermissionMatrix from './AdminPermissionMatrix';
 import AdminRoleMembers from './AdminRoleMembers';
 import { apiGet } from '@/lib/api';
@@ -63,9 +64,13 @@ export default function AdminRoleDetail({ role, allPermissions, onRefresh }: Adm
             {/* Header */}
             <div style={{ padding: '24px 32px', borderBottom: '1px solid #DFE1E6', background: '#FAFBFC' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#172B4D', margin: 0 }}>{roleDetails.name}</h2>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FFFAE6', color: '#FFAB00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {React.createElement(getRoleIcon(roleDetails.name), { size: 24 })}
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#172B4D', margin: 0 }}>{roleDetails.name}</h2>
                             {roleDetails.isSystem ? (
                                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#6554C0', background: '#F4F1FD', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
                                     System Role
@@ -79,6 +84,7 @@ export default function AdminRoleDetail({ role, allPermissions, onRefresh }: Adm
                         <p style={{ fontSize: '14px', color: '#6B778C', margin: 0, maxWidth: '600px' }}>
                             {roleDetails.description || 'No description provided.'}
                         </p>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>

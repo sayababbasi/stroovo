@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Plus, Shield, ShieldCheck } from 'lucide-react';
+import { getRoleIcon } from '@/lib/iconMap';
 
 interface AdminRolesListProps {
     roles: any[];
@@ -23,6 +24,8 @@ export default function AdminRolesList({ roles, selectedRoleId, onSelectRole, on
 
     const renderRoleItem = (role: any) => {
         const isSelected = role.id === selectedRoleId;
+        const RoleIcon = getRoleIcon(role.name);
+        
         return (
             <div 
                 key={role.id}
@@ -37,7 +40,10 @@ export default function AdminRolesList({ roles, selectedRoleId, onSelectRole, on
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: isSelected ? '#0052CC' : '#172B4D' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: isSelected ? '#0052CC' : '#172B4D' }}>
+                        <div style={{ color: isSelected ? '#0052CC' : '#42526E' }}>
+                            <RoleIcon size={16} />
+                        </div>
                         {role.name}
                     </div>
                     {role.isSystem ? (

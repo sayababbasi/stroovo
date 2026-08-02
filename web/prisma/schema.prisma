@@ -45,6 +45,7 @@ model Tenant {
   accessPolicies       AccessPolicy[]
   domainRestrictions   DomainRestriction[]
   orgInvitations       OrganizationInvitation[]
+  emailLogs            EmailLog[]
 }
 
 model Team {
@@ -1516,4 +1517,17 @@ enum TaskPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  status    String   @default("SENT") // "SENT" or "FAILED"
+  error     String?  @db.Text
+  provider  String   @default("SMTP")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
 }

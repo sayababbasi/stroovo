@@ -4,6 +4,9 @@ import { P } from '@/lib/permissions/registry';
 import { requirePermission } from '@/lib/authorization';
 import crypto from 'crypto';
 import { emailService } from '@/lib/email';
+import { render } from '@react-email/render';
+import { InvitationEmail } from '@/lib/email/templates/InvitationEmail';
+import * as React from 'react';
 
 export async function GET(request: Request) {
   const auth = await requirePermission(P.INVITATIONS_VIEW)(request);
@@ -55,6 +58,11 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const { emails, roleId, teams, expiresInDays, requireEmailVerification, requireMFA, requireAdminApproval } = body;
+
+  const role = await prisma.role.findUnique({ where: { id: roleId } });
+  if (!role) {
+    return NextResponse.json({ success: false, error: 'Role not found' }, { status: 404 });
+  }
 
   if (!emails || !Array.isArray(emails) || emails.length === 0) {
     return NextResponse.json({ success: false, error: 'At least one email is required' }, { status: 400 });
@@ -113,31 +121,21 @@ export async function POST(request: Request) {
       const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const inviteUrl = `${appUrl}/invite/${token}`;
 
+      // Render the Email HTML
+      const html = await render(
+        React.createElement(InvitationEmail, {
+          inviteUrl,
+          inviterName: auth.user.name || 'An administrator',
+          roleName: role.name,
+        })
+      );
+
       // Dispatch Email using Centralized Email Service
       try {
         const emailResponse = await emailService.sendEmail({
           to: email,
           subject: `You've been invited to join Stroovo`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-              <h2 style="color: #0f172a;">You're Invited!</h2>
-              <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-                You have been invited to join a workspace on Stroovo by an administrator.
-              </p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${inviteUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                  Accept Invitation
-                </a>
-              </div>
-              <p style="color: #64748b; font-size: 14px;">
-                If you did not expect this invitation, you can safely ignore this email.
-              </p>
-              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-              <p style="color: #94a3b8; font-size: 12px;">
-                Stroovo Enterprise Platform
-              </p>
-            </div>
-          `,
+          html,
         });
 
         if (emailResponse.success) {

@@ -3,6 +3,7 @@ import { SMTPProvider } from './providers/smtp';
 import { MockProvider } from './providers/mock';
 import { emailQueue } from './queue';
 import { startEmailWorker } from './worker';
+import prisma from '../prisma';
 
 class EmailService {
   private provider: EmailProvider;
@@ -74,9 +75,36 @@ class EmailService {
         console.error('[EmailService] Delivery failed:', response.error);
       }
       
+      try {
+        await prisma.emailLog.create({
+          data: {
+            to: Array.isArray(options.to) ? options.to.join(',') : options.to,
+            subject: options.subject,
+            status: response.success ? 'SENT' : 'FAILED',
+            error: typeof response.error === 'string' ? response.error : response.error?.message || null,
+            provider: this.provider.name,
+          }
+        });
+      } catch (dbErr) {
+        console.error('[EmailService] Failed to save EmailLog:', dbErr);
+      }
+      
       return response;
     } catch (error: any) {
       console.error('[EmailService] Unexpected error sending email:', error);
+      
+      try {
+        await prisma.emailLog.create({
+          data: {
+            to: Array.isArray(options.to) ? options.to.join(',') : options.to,
+            subject: options.subject,
+            status: 'FAILED',
+            error: error.message || String(error),
+            provider: this.provider.name,
+          }
+        });
+      } catch (dbErr) {}
+
       return {
         success: false,
         error: error.message || error

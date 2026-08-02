@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Search, Save, RotateCcw, AlertCircle } from 'lucide-react';
+import { getModuleIcon } from '@/lib/iconMap';
 
 export interface Permission {
   id: string;
@@ -25,18 +26,6 @@ interface PermissionMatrixProps {
   isSaving: boolean;
 }
 
-// Module display config
-const MODULE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  projects: { label: 'Projects', icon: '📁', color: '#0052CC' },
-  tasks: { label: 'Tasks', icon: '✅', color: '#36B37E' },
-  teams: { label: 'Teams', icon: '👥', color: '#6554C0' },
-  users: { label: 'Users', icon: '👤', color: '#FF8B00' },
-  roles: { label: 'Roles', icon: '🛡️', color: '#FF5630' },
-  ai: { label: 'AI & Automation', icon: '🤖', color: '#00B8D9' },
-  system: { label: 'System', icon: '⚙️', color: '#42526E' },
-  analytics: { label: 'Analytics', icon: '📊', color: '#36B37E' },
-  admin: { label: 'Admin', icon: '🔑', color: '#FF5630' },
-};
 
 // Access level definitions (UI concept — maps from permission key patterns)
 type AccessLevel = 'none' | 'view' | 'edit' | 'full';
@@ -143,7 +132,6 @@ export default function PermissionMatrix({
   };
 
   const togglePerm = (key: string) => {
-    if (isSystem) return;
     setPermState((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       setHasChanges(true);
@@ -152,7 +140,6 @@ export default function PermissionMatrix({
   };
 
   const setModuleLevel = (mod: string, level: AccessLevel) => {
-    if (isSystem) return;
     setPermState((prev) => {
       const next = setAccessLevelForModule(mod, level, allPermissions, prev);
       setHasChanges(true);
@@ -201,7 +188,7 @@ export default function PermissionMatrix({
 
         <div style={{ flex: 1 }} />
 
-        {hasChanges && !isSystem && (
+        {hasChanges && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#FFF0B3', borderRadius: '8px', border: '1px solid #FFD740' }}>
               <AlertCircle size={14} style={{ color: '#974F0C' }} />
@@ -235,7 +222,7 @@ export default function PermissionMatrix({
         )}
         {isSystem && (
           <div style={{ padding: '6px 12px', background: '#EEF2FF', borderRadius: '8px', border: '1px solid #9DB5E7' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#0052CC' }}>🔒 System role — read only</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#0052CC' }}>🔒 System role (Editable)</span>
           </div>
         )}
       </div>
@@ -262,7 +249,6 @@ export default function PermissionMatrix({
           </div>
         ) : (
           filteredModules.map((mod) => {
-            const cfg = MODULE_CONFIG[mod] || { label: mod.charAt(0).toUpperCase() + mod.slice(1), icon: '🔧', color: '#42526E' };
             const isExpanded = expandedModules.has(mod);
             const currentLevel = getAccessLevelForModule(mod, permState, allPermissions);
             const modPerms = searchPerm
@@ -274,6 +260,9 @@ export default function PermissionMatrix({
                 )
               : grouped[mod];
 
+            const ModuleIcon = getModuleIcon(mod);
+            const label = mod.charAt(0).toUpperCase() + mod.slice(1).replace(/_/g, ' ');
+
             return (
               <div key={mod}>
                 {/* Module Header Row */}
@@ -283,14 +272,14 @@ export default function PermissionMatrix({
                     padding: '14px 20px', borderBottom: '1px solid #F0F1F3',
                     background: isExpanded ? '#FAFBFC' : 'white',
                     cursor: 'pointer', userSelect: 'none',
-                    borderLeft: `3px solid ${cfg.color}`,
+                    borderLeft: `3px solid #0052CC`,
                   }}
                   onClick={() => toggleModule(mod)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {isExpanded ? <ChevronDown size={16} style={{ color: '#6B778C' }} /> : <ChevronRight size={16} style={{ color: '#6B778C' }} />}
-                    <span style={{ fontSize: '14px' }}>{cfg.icon}</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D' }}>{cfg.label}</span>
+                    <span style={{ fontSize: '14px', color: '#42526E', display: 'flex' }}><ModuleIcon size={16} /></span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D' }}>{label}</span>
                     <span style={{ fontSize: '11px', color: '#8A94A6', fontWeight: 500 }}>{grouped[mod].length} permissions</span>
                   </div>
                   {(['none', 'view', 'edit', 'full'] as AccessLevel[]).map((level) => (

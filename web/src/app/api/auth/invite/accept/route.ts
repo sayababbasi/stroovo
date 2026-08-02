@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import AuthenticationService from '@/lib/auth/auth-service';
-import { generateSessionId, generateTokenPair } from '@/lib/auth/jwt';
-import { extractIPAddress, extractUserAgent, parseDeviceInfo } from '@/lib/auth/security';
-import { hashPassword } from '@/lib/auth/crypto';
-import { AuthAction, AuthStatus } from '@/lib/auth/types';
+import { generateSessionId, generateTokenPair } from '@/lib/auth/tokens';
+import { extractIPAddress, extractUserAgent, parseDeviceInfo, hashPassword } from '@/lib/auth/security';
+import { AuthAction, AuthStatus } from '@prisma/client';
 
 const authService = new AuthenticationService(prisma);
 
@@ -69,16 +68,15 @@ export async function POST(request: Request) {
 
         // 3. Assign Role (MemberRole) if roleId was specified
         if (invitation.roleId) {
-            // Remove any existing roles for this tenant
+            // Remove any existing roles for this user globally
             await prisma.memberRole.deleteMany({
-                where: { userId: user.id, role: { tenantId: invitation.tenantId } }
+                where: { userId: user.id }
             });
             
             await prisma.memberRole.create({
                 data: {
                     userId: user.id,
-                    roleId: invitation.roleId,
-                    assignedBy: invitation.invitedBy
+                    roleId: invitation.roleId
                 }
             });
         }
@@ -114,6 +112,7 @@ export async function POST(request: Request) {
         await prisma.session.create({
             data: {
                 id: sessionId,
+                tokenHash: sessionId,
                 userId: user.id,
                 device: deviceInfo.device,
                 browser: deviceInfo.browser,
@@ -126,9 +125,10 @@ export async function POST(request: Request) {
         await prisma.authLog.create({
             data: {
                 userId: user.id,
-                action: 'LOGIN',
-                status: 'SUCCESS',
+                action: AuthAction.LOGIN,
+                status: AuthStatus.SUCCESS,
                 ipAddress,
+                device: deviceInfo.device,
                 userAgent,
                 details: 'Login via invitation acceptance'
             }

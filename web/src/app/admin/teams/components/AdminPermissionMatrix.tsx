@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ShieldAlert, Check, X, AlertCircle } from 'lucide-react';
+import { getModuleIcon } from '@/lib/iconMap';
 import { apiPut } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -216,7 +217,10 @@ export default function AdminPermissionMatrix({ role, allPermissions, onSave }: 
                                         {allModuleSelected && <Check size={10} color="white" />}
                                         {someModuleSelected && <div style={{ width: '6px', height: '6px', background: '#0052CC', borderRadius: '1px' }} />}
                                     </div>
-                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: '#172B4D' }}>
+                                        <div style={{ color: '#0052CC', display: 'flex', alignItems: 'center' }}>
+                                            {React.createElement(getModuleIcon(moduleName), { size: 16 })}
+                                        </div>
                                         {moduleName}
                                     </div>
                                     <div style={{ fontSize: '12px', color: '#8A94A6' }}>

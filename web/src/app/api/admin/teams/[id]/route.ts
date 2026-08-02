@@ -13,7 +13,7 @@ export async function GET(
         const { id } = await params;
         const tenantId = authResult.user.tenantId;
 
-        const team = await prisma.team.findUnique({
+        const team = await prisma.team.findFirst({
             where: { id, tenantId: tenantId! },
             include: {
                 members: {
@@ -48,7 +48,7 @@ export async function PATCH(
         const body = await request.json();
         const { name, description, status, newOwnerId, parentTeamId, teamType, leadId } = body;
 
-        const team = await prisma.team.findUnique({ where: { id, tenantId: tenantId! } });
+        const team = await prisma.team.findFirst({ where: { id, tenantId: tenantId! } });
         if (!team) {
             return NextResponse.json({ error: 'Team not found' }, { status: 404 });
         }
@@ -121,7 +121,7 @@ export async function DELETE(
         const { id } = await params;
         const tenantId = authResult.user.tenantId;
 
-        const team = await prisma.team.findUnique({ where: { id, tenantId: tenantId! } });
+        const team = await prisma.team.findFirst({ where: { id, tenantId: tenantId! } });
         if (!team) {
             return NextResponse.json({ error: 'Team not found' }, { status: 404 });
         }

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { Permission } from './PermissionMatrix';
 import RoleDetail from './RoleDetail';
+import { getRoleIcon } from '@/lib/iconMap';
 
 interface Role {
   id: string;
@@ -45,19 +46,7 @@ function KpiCard({ icon, title, value, trend, trendLabel, color }: {
   );
 }
 
-const ROLE_ICONS: Record<string, string> = {
-  admin: '👑', manager: '🎯', 'team lead': '⭐', member: '👤', viewer: '👁️',
-  developer: '💻', designer: '🎨', 'qa engineer': '🔍', 'product manager': '📋',
-  stakeholder: '💼',
-};
 
-function getRoleIcon(name: string) {
-  const key = name.toLowerCase();
-  for (const [k, v] of Object.entries(ROLE_ICONS)) {
-    if (key.includes(k)) return v;
-  }
-  return '🛡️';
-}
 
 function CreateRoleModal({ onClose, onCreated }: { onClose: () => void; onCreated: (role: Role) => void }) {
   const { accessToken } = useAuth();
@@ -230,6 +219,7 @@ export default function RolesTab() {
             ) : (
               filteredRoles.map((role) => {
                 const isSelected = selectedRole?.id === role.id;
+                const RoleIcon = getRoleIcon(role.name);
                 return (
                   <div
                     key={role.id}
@@ -248,9 +238,9 @@ export default function RolesTab() {
                       width: '32px', height: '32px', borderRadius: '8px',
                       background: isSelected ? '#DBEAFE' : '#F4F5F7',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px',
-                      flexShrink: 0,
+                      flexShrink: 0, color: isSelected ? '#0052CC' : '#42526E'
                     }}>
-                      {getRoleIcon(role.name)}
+                      <RoleIcon size={18} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: isSelected ? '#0052CC' : '#172B4D', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
