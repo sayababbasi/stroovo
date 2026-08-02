@@ -20,7 +20,7 @@ export async function POST(
 
         const task = await prisma.task.findUnique({
             where: { id },
-            select: { id: true, assigneeId: true, teamId: true, tenantId: true }
+            select: { id: true, assigneeId: true, teamId: true, tenantId: true, parentId: true }
         });
         if (!(await canAccessTask(authResult.user, task, 'read'))) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

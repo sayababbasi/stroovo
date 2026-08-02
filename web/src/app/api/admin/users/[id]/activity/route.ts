@@ -16,7 +16,7 @@ export async function GET(
 
         // Ensure user belongs to tenant
         const user = await prisma.user.findUnique({
-            where: { id, tenantId },
+            where: { id, tenantId: tenantId! },
             select: {
                 id: true,
                 name: true,
@@ -59,9 +59,9 @@ export async function GET(
         // Fetch audit logs where this user is the target (entityId)
         const activityLogs = await prisma.activityLog.findMany({
             where: {
-                tenantId,
+                tenantId: tenantId!,
                 entityId: id,
-                entityType: 'USER'
+                entity: 'USER'
             },
             orderBy: {
                 createdAt: 'desc'

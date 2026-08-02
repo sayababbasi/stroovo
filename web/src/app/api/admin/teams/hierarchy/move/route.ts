@@ -17,11 +17,11 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ success: false, error: 'A team cannot be its own parent.' }, { status: 400 });
     }
 
-    const team = await prisma.team.findUnique({ where: { id: teamId, tenantId } });
+    const team = await prisma.team.findUnique({ where: { id: teamId, tenantId: tenantId! } });
     if (!team) return NextResponse.json({ success: false, error: 'Team not found' }, { status: 404 });
 
     if (targetParentId) {
-        const targetParent = await prisma.team.findUnique({ where: { id: targetParentId, tenantId } });
+        const targetParent = await prisma.team.findUnique({ where: { id: targetParentId, tenantId: tenantId! } });
         if (!targetParent) return NextResponse.json({ success: false, error: 'Target parent team not found' }, { status: 404 });
 
         let currentParentId: string | null = targetParent.parentTeamId;
@@ -51,8 +51,7 @@ export async function PATCH(request: Request) {
         action: 'TEAM_HIERARCHY_MOVED',
         entity: 'TEAM',
         entityId: team.id,
-        details: `Moved team ${team.name} to parent ${targetParentId || 'root'}`,
-        metadata: { teamId, targetParentId }
+        metadata: { details: `Moved team ${team.name} to parent ${targetParentId || 'root'}`, teamId, targetParentId }
     });
 
     return NextResponse.json({ success: true, data: updated });

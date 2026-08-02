@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         const userId = authResult.user.id;
 
         const tenant = await prisma.tenant.findUnique({
-            where: { id: tenantId },
+            where: { id: tenantId! },
             include: { subscription: true }
         });
 
@@ -32,9 +32,9 @@ export async function POST(request: Request) {
             customerId = customer.id;
             
             await prisma.subscription.upsert({
-                where: { tenantId },
+                where: { tenantId: tenantId! },
                 update: { stripeCustomerId: customerId },
-                create: { tenantId, stripeCustomerId: customerId }
+                create: { tenantId: tenantId!, stripeCustomerId: customerId }
             });
         }
 

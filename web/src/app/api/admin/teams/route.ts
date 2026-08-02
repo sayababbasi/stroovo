@@ -52,23 +52,40 @@ export async function GET(request: Request) {
         const getStats = searchParams.get('stats') === 'true';
         let stats = null;
         if (getStats) {
+            const now = new Date();
+            const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
             const allTeamsForStats = await prisma.team.findMany({
-                where: { tenantId },
-                select: { status: true, _count: { select: { members: true, spaces: true, tasks: true } } }
+                where: { tenantId: tenantId! },
+                include: { _count: { select: { members: true, spaces: true, tasks: true } } }
             });
-            const pendingInvites = await prisma.teamInvitation.count({
-                where: { team: { tenantId }, status: 'PENDING' }
+
+            const totalTeams = allTeamsForStats.length;
+            const teamsUntilLastMonth = allTeamsForStats.filter(t => t.createdAt < firstDayThisMonth).length;
+            const teamsGrowth = teamsUntilLastMonth === 0 ? (totalTeams > 0 ? 100 : 0) : Math.round(((totalTeams - teamsUntilLastMonth) / teamsUntilLastMonth) * 100);
+            
+            const allMembers = await prisma.teamMember.findMany({
+                where: { team: { tenantId: tenantId! } },
+                select: { joinedAt: true }
+            });
+            const totalMembers = allMembers.length;
+            const membersUntilLastMonth = allMembers.filter(m => m.joinedAt < firstDayThisMonth).length;
+            const membersGrowth = membersUntilLastMonth === 0 ? (totalMembers > 0 ? 100 : 0) : Math.round(((totalMembers - membersUntilLastMonth) / membersUntilLastMonth) * 100);
+
+            const accessIssues = await prisma.activityLog.count({
+                where: { tenantId: tenantId!, result: { in: ['FAILED', 'BLOCKED'] } }
             });
             
             stats = {
-                totalTeams: allTeamsForStats.length,
+                totalTeams,
+                teamsTrend: teamsGrowth >= 0 ? `+${teamsGrowth}% vs last month` : `${teamsGrowth}% vs last month`,
                 activeTeams: allTeamsForStats.filter(t => t.status !== 'ARCHIVED').length,
-                totalMembers: allTeamsForStats.reduce((sum, t) => sum + t._count.members, 0),
+                totalMembers,
+                membersTrend: membersGrowth >= 0 ? `+${membersGrowth}% vs last month` : `${membersGrowth}% vs last month`,
                 totalProjects: allTeamsForStats.reduce((sum, t) => sum + t._count.spaces, 0),
                 totalTasks: allTeamsForStats.reduce((sum, t) => sum + t._count.tasks, 0),
                 archivedTeams: allTeamsForStats.filter(t => t.status === 'ARCHIVED').length,
-                pendingInvitations: pendingInvites,
-                accessIssues: 0 // Mocked for now, can compute based on policies later
+                accessIssues
             };
         }
 
@@ -104,7 +121,7 @@ export async function POST(request: Request) {
                     name,
                     description,
                     status: status || 'ACTIVE',
-                    tenantId,
+                    tenantId: tenantId!,
                     createdBy: authResult.user.id,
                     parentTeamId: parentTeamId || null,
                     teamType: teamType || 'TEAM',

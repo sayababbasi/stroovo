@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { P } from '@/lib/permissions/registry';
 import { requirePermission } from '@/lib/authorization';
 import crypto from 'crypto';
+import { emailService } from '@/lib/email';
 
 export async function GET(request: Request) {
   const auth = await requirePermission(P.INVITATIONS_VIEW)(request);
@@ -105,6 +106,52 @@ export async function POST(request: Request) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (parseInt(expiresInDays) || 7));
 
+      let deliveryStatus = 'SENDING';
+      let failureReason: string | null = null;
+
+      // Construct Invitation URL
+      const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const inviteUrl = `${appUrl}/invite/${token}`;
+
+      // Dispatch Email using Centralized Email Service
+      try {
+        const emailResponse = await emailService.sendEmail({
+          to: email,
+          subject: `You've been invited to join Stroovo`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+              <h2 style="color: #0f172a;">You're Invited!</h2>
+              <p style="color: #334155; font-size: 16px; line-height: 1.5;">
+                You have been invited to join a workspace on Stroovo by an administrator.
+              </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${inviteUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                  Accept Invitation
+                </a>
+              </div>
+              <p style="color: #64748b; font-size: 14px;">
+                If you did not expect this invitation, you can safely ignore this email.
+              </p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+              <p style="color: #94a3b8; font-size: 12px;">
+                Stroovo Enterprise Platform
+              </p>
+            </div>
+          `,
+        });
+
+        if (emailResponse.success) {
+          deliveryStatus = 'DELIVERED';
+        } else {
+          deliveryStatus = 'FAILED';
+          failureReason = emailResponse.error as string || 'Delivery failed via provider';
+        }
+      } catch (err: any) {
+        console.error(`[INVITE ERROR] Failed to deliver to ${email}:`, err);
+        deliveryStatus = 'FAILED';
+        failureReason = err.message || 'Unknown Delivery Error';
+      }
+
       const invitation = await prisma.organizationInvitation.create({
         data: {
           email,
@@ -120,7 +167,8 @@ export async function POST(request: Request) {
             create: (teams || []).map((tId: string) => ({ teamId: tId }))
           },
           lastSentAt: new Date(),
-          deliveryStatus: 'DELIVERED' // Mock delivery success
+          deliveryStatus,
+          failureReason
         }
       });
 
@@ -132,13 +180,22 @@ export async function POST(request: Request) {
           action: 'INVITATION_CREATED',
           entity: 'INVITATION',
           entityId: invitation.id,
-          details: `Sent invitation to ${email}`
+          metadata: { 
+            details: `Created invitation for ${email}`,
+            deliveryStatus,
+            error: failureReason 
+          }
         }
       });
 
+      if (deliveryStatus === 'FAILED') {
+        // We log the error but still create the DB record so admin can retry later.
+        errors.push(`Created invitation but email failed to send to ${email}: ${failureReason}`);
+      }
+      
       createdInvitations.push(invitation);
     } catch (e: any) {
-      errors.push(`Failed to invite ${email}: ${e.message}`);
+      errors.push(`Failed to create invitation for ${email}: ${e.message}`);
     }
   }
 

@@ -228,12 +228,40 @@ export default function AdminInviteMemberModal({ isOpen, onClose, onSuccess }: {
                     )}
 
                     {step === 5 && result && (
-                        <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#E3FCEF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#36B37E' }}>
-                                <Check size={32} />
+                        <div style={{ textAlign: 'left', padding: '24px 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
+                                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#E3FCEF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#36B37E' }}>
+                                    <Check size={24} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 600, color: '#172B4D' }}>Invitation Results</h3>
+                                    <p style={{ margin: 0, fontSize: '14px', color: '#6B778C' }}>Processed {result.data?.length || 0} invitations.</p>
+                                </div>
                             </div>
-                            <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 600, color: '#172B4D' }}>Invitations Sent!</h3>
-                            <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6B778C' }}>{result.message}</p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px', maxHeight: '200px', overflowY: 'auto', background: '#FAFBFC', padding: '12px', borderRadius: '6px', border: '1px solid #DFE1E6' }}>
+                                {result.data?.map((inv: any) => (
+                                    <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'white', border: '1px solid #DFE1E6', borderRadius: '4px' }}>
+                                        <div style={{ fontSize: '14px', fontWeight: 500, color: '#172B4D' }}>{inv.email}</div>
+                                        {inv.deliveryStatus === 'DELIVERED' ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#36B37E', background: '#E3FCEF', padding: '2px 8px', borderRadius: '12px' }}>
+                                                <Check size={12} /> Email Delivered
+                                            </div>
+                                        ) : inv.deliveryStatus === 'FAILED' ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#DE350B', background: '#FFEBE6', padding: '2px 8px', borderRadius: '12px' }} title={inv.failureReason || 'Failed'}>
+                                                <X size={12} /> Failed to Send
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#FF991F', background: '#FFFAE6', padding: '2px 8px', borderRadius: '12px' }}>
+                                                Queued
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {(!result.data || result.data.length === 0) && (
+                                    <div style={{ fontSize: '14px', color: '#DE350B' }}>{result.message}</div>
+                                )}
+                            </div>
                             
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                                 <button onClick={resetAndClose} style={{ height: '40px', padding: '0 20px', borderRadius: '4px', border: '1px solid #DFE1E6', background: 'white', color: '#42526E', fontWeight: 600, cursor: 'pointer' }}>Close</button>

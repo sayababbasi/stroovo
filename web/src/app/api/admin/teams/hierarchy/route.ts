@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const tenantId = auth.user.tenantId!;
 
     const teams = await prisma.team.findMany({
-      where: { tenantId },
+      where: { tenantId: tenantId! },
       include: {
         lead: { select: { id: true, name: true, email: true, image: true } },
         _count: { select: { members: true, children: true } }

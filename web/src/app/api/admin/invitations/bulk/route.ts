@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         action: 'BULK_INVITATION_CREATED',
         entity: 'INVITATION',
         entityId: 'BULK',
-        details: `Bulk invited ${created.length} members`
+        metadata: { details: `Bulk invited ${created.length} members` }
       }
     });
   }

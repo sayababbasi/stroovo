@@ -19,12 +19,12 @@ export async function POST(
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
-        const team = await prisma.team.findUnique({ where: { id: teamId, tenantId } });
+        const team = await prisma.team.findUnique({ where: { id: teamId, tenantId: tenantId! } });
         if (!team) {
             return NextResponse.json({ error: 'Team not found' }, { status: 404 });
         }
 
-        const user = await prisma.user.findUnique({ where: { id: userId, tenantId } });
+        const user = await prisma.user.findUnique({ where: { id: userId, tenantId: tenantId! } });
         if (!user) {
             return NextResponse.json({ error: 'User not found in this tenant' }, { status: 404 });
         }

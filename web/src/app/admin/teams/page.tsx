@@ -36,7 +36,7 @@ function KpiCard({ icon, title, value, trend, color }: {
       </div>
       <div style={{ fontSize: '13px', fontWeight: 600, color: '#6B778C' }}>{title}</div>
       {trend && (
-        <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: trend.startsWith('+') ? '#36B37E' : '#97A0AF' }}>
+        <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: trend.startsWith('+') ? '#36B37E' : trend.startsWith('-') ? '#DE350B' : '#97A0AF' }}>
           {trend}
         </div>
       )}
@@ -121,8 +121,8 @@ export default function AdminTeamsPage() {
 
             {/* KPI Stats */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <KpiCard icon={<Network size={20} />} title="Total Teams" value={stats?.totalTeams || 0} trend="+12% vs last month" color="#0052CC" />
-                <KpiCard icon={<Users size={20} />} title="Total Members" value={stats?.totalMembers || 0} trend="+8% vs last month" color="#36B37E" />
+                <KpiCard icon={<Network size={20} />} title="Total Teams" value={stats?.totalTeams || 0} trend={stats?.teamsTrend} color="#0052CC" />
+                <KpiCard icon={<Users size={20} />} title="Total Members" value={stats?.totalMembers || 0} trend={stats?.membersTrend} color="#36B37E" />
                 <KpiCard icon={<Activity size={20} />} title="Active Teams" value={stats?.activeTeams || 0} color="#6554C0" />
                 <KpiCard icon={<FolderKanban size={20} />} title="Total Projects" value={stats?.totalProjects || 0} color="#FFAB00" />
                 <KpiCard icon={<Archive size={20} />} title="Archived Teams" value={stats?.archivedTeams || 0} color="#97A0AF" />

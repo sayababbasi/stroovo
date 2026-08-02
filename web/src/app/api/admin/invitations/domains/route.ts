@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         action: 'DOMAIN_RESTRICTION_CREATED',
         entity: 'TENANT',
         entityId: auth.user.tenantId!,
-        details: `Set domain ${cleanDomain} to ${type}`
+        metadata: { details: `Set domain ${cleanDomain} to ${type}` }
       }
     });
 

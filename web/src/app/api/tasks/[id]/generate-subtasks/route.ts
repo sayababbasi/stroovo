@@ -33,6 +33,7 @@ export async function POST(
                 tenantId: true,
                 assigneeId: true,
                 teamId: true,
+                parentId: true,
             }
         });
         if (!parent) return NextResponse.json({ error: 'Task not found' }, { status: 404 });
