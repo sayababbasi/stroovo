@@ -5,7 +5,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 interface Props { editingGoal: any | null; onClose: () => void; onSuccess: () => void; currentUserId: string; }
 
 export default function GoalFormModal({ editingGoal, onClose, onSuccess, currentUserId }: Props) {
-  const [form, setForm] = useState({ title: '', description: '', status: 'ON_TRACK', targetDate: '', cycleId: '' });
+  const [form, setForm] = useState({ title: '', description: '', type: 'COMPANY', status: 'ON_TRACK', targetDate: '', cycleId: '' });
   const [krs, setKRs] = useState<{ title: string; targetValue: string; initialValue: string; unit: string }[]>([]);
   const [cycles, setCycles] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -17,8 +17,11 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
 
   useEffect(() => {
     if (editingGoal) {
-      setForm({ title: editingGoal.title || '', description: editingGoal.description || '', status: editingGoal.status || 'ON_TRACK', targetDate: editingGoal.targetDate ? editingGoal.targetDate.split('T')[0] : '', cycleId: editingGoal.cycleId || '' });
+      setForm({ title: editingGoal.title || '', description: editingGoal.description || '', type: editingGoal.type || 'COMPANY', status: editingGoal.status || 'ON_TRACK', targetDate: editingGoal.targetDate ? editingGoal.targetDate.split('T')[0] : '', cycleId: editingGoal.cycleId || '' });
       setKRs((editingGoal.keyResults || []).map((kr: any) => ({ title: kr.title, targetValue: String(kr.targetValue), initialValue: String(kr.initialValue || 0), unit: kr.unit || 'NUMBER' })));
+    } else {
+      setForm({ title: '', description: '', type: 'COMPANY', status: 'ON_TRACK', targetDate: '', cycleId: '' });
+      setKRs([]);
     }
   }, [editingGoal]);
 
@@ -27,7 +30,7 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
     if (!form.title.trim()) { setError('Goal title is required'); return; }
     setSaving(true); setError('');
     const payload: any = {
-      title: form.title, description: form.description, status: form.status,
+      title: form.title, description: form.description, type: form.type, status: form.status,
       targetDate: form.targetDate || null, cycleId: form.cycleId || null, ownerId: currentUserId,
       keyResults: krs.filter(kr => kr.title && kr.targetValue).map(kr => ({
         title: kr.title, targetValue: parseFloat(kr.targetValue) || 0,
@@ -67,6 +70,12 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
             <div className="gm-field" style={{ marginBottom: 0 }}>
+              <label>Goal type</label>
+              <select className="gselect" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                <option value="PERSONAL">Personal</option><option value="TEAM">Team</option><option value="DEPARTMENT">Department</option><option value="COMPANY">Company</option>
+              </select>
+            </div>
+            <div className="gm-field" style={{ marginBottom: 0 }}>
               <label>Status</label>
               <select className="gselect" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
                 <option value="ON_TRACK">On Track</option><option value="AT_RISK">At Risk</option>
@@ -77,13 +86,13 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
               <label>Deadline</label>
               <input type="date" className="ginput" value={form.targetDate} onChange={e => setForm(p => ({ ...p, targetDate: e.target.value }))} />
             </div>
-            <div className="gm-field" style={{ marginBottom: 0 }}>
-              <label>Cycle</label>
-              <select className="gselect" value={form.cycleId} onChange={e => setForm(p => ({ ...p, cycleId: e.target.value }))}>
-                <option value="">No Cycle</option>
-                {cycles.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+          </div>
+          <div className="gm-field" style={{ marginBottom: 16 }}>
+            <label>Cycle</label>
+            <select className="gselect" value={form.cycleId} onChange={e => setForm(p => ({ ...p, cycleId: e.target.value }))}>
+              <option value="">No Cycle</option>
+              {cycles.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
           </div>
 
           {/* Key Results */}

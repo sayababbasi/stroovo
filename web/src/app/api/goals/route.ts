@@ -49,7 +49,7 @@ export async function POST(request: Request) {
             data: {
                 title,
                 description,
-                // type: type || 'COMPANY',
+                type: type || 'COMPANY',
                 status: status || 'ON_TRACK',
                 targetDate: targetDate ? new Date(targetDate) : null,
                 ownerId,

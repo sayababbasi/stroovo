@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { ChevronDown, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 
@@ -69,8 +69,8 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
           const krs: any[] = c.keyResults || g.keyResults || [];
           const isExp = expanded.has(g.id);
           return (
-            <>
-              <tr key={g.id} className={selectedGoalId === g.id ? 'gsel' : ''} onClick={() => onSelectGoal(g.id)}>
+            <Fragment key={`goal-${g.id}`}>
+              <tr className={selectedGoalId === g.id ? 'gsel' : ''} onClick={() => onSelectGoal(g.id)}>
                 <td style={{ paddingLeft: 8, paddingRight: 0 }}>
                   <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B778C', padding: 4, display: 'flex' }} onClick={e => { e.stopPropagation(); toggle(g.id); }}>
                     {isExp ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -116,11 +116,11 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                   </div>
                 </td>
               </tr>
-              {isExp && krs.map((kr: any) => {
+              {isExp && krs.map((kr: any, index: number) => {
                 const hc: Record<string,string> = { ON_TRACK:'#36B37E', AT_RISK:'#FFAB00', CRITICAL:'#FF5630', COMPLETED:'#0052CC' };
                 const hColor = hc[kr.healthStatus] || '#6B778C';
                 return (
-                  <tr key={kr.id}><td colSpan={11} style={{ padding: 0 }}>
+                  <tr key={`${g.id}-key-result-${kr.id ?? kr.title ?? index}`}><td colSpan={11} style={{ padding: 0 }}>
                     <div className="kr-expand">
                       <div /><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: hColor, flexShrink: 0 }} />
@@ -135,7 +135,7 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                   </td></tr>
                 );
               })}
-            </>
+            </Fragment>
           );
         })}
       </tbody>

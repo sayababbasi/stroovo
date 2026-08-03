@@ -1,355 +1,78 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import Sidebar from '@/components/Sidebar';
-import { useAuth } from '@/contexts/AuthContext';
-import GoalFormModal from '@/components/goals/GoalFormModal';
-import GoalDetailPanel from '@/components/goals/GoalDetailPanel';
-import GoalsView from '@/components/goals/views/GoalsView';
-import OKRsView from '@/components/goals/views/OKRsView';
-import PerformanceView from '@/components/goals/views/PerformanceView';
-import MyFocusView from '@/components/goals/views/MyFocusView';
-import {
-  Target, Plus, RefreshCw, AlertTriangle, Clock,
-  TrendingDown, LayoutGrid, Search, Filter, ChevronDown,
-  Activity, Zap, Brain
-} from 'lucide-react';
 
-export type ViewTab = 'goals' | 'okrs' | 'performance' | 'myfocus';
+import { useEffect, useMemo, useState } from "react";
+import Sidebar from "@/components/Sidebar";
+import GoalFormModal from "@/components/goals/GoalFormModal";
+import GoalDetailPanel from "@/components/goals/GoalDetailPanel";
+import { useAuth } from "@/contexts/AuthContext";
+import { AlertTriangle, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, Download, Filter, MoreHorizontal, Plus, Search, Target, TrendingUp } from "lucide-react";
+import toast from "react-hot-toast";
 
-// ── Tiny SVG Sparkline ────────────────────────────────────────────────────────
-function Sparkline({ color, positive }: { color: string; positive: boolean }) {
-  const pts = positive
-    ? '0,18 8,14 16,12 24,9 32,7 40,4 48,2'
-    : '0,4 8,6 16,5 24,10 32,12 40,15 48,18';
-  return (
-    <svg width={48} height={20} style={{ display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.8} />
-    </svg>
-  );
-}
+type Goal = { id:string; title:string; description?:string | null; status:string; progress:number; type:string; targetDate?:string | null; ownerId?:string; owner?:{id:string;name?:string;email?:string;image?:string | null}; cycle?:{name:string}|null; projects?:{name:string;teamIds?:string[]}[]; keyResults?:unknown[]; computed?:{progress?:number}; };
+type FilterState = { search:string; status:string; owner:string; type:string; dateRange:string };
 
-// ── Metric Card ───────────────────────────────────────────────────────────────
-function MetricCard({ label, value, unit = '', sub, accent, positive, onClick, active }: {
-  label: string; value: string | number; unit?: string; sub?: string;
-  accent: string; positive: boolean; onClick?: () => void; active?: boolean;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        background: active ? '#E6EFFF' : 'white',
-        border: `1px solid ${active ? '#0052CC' : '#DFE1E6'}`,
-        borderRadius: 10, padding: '16px 18px', cursor: onClick ? 'pointer' : 'default',
-        display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140,
-        transition: 'all .15s', position: 'relative', overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(9,30,66,.06)'
-      }}
-    >
-      <span style={{ fontSize: 10, fontWeight: 700, color: '#6B778C', textTransform: 'uppercase', letterSpacing: '.07em' }}>{label}</span>
-      <span style={{ fontSize: 26, fontWeight: 800, color: accent, lineHeight: 1 }}>
-        {value}<span style={{ fontSize: 14, fontWeight: 600 }}>{unit}</span>
-      </span>
-      {sub && <span style={{ fontSize: 10, color: positive ? '#36B37E' : '#FF5630', display: 'flex', alignItems: 'center', gap: 3 }}>
-        {positive ? '▲' : '▼'} {sub}
-      </span>}
-      <div style={{ position: 'absolute', right: 12, bottom: 12 }}>
-        <Sparkline color={accent} positive={positive} />
-      </div>
-    </div>
-  );
-}
+const tabs = ["All Goals", "My Goals", "Team Goals", "Department Goals", "Company Goals", "Archived Goals"] as const;
+const labels: Record<string, string> = { ON_TRACK:"On Track", AT_RISK:"At Risk", OFF_TRACK:"Off Track", COMPLETED:"Completed", NOT_STARTED:"Not Started", PAUSED:"Paused", ARCHIVED:"Archived" };
+const statusTone: Record<string, string> = { ON_TRACK:"green", AT_RISK:"amber", OFF_TRACK:"red", COMPLETED:"blue", NOT_STARTED:"slate", PAUSED:"purple", ARCHIVED:"slate" };
 
-// ── Attention Alert Card ──────────────────────────────────────────────────────
-function AttentionCard({ alert, onClick }: { alert: any; onClick: () => void }) {
-  const cfg: Record<string, { bg: string; border: string; dot: string; textColor: string; badgeText: string }> = {
-    critical: { bg: '#FFF0F0', border: '#FFEBEB', dot: '#FF5630', textColor: '#BF2600', badgeText: 'Critical' },
-    warning: { bg: '#FFFAE6', border: '#FFF0B3', dot: '#FFAB00', textColor: '#974F0C', badgeText: 'Warning' },
-    info: { bg: '#E6EFFF', border: '#B3D0FF', dot: '#0052CC', textColor: '#0052CC', badgeText: 'Info' },
-    good: { bg: '#E3FCEF', border: '#D3F9E8', dot: '#36B37E', textColor: '#006644', badgeText: 'Good' },
-  };
-  const c = cfg[alert.severity] || cfg.info;
-  return (
-    <div onClick={onClick} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer', minWidth: 220, flex: 1, transition: 'all .15s', boxShadow: '0 1px 3px rgba(9,30,66,.04)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#172B4D', flex: 1, lineHeight: 1.3 }}>{alert.message}</span>
-      </div>
-      {alert.detail && <p style={{ fontSize: 11, color: '#42526E', marginBottom: 8 }}>{alert.detail}</p>}
-      <span style={{ fontSize: 10, fontWeight: 700, background: c.dot, color: 'white', padding: '2px 8px', borderRadius: 6 }}>{c.badgeText}</span>
-    </div>
-  );
-}
+function goalProgress(goal: Goal) { return Math.min(100, Math.max(0, goal.computed?.progress ?? goal.progress ?? 0)); }
+function avatar(name?: string) { return (name || "U").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase(); }
+function days(date?: string | null) { if (!date) return null; return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000); }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function GoalsPage() {
-  const { user } = useAuth();
-  const [tab, setTab] = useState<ViewTab>('goals');
-  const [data, setData] = useState<any>(null);
+  const { user, hasPermission, isLoading: authLoading } = useAuth();
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<any>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [cardFilter, setCardFilter] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState<(typeof tabs)[number]>("All Goals");
+  const [filter, setFilter] = useState<FilterState>({ search:"", status:"ALL", owner:"ALL", type:"ALL", dateRange:"ALL" });
+  const [page, setPage] = useState(1); const [pageSize, setPageSize] = useState(5);
+  const [editing, setEditing] = useState<Goal | null>(null); const [selected, setSelected] = useState<Goal | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
 
-  const fetchData = useCallback(async (silent = false) => {
-    silent ? setRefreshing(true) : setLoading(true);
-    try {
-      const r = await fetch('/api/goals/intelligence', { credentials: 'include' });
-      if (r.ok) setData(await r.json());
-    } catch { }
-    setLoading(false); setRefreshing(false);
-  }, []);
+  const refresh = async () => { setLoading(true); setError(""); try { const res = await fetch("/api/goals/intelligence", { credentials:"include" }); if (!res.ok) throw new Error("Unable to load goals"); const data = await res.json(); setGoals(Array.isArray(data.goals) ? data.goals : []); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load goals"); } finally { setLoading(false); } };
+  useEffect(() => { refresh(); }, []);
+  useEffect(() => { setPage(1); }, [tab, filter, pageSize]);
 
-  useEffect(() => {
-    fetchData();
-    const t = setInterval(() => fetchData(true), 30000);
-    const h = () => fetchData(true);
-    window.addEventListener('goalsUpdated', h);
-    return () => { clearInterval(t); window.removeEventListener('goalsUpdated', h); };
-  }, [fetchData]);
-
-  const goals: any[] = data?.goals || [];
-  const summary: any = data?.summary || {};
-  const alerts: any[] = (data?.alerts || []).slice(0, 4);
-
+  const owners = useMemo(() => Array.from(new Map(goals.filter(g => g.owner?.id).map(g => [g.owner!.id, g.owner!])).values()), [goals]);
   const filtered = useMemo(() => goals.filter(g => {
-    const matchSearch = !search || g.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || g.status?.replace(/_/g, ' ') === statusFilter;
-    const matchCard = !cardFilter
-      || (cardFilter === 'ACTIVE' && g.status !== 'COMPLETED')
-      || (cardFilter === 'AT_RISK' && (g.computed?.riskScore ?? 0) > 40 && (g.computed?.riskScore ?? 0) <= 70)
-      || (cardFilter === 'CRITICAL' && (g.computed?.riskScore ?? 0) > 70);
-    return matchSearch && matchStatus && matchCard;
-  }), [goals, search, statusFilter, cardFilter]);
-
-  const selectedGoal = goals.find(g => g.id === selectedGoalId);
-  const tabs = [
-    { id: 'goals' as ViewTab, label: 'Goals', Icon: Target },
-    { id: 'okrs' as ViewTab, label: 'OKRs', Icon: LayoutGrid },
-    { id: 'performance' as ViewTab, label: 'Performance', Icon: Activity },
-    { id: 'myfocus' as ViewTab, label: 'My Focus', Icon: Zap },
-  ];
-
-  return (
-    <main style={{ display: 'flex', minHeight: '100vh', background: '#F8F9FA', fontFamily: "'Inter', -apple-system, sans-serif" }}>
-      <Sidebar />
-      <style>{CSS}</style>
-
-      <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
-
-        {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-        <div style={{ padding: '24px 28px 0', background: 'white', borderBottom: '1px solid #DFE1E6', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 4px rgba(9,30,66,.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ background: '#E6EFFF', padding: 8, borderRadius: 8, color: '#0052CC' }}>
-                <Target size={20} />
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, color: '#172B4D', letterSpacing: '-0.3px' }}>Goals Command Center</h1>
-                  <Brain size={15} color="#0052CC" />
-                </div>
-                <p style={{ fontSize: 13, color: '#42526E', marginTop: 2 }}>Drive strategy. Track outcomes. Make better decisions.</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="gb-ghost" onClick={() => fetchData(true)} disabled={refreshing}>
-                <RefreshCw size={13} style={{ animation: refreshing ? 'gspin 1s linear infinite' : 'none' }} />
-                {refreshing ? 'Syncing…' : 'Refresh'}
-              </button>
-              <button className="gb-primary" onClick={() => { setEditingGoal(null); setShowModal(true); }}>
-                <Plus size={14} /> New Goal
-              </button>
-            </div>
-          </div>
-
-          {/* ── METRIC CARDS ── */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-            <MetricCard label="Active Goals" value={summary.activeGoals ?? goals.filter(g => g.status !== 'COMPLETED').length} sub="vs last cycle" accent="#0052CC" positive onClick={() => setCardFilter(cardFilter === 'ACTIVE' ? null : 'ACTIVE')} active={cardFilter === 'ACTIVE'} />
-            <MetricCard label="At Risk Goals" value={summary.atRiskGoals ?? 0} sub="vs last cycle" accent="#FFAB00" positive={false} onClick={() => setCardFilter(cardFilter === 'AT_RISK' ? null : 'AT_RISK')} active={cardFilter === 'AT_RISK'} />
-            <MetricCard label="Critical Goals" value={summary.criticalGoals ?? 0} sub="vs last cycle" accent="#FF5630" positive={false} onClick={() => setCardFilter(cardFilter === 'CRITICAL' ? null : 'CRITICAL')} active={cardFilter === 'CRITICAL'} />
-            <MetricCard label="Execution Score" value={summary.executionScore ?? 0} unit="%" sub="vs last cycle" accent="#36B37E" positive />
-            <MetricCard label="AI Confidence" value={summary.avgConfidence ?? 0} unit="%" sub="vs last cycle" accent="#6554C0" positive />
-          </div>
-
-          {/* ── TABS ── */}
-          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #DFE1E6' }}>
-            {tabs.map(({ id, label, Icon }) => (
-              <button key={id} onClick={() => setTab(id)} style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '10px 18px 12px', background: 'none', border: 'none',
-                borderBottom: tab === id ? '2px solid #0052CC' : '2px solid transparent',
-                color: tab === id ? '#0052CC' : '#42526E', fontSize: 13, fontWeight: tab === id ? 600 : 500,
-                cursor: 'pointer', marginBottom: -1, transition: 'color .15s', fontFamily: 'inherit',
-              }}>
-                <Icon size={13} /> {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── ATTENTION ALERTS ── */}
-        {alerts.length > 0 && (
-          <div style={{ padding: '14px 28px', background: '#FAFBFC', borderBottom: '1px solid #DFE1E6' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 15 }}>✨</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#172B4D' }}>What needs your attention</span>
-              </div>
-              <span style={{ fontSize: 11, color: '#0052CC', cursor: 'pointer', fontWeight: 500 }}>View all alerts →</span>
-            </div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'nowrap', overflow: 'hidden' }}>
-              {alerts.map(a => (
-                <AttentionCard key={a.id} alert={a} onClick={() => setSelectedGoalId(a.goalId)} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── FILTER BAR ── */}
-        <div style={{ padding: '10px 28px', background: 'white', borderBottom: '1px solid #DFE1E6', display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
-            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6' }} />
-            <input
-              placeholder="Search goals, KRs…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '7px 12px 7px 32px', background: '#FAFBFC', border: '1px solid #DFE1E6', borderRadius: 8, color: '#172B4D', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
-            />
-          </div>
-          {[
-            { label: 'Status', options: ['ALL', 'ON TRACK', 'AT RISK', 'OFF TRACK', 'COMPLETED'], val: statusFilter, set: setStatusFilter },
-          ].map(({ label, options, val, set }) => (
-            <select key={label} value={val} onChange={e => set(e.target.value)} style={{ padding: '7px 10px', background: '#F4F5F7', border: '1px solid #DFE1E6', borderRadius: 8, color: '#42526E', fontSize: 12, outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {options.map(o => <option key={o} value={o}>{label}: {o === 'ALL' ? 'All' : o}</option>)}
-            </select>
-          ))}
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#42526E' }}>
-            Showing {filtered.length} of {goals.length} goals
-          </div>
-        </div>
-
-        {/* ── CONTENT ── */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
-            {loading ? (
-              <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ height: 64, borderRadius: 10, background: '#111827', animation: 'gpulse 1.5s ease infinite' }} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {tab === 'goals' && <GoalsView goals={filtered} onSelectGoal={setSelectedGoalId} onEditGoal={g => { setEditingGoal(g); setShowModal(true); }} selectedGoalId={selectedGoalId} onRefresh={() => fetchData(true)} />}
-                {tab === 'okrs' && <OKRsView goals={filtered} onRefresh={() => fetchData(true)} currentUserId={user?.id} />}
-                {tab === 'performance' && <PerformanceView goals={filtered} summary={summary} />}
-                {tab === 'myfocus' && <MyFocusView goals={filtered} currentUserId={user?.id || ''} onSelectGoal={setSelectedGoalId} onRefresh={() => fetchData(true)} />}
-              </>
-            )}
-          </div>
-
-          {selectedGoal && (
-            <GoalDetailPanel
-              goal={selectedGoal}
-              onClose={() => setSelectedGoalId(null)}
-              onRefresh={() => fetchData(true)}
-              onEdit={g => { setEditingGoal(g); setShowModal(true); }}
-            />
-          )}
-        </div>
-      </div>
-
-      {showModal && (
-        <GoalFormModal
-          editingGoal={editingGoal}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => { setShowModal(false); fetchData(true); }}
-          currentUserId={user?.id || ''}
-        />
-      )}
-    </main>
-  );
+    const text = `${g.title} ${g.description || ""} ${g.owner?.name || ""}`.toLowerCase();
+    if (filter.search && !text.includes(filter.search.toLowerCase())) return false;
+    if (filter.status !== "ALL" && g.status !== filter.status) return false;
+    if (filter.owner !== "ALL" && g.ownerId !== filter.owner) return false;
+    if (filter.type !== "ALL" && g.type !== filter.type) return false;
+    if (tab === "My Goals" && g.ownerId !== user?.id) return false;
+    if (tab === "Team Goals" && g.type !== "TEAM") return false;
+    if (tab === "Department Goals" && g.type !== "DEPARTMENT") return false;
+    if (tab === "Company Goals" && g.type !== "COMPANY") return false;
+    if (tab === "Archived Goals" && g.status !== "ARCHIVED") return false;
+    if (tab !== "Archived Goals" && g.status === "ARCHIVED") return false;
+    if (filter.dateRange !== "ALL" && g.targetDate) { const d = days(g.targetDate); if (filter.dateRange === "OVERDUE" && !(d !== null && d < 0)) return false; if (filter.dateRange === "NEXT_30" && !(d !== null && d >= 0 && d <= 30)) return false; }
+    return true;
+  }), [filter, goals, tab, user?.id]);
+  const visible = filtered.slice((page - 1) * pageSize, page * pageSize); const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const activeFilters = Object.values(filter).filter(v => v !== "" && v !== "ALL").length;
+  const metrics = useMemo(() => [{label:"Total Goals",value:goals.length,icon:Target,tone:"blue",trend:"All active objectives"},{label:"On Track",value:goals.filter(g=>g.status==="ON_TRACK").length,icon:CheckCircle2,tone:"green",trend:"Healthy delivery"},{label:"At Risk",value:goals.filter(g=>g.status==="AT_RISK").length,icon:AlertTriangle,tone:"amber",trend:"Needs attention"},{label:"Off Track",value:goals.filter(g=>g.status==="OFF_TRACK").length,icon:AlertTriangle,tone:"red",trend:"Immediate action"},{label:"Completed",value:goals.filter(g=>g.status==="COMPLETED" || goalProgress(g) === 100).length,icon:TrendingUp,tone:"purple",trend:"Delivered outcomes"},{label:"Avg Progress",value:`${goals.length ? Math.round(goals.reduce((sum,g)=>sum+goalProgress(g),0)/goals.length) : 0}%`,icon:BarChart3,tone:"blue",trend:"Across all goals"}], [goals]);
+  const canCreate = hasPermission("goals.create"); const canEdit = hasPermission("goals.edit"); const canDelete = hasPermission("goals.delete");
+  const clear = () => setFilter({search:"",status:"ALL",owner:"ALL",type:"ALL",dateRange:"ALL"});
+  const exportCsv = () => { const rows = [["Goal","Owner","Type","Progress","Status","Due date"], ...filtered.map(g => [g.title,g.owner?.name || "Unassigned",g.type,`${goalProgress(g)}%`,labels[g.status] || g.status,g.targetDate ? new Date(g.targetDate).toLocaleDateString() : ""])]; const url=URL.createObjectURL(new Blob([rows.map(r=>r.map(v=>`\"${String(v).replaceAll('"','""')}\"`).join(",")).join("\n")],{type:"text/csv"})); const a=document.createElement("a"); a.href=url; a.download="stroovo-goals.csv"; a.click(); URL.revokeObjectURL(url); toast.success("Filtered goals exported"); };
+  const deleteGoal = async (goal:Goal) => { if (!confirm(`Delete “${goal.title}”? This cannot be undone.`)) return; const res=await fetch(`/api/goals/${goal.id}`,{method:"DELETE",credentials:"include"}); if (!res.ok) { toast.error("Could not delete goal"); return; } toast.success("Goal deleted"); setMenu(null); refresh(); };
+  const updateStatus = async (goal:Goal, status:string) => { const res=await fetch(`/api/goals/${goal.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({status})}); if (!res.ok) return toast.error("Could not update goal"); toast.success(`Goal marked ${labels[status].toLowerCase()}`); setMenu(null); refresh(); };
+  if (!authLoading && !hasPermission("goals.view")) return <div className="goals-shell"><Sidebar/><main className="goals-main"><div className="permission-state"><Target size={38}/><h1>Goals access required</h1><p>You do not have permission to view organizational goals.</p></div></main></div>;
+  return <div className="goals-shell"><Sidebar/><main className="goals-main">
+    <section className="goals-page">
+      <header className="goals-header"><div className="title-block"><div className="title-icon"><Target size={24}/></div><div><h1>Goals</h1><p>Track, manage and achieve your organization&apos;s goals and objectives.</p></div></div><div className="header-actions"><button className="secondary-btn" onClick={exportCsv}><Download size={16}/>Export</button><button className="secondary-btn" onClick={() => toast("Analytics are available in the goal detail insights panel.")}><BarChart3 size={16}/>View Analytics</button>{canCreate && <button className="primary-btn" onClick={() => setEditing({} as Goal)}><Plus size={17}/>New Goal</button>}</div></header>
+      <section className="metric-grid">{loading ? Array.from({length:6}).map((_,i)=><div className="metric skeleton" key={i}/>) : metrics.map(m=>{const Icon=m.icon;return <article className="metric" key={m.label}><span className={`metric-icon ${m.tone}`}><Icon size={19}/></span><b>{m.value}</b><strong>{m.label}</strong><small>{m.trend}</small></article>})}</section>
+      <nav className="goal-tabs" aria-label="Goal category">{tabs.map(item=><button key={item} className={tab===item?"active":""} onClick={()=>setTab(item)}>{item}</button>)}</nav>
+      <section className="goal-table-card"><div className="toolbar"><div className="search-box"><Search size={16}/><input value={filter.search} onChange={e=>setFilter({...filter,search:e.target.value})} placeholder="Search goals by name, description or owner..."/></div><select value={filter.status} onChange={e=>setFilter({...filter,status:e.target.value})}><option value="ALL">Status: All</option>{Object.entries(labels).map(([v,l])=><option value={v} key={v}>{l}</option>)}</select><select value={filter.owner} onChange={e=>setFilter({...filter,owner:e.target.value})}><option value="ALL">Owner: All</option>{owners.map(o=><option value={o.id} key={o.id}>{o.name || o.email}</option>)}</select><select value={filter.type} onChange={e=>setFilter({...filter,type:e.target.value})}><option value="ALL">Goal Type: All</option><option value="PERSONAL">Personal</option><option value="INDIVIDUAL">Personal</option><option value="TEAM">Team</option><option value="DEPARTMENT">Department</option><option value="COMPANY">Company</option></select><select value={filter.dateRange} onChange={e=>setFilter({...filter,dateRange:e.target.value})}><option value="ALL">Any due date</option><option value="NEXT_30">Due in 30 days</option><option value="OVERDUE">Overdue</option></select><button className="filter-btn"><Filter size={15}/>Filters {activeFilters ? <em>{activeFilters}</em> : null}</button>{activeFilters ? <button className="clear-btn" onClick={clear}>Clear</button> : null}</div>
+        {error ? <div className="state"><AlertTriangle/><h3>We couldn&apos;t load your goals</h3><p>{error}</p><button className="primary-btn" onClick={refresh}>Try again</button></div> : loading ? <div className="table-skeleton">{Array.from({length:5}).map((_,i)=><i key={i}/>)}</div> : !filtered.length ? <div className="state"><Target size={42}/><h3>{goals.length ? "No goals match these filters" : "No goals yet"}</h3><p>{goals.length ? "Try clearing filters or changing your search." : "Create the first goal to give your team direction."}</p>{goals.length ? <button className="secondary-btn" onClick={clear}>Clear filters</button> : canCreate ? <button className="primary-btn" onClick={()=>setEditing({} as Goal)}><Plus size={16}/>New Goal</button> : null}</div> : <div className="table-scroll"><table><thead><tr><th>Goal</th><th>Owner</th><th>Team</th><th>Type</th><th>Progress</th><th>Status</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>{visible.map(g=>{const d=days(g.targetDate);const prog=goalProgress(g);const team=g.projects?.[0]?.name || "No team";return <tr key={g.id} onClick={()=>setSelected(g)}><td><div className="goal-cell"><span className="goal-dot"><Target size={16}/></span><div><b>{g.title}</b><small>{g.description || "No description provided"}</small></div></div></td><td><div className="person"><span>{avatar(g.owner?.name)}</span><div><b>{g.owner?.name || "Unassigned"}</b><small>{g.owner?.email?.split("@")[0] || "Goal owner"}</small></div></div></td><td><div className="team-cell"><b>{team}</b><small>{g.projects?.length ? `${g.projects.length} linked project${g.projects.length>1?"s":""}` : "No linked projects"}</small></div></td><td><span className="type-badge">{g.type === "INDIVIDUAL" ? "Personal" : g.type[0]+g.type.slice(1).toLowerCase()}</span></td><td><div className="progress"><b>{prog}%</b><span><i style={{width:`${prog}%`}}/></span></div></td><td><span className={`status ${statusTone[g.status] || "slate"}`}><i/>{labels[g.status] || g.status.replaceAll("_"," ")}</span></td><td><div className={`due ${d !== null && d < 0 ? "overdue" : ""}`}><b>{g.targetDate ? new Date(g.targetDate).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "No due date"}</b>{d !== null && <small>{d < 0 ? `${Math.abs(d)} days overdue` : d === 0 ? "Due today" : `${d} days left`}</small>}</div></td><td onClick={e=>e.stopPropagation()}><div className="action-wrap"><button className="more" onClick={()=>setMenu(menu===g.id?null:g.id)} aria-label="Goal actions"><MoreHorizontal size={18}/></button>{menu===g.id && <div className="action-menu"><button onClick={()=>{setSelected(g);setMenu(null)}}>View goal</button>{canEdit && <><button onClick={()=>{setEditing(g);setMenu(null)}}>Edit goal</button><button onClick={()=>updateStatus(g,"COMPLETED")}>Mark completed</button><button onClick={()=>updateStatus(g,"ARCHIVED")}>Archive goal</button></>}{canDelete && <button className="danger" onClick={()=>deleteGoal(g)}>Delete goal</button>}</div>}</div></td></tr>})}</tbody></table></div>}
+        {!loading && filtered.length>0 && <footer className="pagination"><span>Showing {(page-1)*pageSize+1} to {Math.min(page*pageSize,filtered.length)} of {filtered.length} goals</span><div><select value={pageSize} onChange={e=>setPageSize(Number(e.target.value))}>{[5,10,25,50,100].map(n=><option value={n} key={n}>{n} per page</option>)}</select><button disabled={page===1} onClick={()=>setPage(1)}>«</button><button disabled={page===1} onClick={()=>setPage(p=>p-1)}><ChevronLeft size={16}/></button><strong>{page}</strong><button disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}><ChevronRight size={16}/></button><button disabled={page===totalPages} onClick={()=>setPage(totalPages)}>»</button></div></footer>}
+      </section>
+    </section>
+    {editing && <GoalFormModal editingGoal={editing.id ? editing : null} currentUserId={user?.id || ""} onClose={()=>setEditing(null)} onSuccess={()=>{setEditing(null);refresh();toast.success(editing.id ? "Goal updated" : "Goal created");}}/>}
+    {selected && <aside className="detail-overlay" onClick={()=>setSelected(null)}><div onClick={e=>e.stopPropagation()}><GoalDetailPanel goal={selected} onClose={()=>setSelected(null)} onRefresh={refresh} onEdit={(g)=>{setSelected(null);setEditing(g);}}/></div></aside>}
+    <style jsx global>{`
+      .goals-shell{display:flex;min-height:100vh;background:#f7f9fc;color:#162447}.goals-main{flex:1;margin-left:240px;min-width:0}.goals-page{max-width:1440px;margin:auto;padding:35px 32px 52px}.goals-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;gap:18px}.title-block{display:flex;gap:15px;align-items:center}.title-icon{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#1876f7,#0056d8);color:#fff;box-shadow:0 10px 22px #0064dc2b}.title-block h1{font-size:25px;letter-spacing:-.04em;margin:0}.title-block p{font-size:14px;color:#64708a;margin:5px 0 0}.header-actions{display:flex;gap:10px;align-items:center}.primary-btn,.secondary-btn,.filter-btn,.clear-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:8px;height:40px;padding:0 14px;cursor:pointer;font:600 13px var(--font-poppins),sans-serif}.primary-btn{background:#0966df;color:#fff;border:1px solid #0966df;box-shadow:0 8px 16px #0966df25}.secondary-btn,.filter-btn{background:#fff;border:1px solid #dfe5ee;color:#213455}.clear-btn{border:0;background:transparent;color:#0966df}.metric-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:20px}.metric{min-height:160px;padding:22px 20px;background:#fff;border:1px solid #dfe5ee;border-radius:12px;box-shadow:0 3px 12px #15234d08}.metric-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;margin-bottom:12px}.metric-icon.blue{background:#e9f2ff;color:#0966df}.metric-icon.green{background:#e7f8f1;color:#10a878}.metric-icon.amber{background:#fff3df;color:#ef9700}.metric-icon.red{background:#ffeaed;color:#f04455}.metric-icon.purple{background:#f0eaff;color:#7a4de8}.metric>b{display:block;font-size:27px;line-height:1;margin-bottom:7px;letter-spacing:-.05em}.metric strong{display:block;font-size:12px;color:#60708d}.metric small{display:block;color:#00a878;font-size:10px;margin-top:10px}.skeleton{background:linear-gradient(90deg,#edf1f7,#f7f9fc,#edf1f7);background-size:200% 100%;animation:shine 1.2s infinite}.goal-tabs{display:flex;gap:28px;border-bottom:1px solid #dfe5ee;margin:0 0 8px;padding-left:2px;overflow:auto}.goal-tabs button{white-space:nowrap;background:transparent;border:0;border-bottom:2px solid transparent;padding:13px 0;color:#62708b;font:600 13px var(--font-poppins),sans-serif;cursor:pointer}.goal-tabs button.active{color:#0966df;border-color:#0966df}.goal-table-card{background:#fff;border:1px solid #dfe5ee;border-radius:12px;overflow:visible;box-shadow:0 4px 14px #15234d08}.toolbar{padding:16px;display:flex;gap:11px;align-items:center;border-bottom:1px solid #e6ebf2}.toolbar select,.pagination select{height:38px;border:1px solid #dfe5ee;border-radius:8px;background:#fff;padding:0 28px 0 11px;color:#42516e;font:500 12px var(--font-poppins),sans-serif}.search-box{height:38px;border:1px solid #dfe5ee;border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 11px;flex:1;min-width:220px;color:#73819b}.search-box input{border:0;outline:0;width:100%;font:500 12px var(--font-poppins),sans-serif}.filter-btn em{background:#0966df;color:#fff;font-style:normal;border-radius:20px;padding:1px 6px;font-size:10px}.table-scroll{overflow-x:auto}table{width:100%;min-width:1080px;border-collapse:collapse}th{height:43px;text-align:left;padding:0 16px;background:#fbfcfe;border-bottom:1px solid #e6ebf2;color:#53617b;font-size:10px;text-transform:uppercase;letter-spacing:.03em}td{padding:15px 16px;border-bottom:1px solid #e9edf3;vertical-align:middle;font-size:12px}tbody tr{cursor:pointer}tbody tr:hover{background:#fafcff}.goal-cell,.person{display:flex;align-items:center;gap:10px}.goal-cell{min-width:270px}.goal-dot{width:39px;height:39px;background:#eaf3ff;color:#0966df;border-radius:50%;display:grid;place-items:center;flex:none}.goal-cell b,.person b,.team-cell b,.due b{display:block;font-size:12px;color:#223354}.goal-cell small,.person small,.team-cell small,.due small{display:block;color:#73809a;font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}.person>span{width:31px;height:31px;border-radius:50%;background:#dbe9ff;color:#0966df;display:grid;place-items:center;font-size:10px;font-weight:700}.type-badge{display:inline-flex;padding:5px 9px;border-radius:6px;background:#eaf3ff;color:#0966df;font-size:10px;font-weight:700}.progress{width:126px}.progress>b{display:block;font-size:11px;margin-bottom:7px}.progress span{display:block;height:6px;background:#e8edf5;border-radius:5px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#0966df,#2780f1);border-radius:5px}.status{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:6px;font-weight:700;font-size:10px;white-space:nowrap}.status i{width:6px;height:6px;border:1.5px solid currentColor;border-radius:50%}.status.green{background:#e7f8f1;color:#07956b}.status.amber{background:#fff3df;color:#d57a00}.status.red{background:#ffeaed;color:#e73b50}.status.blue{background:#e9f2ff;color:#0966df}.status.purple{background:#f0eaff;color:#7745d9}.status.slate{background:#eff2f6;color:#6f7c94}.due.overdue b,.due.overdue small{color:#e73b50}.more{width:36px;height:36px;border:1px solid #dfe5ee;border-radius:8px;background:#fff;color:#586781;display:grid;place-items:center;cursor:pointer}.action-wrap{position:relative}.action-menu{position:absolute;z-index:8;right:0;top:40px;width:152px;border:1px solid #dfe5ee;border-radius:9px;background:#fff;padding:5px;box-shadow:0 12px 28px #17244020}.action-menu button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:8px;border-radius:5px;color:#334261;font:500 12px var(--font-poppins),sans-serif;cursor:pointer}.action-menu button:hover{background:#f3f7fc}.action-menu .danger{color:#e73b50}.pagination{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;color:#42516e;font-size:12px}.pagination>div{display:flex;align-items:center;gap:5px}.pagination button{height:33px;min-width:33px;border:1px solid #dfe5ee;border-radius:6px;background:#fff;color:#42608b;cursor:pointer}.pagination button:disabled{opacity:.4;cursor:not-allowed}.pagination strong{width:32px;height:32px;display:grid;place-items:center;border:1px solid #0966df;border-radius:6px;background:#eaf3ff;color:#0966df}.state,.permission-state{min-height:310px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#73809a;padding:30px}.state svg,.permission-state svg{color:#0966df;margin-bottom:12px}.state h3,.permission-state h1{margin:0;color:#223354;font-size:17px}.state p,.permission-state p{margin:7px 0 19px;font-size:13px}.table-skeleton{padding:16px}.table-skeleton i{display:block;height:59px;border-radius:7px;background:linear-gradient(90deg,#f2f5f9,#fff,#f2f5f9);background-size:200%;animation:shine 1.2s infinite;margin-bottom:8px}@keyframes shine{to{background-position:-200% 0}}.detail-overlay{position:fixed;z-index:30;inset:0;background:#091e423d;display:flex;justify-content:flex-end}.detail-overlay>div{width:385px;max-width:100%;height:100%;background:#fff;overflow:auto;box-shadow:-15px 0 40px #091e4220}.dpanel{min-height:100%;background:#fff}.dpanel-sec{padding:18px;border-bottom:1px solid #dfe5ee}.dp-label{font-size:10px;font-weight:700;color:#63718c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;gap:5px;align-items:center}.g-prog{height:5px;background:#e8edf5;border-radius:5px;overflow:hidden}.g-prog-fill{height:100%;border-radius:5px}.gb-primary,.gb-ghost{display:inline-flex;align-items:center;gap:5px;border-radius:7px;font:600 12px var(--font-poppins),sans-serif;cursor:pointer}.gb-primary{background:#0966df;color:white;border:0}.gb-ghost{border:1px solid #dfe5ee;background:#fff;color:#42516e}.gm-overlay{position:fixed;inset:0;z-index:40;background:#091e4261;display:grid;place-items:center;padding:20px}.gm-box{background:#fff;width:650px;max-width:100%;border-radius:14px;padding:24px;box-shadow:0 18px 50px #091e4233;max-height:90vh;overflow:auto}.gm-field{margin-bottom:15px}.gm-field label{display:block;font-size:11px;font-weight:700;color:#52607a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}.ginput,.gselect,.gtextarea{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #dfe5ee;border-radius:7px;color:#223354;font:13px var(--font-poppins),sans-serif;background:#fff}.gtextarea{resize:vertical}@media(max-width:1180px){.metric-grid{grid-template-columns:repeat(3,1fr)}.toolbar{flex-wrap:wrap}.search-box{flex-basis:40%}}@media(max-width:800px){.goals-main{margin-left:0}.goals-page{padding:24px 16px}.goals-header{align-items:flex-start;flex-direction:column}.header-actions{width:100%;flex-wrap:wrap}.metric-grid{grid-template-columns:repeat(2,1fr)}.toolbar>*{flex:1}.search-box{flex-basis:100%}.pagination{align-items:flex-start;gap:12px;flex-direction:column}}@media(max-width:460px){.metric-grid{gap:9px}.metric{min-height:130px;padding:15px}.metric>b{font-size:23px}.goal-tabs{gap:22px}.header-actions .secondary-btn{display:none}.primary-btn{flex:1}.detail-overlay>div{width:100%}}
+    `}</style>
+  </main></div>;
 }
-
-// ── CSS ───────────────────────────────────────────────────────────────────────
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-  @keyframes gspin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes gpulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
-  @keyframes gslideIn{ from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
-  @keyframes gfadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-
-  .gb-primary{display:flex;align-items:center;gap:6px;padding:7px 16px;background:#0052CC;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;box-shadow:0 2px 8px rgba(0,82,204,.2)}
-  .gb-primary:hover{background:#0065FF}
-  .gb-ghost{display:flex;align-items:center;gap:6px;padding:7px 12px;background:white;color:#42526E;border:1px solid #DFE1E6;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
-  .gb-ghost:hover{background:#F4F5F7;border-color:#C1C7D0}
-
-  /* goals table */
-  .goals-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:12px}
-  .goals-table th{padding:9px 12px;font-size:10px;font-weight:700;color:#6B778C;text-transform:uppercase;letter-spacing:.07em;background:#F8F9FA;border-bottom:1px solid #DFE1E6;text-align:left;white-space:nowrap}
-  .goals-table td{padding:11px 12px;font-size:13px;color:#172B4D;border-bottom:1px solid rgba(9,30,66,.06);vertical-align:middle}
-  .goals-table tbody tr{cursor:pointer;transition:background .1s}
-  .goals-table tbody tr:hover td{background:#F4F5F7}
-  .goals-table tbody tr.gsel td{background:#E6EFFF}
-
-  /* KR expand row */
-  .kr-expand{background:#FAFBFC;display:grid;grid-template-columns:32px 1fr 180px 120px 90px 80px;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(9,30,66,.06);align-items:center}
-
-  /* progress */
-  .g-prog{height:5px;background:#EBECF0;border-radius:10px;overflow:hidden}
-  .g-prog-fill{height:100%;border-radius:10px;transition:width .5s ease}
-
-  /* score pill */
-  .spill{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;min-width:40px}
-  .spill.h{background:rgba(54,179,126,.12);color:#006644}
-  .spill.m{background:rgba(255,171,0,.12);color:#974F0C}
-  .spill.l{background:rgba(255,86,48,.12);color:#BF2600}
-
-  /* status badge */
-  .gbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-  .gbadge.on{background:rgba(54,179,126,.1);color:#006644}
-  .gbadge.at{background:rgba(255,171,0,.1);color:#974F0C}
-  .gbadge.off{background:rgba(255,86,48,.1);color:#BF2600}
-  .gbadge.done{background:rgba(0,82,204,.1);color:#0052CC}
-
-  /* okr */
-  .okr-card{background:white;border:1px solid #DFE1E6;border-radius:10px;margin-bottom:12px;overflow:hidden;animation:gfadeUp .2s ease;box-shadow:0 1px 3px rgba(9,30,66,.06)}
-  .okr-header{padding:14px 18px;border-bottom:1px solid #DFE1E6;display:flex;align-items:center;justify-content:space-between;background:#FAFBFC}
-  .okr-kr-row{display:grid;grid-template-columns:1fr 160px 110px 90px auto;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(9,30,66,.06);align-items:center}
-  .okr-kr-row:last-child{border-bottom:none}
-  .okr-input{background:white;border:1px solid #DFE1E6;border-radius:6px;color:#172B4D;font-size:12px;padding:4px 8px;width:70px;text-align:right;outline:none;font-family:inherit}
-  .okr-input:focus{border-color:#0052CC;box-shadow:0 0 0 2px rgba(0,82,204,.1)}
-
-  /* perf */
-  .perf-box{background:white;border:1px solid #DFE1E6;border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(9,30,66,.06)}
-  .pbar{display:flex;align-items:center;gap:10px;margin-bottom:7px}
-  .pbar-label{font-size:12px;color:#42526E;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pbar-track{flex:1;height:6px;background:#EBECF0;border-radius:10px;overflow:hidden}
-  .pbar-fill{height:100%;border-radius:10px;transition:width .5s}
-  .pbar-val{font-size:11px;color:#6B778C;min-width:32px;text-align:right}
-
-  /* detail panel */
-  .dpanel{width:380px;min-width:380px;border-left:1px solid #DFE1E6;background:white;overflow-y:auto;display:flex;flex-direction:column;animation:gslideIn .2s ease;box-shadow:-4px 0 16px rgba(9,30,66,.08)}
-  .dpanel-sec{padding:16px 18px;border-bottom:1px solid #DFE1E6}
-  .dp-label{font-size:10px;font-weight:700;color:#6B778C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:5px}
-
-  /* modal */
-  .gm-overlay{position:fixed;inset:0;background:rgba(9,30,66,.5);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)}
-  .gm-box{background:white;border:1px solid #DFE1E6;border-radius:12px;width:100%;max-width:580px;padding:28px;box-shadow:0 8px 32px rgba(9,30,66,.15);animation:gfadeUp .2s ease;max-height:90vh;overflow-y:auto}
-  .gm-field{margin-bottom:16px}
-  .gm-field label{display:block;font-size:11px;font-weight:700;color:#42526E;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-  .ginput,.gselect,.gtextarea{width:100%;padding:8px 12px;background:#FAFBFC;border:1px solid #DFE1E6;border-radius:8px;color:#172B4D;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s}
-  .ginput:focus,.gselect:focus,.gtextarea:focus{border-color:#0052CC;box-shadow:0 0 0 2px rgba(0,82,204,.1);background:white}
-  .gtextarea{resize:vertical;min-height:68px}
-
-  /* focus view */
-  .focus-card{background:white;border:1px solid #DFE1E6;border-radius:10px;padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(9,30,66,.04)}
-  .focus-card:hover{border-color:#0052CC;box-shadow:0 3px 8px rgba(0,82,204,.08);transform:translateY(-1px)}
-
-  /* risk donut helper */
-  .risk-donut{position:relative;display:inline-flex;align-items:center;justify-content:center}
-`;
