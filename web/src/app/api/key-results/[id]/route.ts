@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { recalculateGoalProgress } from '@/app/api/objectives/route';
 
 export async function PATCH(
   request: Request,
@@ -16,25 +17,37 @@ export async function PATCH(
     if (targetValue !== undefined) updateData.targetValue = parseFloat(targetValue);
     if (unit !== undefined) updateData.unit = unit;
 
-    const kr = await prisma.keyResult.update({
+    const kr: any = await prisma.keyResult.update({
       where: { id },
       data: updateData,
     });
 
-    // Recalculate parent goal progress
-    const allKRs = await prisma.keyResult.findMany({ where: { goalId: kr.goalId } });
-    if (allKRs.length > 0) {
-      const totalWeight = allKRs.reduce((s: number, k: any) => s + (k.weight || 1), 0);
-      const weightedProgress = allKRs.reduce((s: number, k: any) => {
-        const range = k.targetValue - k.initialValue;
-        const p = range === 0 ? 0 : ((k.currentValue - k.initialValue) / range) * 100;
-        return s + Math.min(100, Math.max(0, p)) * (k.weight || 1);
-      }, 0);
-      const newProgress = Math.round(weightedProgress / totalWeight);
-      await prisma.goal.update({
-        where: { id: kr.goalId },
-        data: { progress: newProgress, updatedAt: new Date() }
-      });
+    // If KR belongs to an Objective, recalculate Objective progress
+    if (kr.objectiveId) {
+      const objKRs = await (prisma.keyResult as any).findMany({ where: { objectiveId: kr.objectiveId } });
+      if (objKRs.length > 0) {
+        let total = 0;
+        objKRs.forEach((k: any) => {
+          const range = k.targetValue - k.initialValue;
+          const p = range === 0 ? 0 : ((k.currentValue - k.initialValue) / range) * 100;
+          total += Math.min(Math.max(p, 0), 100);
+        });
+        const objProgress = Math.round(total / objKRs.length);
+        await (prisma as any).objective.update({
+          where: { id: kr.objectiveId },
+          data: { progress: objProgress }
+        });
+      }
+    }
+
+    // Rollup to parent Goal
+    if (kr.goalId) {
+      await recalculateGoalProgress(kr.goalId);
+    } else if (kr.objectiveId) {
+      const parentObj: any = await (prisma as any).objective.findUnique({ where: { id: kr.objectiveId } });
+      if (parentObj) {
+        await recalculateGoalProgress(parentObj.goalId);
+      }
     }
 
     return NextResponse.json({ success: true, keyResult: kr });
@@ -50,9 +63,45 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.keyResult.delete({ where: { id } });
+    const kr: any = await prisma.keyResult.findUnique({ where: { id } });
+
+    if (kr) {
+      const goalId = kr.goalId;
+      const objectiveId = kr.objectiveId;
+
+      await prisma.keyResult.delete({ where: { id } });
+
+      if (objectiveId) {
+        const objKRs = await (prisma.keyResult as any).findMany({ where: { objectiveId } });
+        let objProgress = 0;
+        if (objKRs.length > 0) {
+          let total = 0;
+          objKRs.forEach((k: any) => {
+            const range = k.targetValue - k.initialValue;
+            const p = range === 0 ? 0 : ((k.currentValue - k.initialValue) / range) * 100;
+            total += Math.min(Math.max(p, 0), 100);
+          });
+          objProgress = Math.round(total / objKRs.length);
+        }
+        await (prisma as any).objective.update({
+          where: { id: objectiveId },
+          data: { progress: objProgress }
+        });
+      }
+
+      if (goalId) {
+        await recalculateGoalProgress(goalId);
+      } else if (objectiveId) {
+        const parentObj: any = await (prisma as any).objective.findUnique({ where: { id: objectiveId } });
+        if (parentObj) {
+          await recalculateGoalProgress(parentObj.goalId);
+        }
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    console.error('KR DELETE error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

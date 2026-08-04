@@ -57,12 +57,12 @@ export default function CreateGoalModal({ isOpen, onClose, cycles, onSuccess, go
       setKeyResults(
         (goalToEdit.keyResults || []).length > 0
           ? goalToEdit.keyResults!.map((kr) => ({
-              id: kr.id,
-              title: kr.title,
-              targetValue: Number(kr.targetValue) || 100,
-              unit: kr.unit || 'NUMBER',
-              currentValue: Number(kr.currentValue) || 0,
-            }))
+            id: kr.id,
+            title: kr.title,
+            targetValue: Number(kr.targetValue) || 100,
+            unit: kr.unit || 'NUMBER',
+            currentValue: Number(kr.currentValue) || 0,
+          }))
           : [{ title: '', targetValue: 100, unit: 'NUMBER' }]
       );
     } else {
@@ -152,7 +152,7 @@ export default function CreateGoalModal({ isOpen, onClose, cycles, onSuccess, go
         <div style={{ padding: '24px', borderBottom: '1px solid #DFE1E6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#172B4D' }}>{goalToEdit ? 'Edit Goal' : 'Create Goal'}</h2>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6B778C' }}>Capture your objective and its measurable key results.</p>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6B778C' }}>Capture your objective and its measurable Key Objective.</p>
           </div>
           <button type="button" onClick={onClose} style={{ border: 'none', background: 'transparent', color: '#6B778C', cursor: 'pointer', padding: '4px' }}>
             <X size={20} />
@@ -227,7 +227,7 @@ export default function CreateGoalModal({ isOpen, onClose, cycles, onSuccess, go
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#42526E' }}>Key Results</label>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#42526E' }}>Key Objective</label>
               <button type="button" onClick={handleAddKR} style={{ display: 'flex', alignItems: 'center', gap: '4px', border: 'none', background: 'transparent', color: '#0052CC', fontWeight: 600, cursor: 'pointer' }}>
                 <Plus size={14} /> Add Result
               </button>

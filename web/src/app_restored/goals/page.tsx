@@ -180,13 +180,13 @@ export default function GoalsPage() {
                     </div>
                 </div>
 
-                {/* Key Results & Sub-goals Expansion */}
+                {/* Key Objective & Sub-goals Expansion */}
                 {isExpanded && (
                     <div style={{ padding: '0 20px 20px 56px', borderTop: '1px solid #F4F5F7' }}>
-                        {/* Key Results */}
+                        {/* Key Objective */}
                         {goal.keyResults && goal.keyResults.length > 0 && (
                             <div style={{ marginTop: '20px' }}>
-                                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6B778C', marginBottom: '12px', fontWeight: 600 }}>Key Results</h4>
+                                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6B778C', marginBottom: '12px', fontWeight: 600 }}>Key Objective</h4>
                                 {goal.keyResults.map(kr => (
                                     <div key={kr.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#FAFBFC', border: '1px solid #EBECF0', borderRadius: '4px', marginBottom: '8px' }}>
                                         <div style={{ flex: 1 }}>

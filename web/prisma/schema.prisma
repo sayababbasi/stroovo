@@ -177,6 +177,7 @@ model User {
   automations            Automation[]
   comments               Comment[]
   goals                  Goal[]                @relation("GoalOwner")
+  objectives             Objective[]           @relation("ObjectiveOwner")
   mfaSettings            MFASetting?
   notifications          Notification[]
   notificationChannels   NotificationChannel[]
@@ -251,40 +252,68 @@ model Cycle {
 }
 
 model Goal {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?
+  status       String      @default("ON_TRACK")
+  priority     String      @default("HIGH")
+  currency     String?     @default("USD ($)")
+  targetAmount Float?
+  progress     Int         @default(0)
+  targetDate   DateTime?
+  type         String      @default("COMPANY")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  tenantId     String?
+  ownerId      String
+  cycleId      String?
+  parentId     String?
+  cycle        Cycle?      @relation(fields: [cycleId], references: [id])
+  owner        User        @relation("GoalOwner", fields: [ownerId], references: [id])
+  parent       Goal?       @relation("GoalHierarchy", fields: [parentId], references: [id])
+  subGoals     Goal[]      @relation("GoalHierarchy")
+  tenant       Tenant?     @relation(fields: [tenantId], references: [id])
+  keyResults   KeyResult[]
+  objectives   Objective[]
+  projects     Project[]
+}
+
+model Objective {
   id          String      @id @default(cuid())
   title       String
   description String?
   status      String      @default("ON_TRACK")
+  priority    String      @default("HIGH")
   progress    Int         @default(0)
+  startDate   DateTime?
   targetDate  DateTime?
-  type        String      @default("COMPANY")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  tenantId    String?
-  ownerId     String
-  cycleId     String?
-  parentId    String?
-  cycle       Cycle?      @relation(fields: [cycleId], references: [id])
-  owner       User        @relation("GoalOwner", fields: [ownerId], references: [id])
-  parent      Goal?       @relation("GoalHierarchy", fields: [parentId], references: [id])
-  subGoals    Goal[]      @relation("GoalHierarchy")
-  tenant      Tenant?     @relation(fields: [tenantId], references: [id])
+  
+  goalId      String
+  goal        Goal        @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  
+  ownerId     String?
+  owner       User?       @relation("ObjectiveOwner", fields: [ownerId], references: [id])
+  
   keyResults  KeyResult[]
-  projects    Project[]
 }
 
 model KeyResult {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   title        String
-  initialValue Float    @default(0)
-  currentValue Float    @default(0)
+  description  String?
+  initialValue Float      @default(0)
+  currentValue Float      @default(0)
   targetValue  Float
-  unit         String   @default("NUMBER")
-  weight       Float    @default(1.0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  goalId       String
-  goal         Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  unit         String     @default("NUMBER")
+  weight       Float      @default(1.0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  goalId       String?
+  goal         Goal?      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  objectiveId  String?
+  objective    Objective? @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
 }
 
 model Project {

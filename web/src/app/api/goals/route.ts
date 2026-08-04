@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-
-
 export async function OPTIONS() {
     return NextResponse.json({});
 }
@@ -13,7 +11,7 @@ export async function GET(request: Request) {
         const cycleId = searchParams.get('cycleId');
         const type = searchParams.get('type');
 
-        const whereClause: any = { parentId: null }; // Only fetch top-level goals by default
+        const whereClause: any = { parentId: null };
         if (cycleId) whereClause.cycleId = cycleId;
         if (type) whereClause.type = type;
 
@@ -22,15 +20,23 @@ export async function GET(request: Request) {
             include: {
                 owner: { select: { id: true, name: true, email: true, image: true } },
                 projects: { select: { id: true, name: true, status: true } },
+                objectives: {
+                    include: {
+                        owner: { select: { id: true, name: true, email: true, image: true } },
+                        keyResults: true
+                    },
+                    orderBy: { createdAt: 'asc' }
+                },
                 keyResults: true,
                 subGoals: {
                     include: {
                         owner: { select: { id: true, name: true, image: true } },
+                        objectives: { include: { keyResults: true } },
                         keyResults: true,
                         projects: { select: { id: true, name: true } }
                     }
                 }
-            },
+            } as any,
             orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(goals);
@@ -43,30 +49,56 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { title, description, type, status, targetDate, ownerId, cycleId, parentId, keyResults } = body;
+        const { title, description, type, status, priority, currency, targetAmount, targetDate, ownerId, cycleId, parentId, objectives, keyResults } = body;
 
-        const goal = await prisma.goal.create({
+        const goal = await (prisma as any).goal.create({
             data: {
                 title,
-                description,
+                description: description || null,
                 type: type || 'COMPANY',
                 status: status || 'ON_TRACK',
+                priority: priority || 'HIGH',
+                currency: currency || 'USD ($)',
+                targetAmount: targetAmount !== undefined && targetAmount !== null ? parseFloat(targetAmount) : null,
                 targetDate: targetDate ? new Date(targetDate) : null,
                 ownerId,
-                cycleId,
-                parentId,
-                keyResults: {
-                    create: keyResults?.map((kr: any) => ({
+                cycleId: cycleId || null,
+                parentId: parentId || null,
+                objectives: objectives && Array.isArray(objectives) ? {
+                    create: objectives.filter((o: any) => o.title && o.title.trim()).map((o: any) => ({
+                        title: o.title,
+                        description: o.description || null,
+                        status: o.status || 'ON_TRACK',
+                        priority: o.priority || 'HIGH',
+                        startDate: o.startDate ? new Date(o.startDate) : null,
+                        targetDate: o.targetDate ? new Date(o.targetDate) : null,
+                        ownerId: o.ownerId || ownerId,
+                        keyResults: o.keyResults && Array.isArray(o.keyResults) ? {
+                            create: o.keyResults.filter((k: any) => k.title && k.title.trim()).map((k: any) => ({
+                                title: k.title,
+                                description: k.description || null,
+                                initialValue: parseFloat(k.initialValue) || 0,
+                                currentValue: parseFloat(k.currentValue) || 0,
+                                targetValue: parseFloat(k.targetValue) || 0,
+                                unit: k.unit || 'NUMBER'
+                            }))
+                        } : undefined
+                    }))
+                } : undefined,
+                keyResults: keyResults && Array.isArray(keyResults) ? {
+                    create: keyResults.filter((kr: any) => kr.title && kr.title.trim()).map((kr: any) => ({
                         title: kr.title,
-                        initialValue: kr.initialValue || 0,
-                        currentValue: kr.currentValue || 0,
-                        targetValue: kr.targetValue,
+                        description: kr.description || null,
+                        initialValue: parseFloat(kr.initialValue) || 0,
+                        currentValue: parseFloat(kr.currentValue) || 0,
+                        targetValue: parseFloat(kr.targetValue) || 0,
                         unit: kr.unit || 'NUMBER',
                         weight: kr.weight || 1.0
                     }))
-                }
+                } : undefined
             },
             include: {
+                objectives: { include: { keyResults: true, owner: true } },
                 keyResults: true
             }
         });

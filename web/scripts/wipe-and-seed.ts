@@ -65,7 +65,7 @@ async function main() {
       roleName: 'CTO'
     },
     {
-      name: 'Adas',
+      name: 'Asad',
       email: 'sales.revoticai@gmail.com',
       password: 'manager@asad#revoticai',
       roleName: 'Manager'

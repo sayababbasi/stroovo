@@ -70,7 +70,7 @@ const REPORT_TEMPLATES: ReportTemplate[] = [
     { id: 't2', name: 'Project Health Report', description: 'Detailed project analysis & risks', type: 'Risk', icon: Target, color: 'emerald', usageCount: 890, aiTags: ['Risk Engine', 'Real-time'] },
     { id: 't3', name: 'Sprint Performance', description: 'Sprint metrics & velocity trends', type: 'Sprint', icon: Activity, color: 'purple', usageCount: 2100, aiTags: ['Predictive', 'Agile'] },
     { id: 't4', name: 'Team Productivity', description: 'Team output & collaboration insights', type: 'Team', icon: Users, color: 'indigo', usageCount: 1250, aiTags: ['Behavioral', 'AI Insight'] },
-    { id: 't5', name: 'OKR Progress Report', description: 'Strategic goals and key results', type: 'OKR', icon: Target, color: 'amber', usageCount: 640, aiTags: ['Strategic', 'Impact'] },
+    { id: 't5', name: 'OKR Progress Report', description: 'Strategic goals and Key Objective', type: 'OKR', icon: Target, color: 'amber', usageCount: 640, aiTags: ['Strategic', 'Impact'] },
     { id: 't6', name: 'Risk & Issues Report', description: 'Project risks and mitigation plans', type: 'Risk', icon: AlertTriangle, color: 'rose', usageCount: 720, aiTags: ['Security', 'Audited'] },
 ];
 
@@ -85,7 +85,7 @@ const GENERATED_REPORTS: GeneratedReport[] = [
 ];
 
 const BUILDER_WIDGETS = [
-    { id: 'w1', name: 'Delivery Performance Trend', type: 'Line', data: Array.from({ length: 7 }, (_, i) => ({ name: `May ${i+1}`, value: 20 + Math.random() * 60 })) },
+    { id: 'w1', name: 'Delivery Performance Trend', type: 'Line', data: Array.from({ length: 7 }, (_, i) => ({ name: `May ${i + 1}`, value: 20 + Math.random() * 60 })) },
     { id: 'w2', name: 'Task Completion Breakdown', type: 'Pie', data: [{ name: 'Completed', value: 130, color: '#10b981' }, { name: 'In Progress', value: 60, color: '#3b82f6' }, { name: 'Overdue', value: 25, color: '#ef4444' }, { name: 'Planned', value: 20, color: '#6366f1' }] },
     { id: 'w3', name: 'Team Velocity', type: 'Bar', data: Array.from({ length: 5 }, (_, i) => ({ name: ['Dev', 'Design', 'QA', 'Ops', 'Mkt'][i], value: 40 + Math.random() * 40 })) },
 ];
@@ -93,7 +93,7 @@ const BUILDER_WIDGETS = [
 // --- Sub-Components ---
 
 const KpiCard = ({ kpi }: { kpi: ReportKPI }) => (
-    <motion.div 
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group"
@@ -125,7 +125,7 @@ const KpiCard = ({ kpi }: { kpi: ReportKPI }) => (
 );
 
 const TemplateCard = ({ template }: { template: ReportTemplate }) => (
-    <motion.div 
+    <motion.div
         whileHover={{ scale: 1.02 }}
         className="min-w-[240px] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm cursor-pointer group hover:border-blue-100 transition-all"
     >
@@ -143,7 +143,7 @@ const TemplateCard = ({ template }: { template: ReportTemplate }) => (
         <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{template.description}</p>
         <div className="mt-4 flex items-center justify-between">
             <span className="text-[9px] font-bold text-gray-400 uppercase">{template.usageCount} reports generated</span>
-            <button className="p-1.5 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-blue-500"><PlusCircle size={16}/></button>
+            <button className="p-1.5 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-blue-500"><PlusCircle size={16} /></button>
         </div>
     </motion.div>
 );
@@ -172,11 +172,11 @@ export default function ReportsPage() {
 
     const handleExport = (format: string) => {
         setIsExporting(format);
-        
+
         // Simulate processing time
         setTimeout(() => {
             setIsExporting(null);
-            
+
             try {
                 // CREATE A REAL DOWNLOAD TRIGGER
                 const mockContent = `Stroovo Executive Report - ${new Date().toLocaleDateString()}\nFormat: ${format}\nStatus: Official\n\nThis is a mock generated ${format} report for the Q2 Executive Summary.`;
@@ -194,7 +194,7 @@ export default function ReportsPage() {
             } catch (error) {
                 console.error('Download failed:', error);
             }
-            
+
             setTimeout(() => setShowSuccessToast(null), 3000);
         }, 1500);
     };
@@ -210,12 +210,12 @@ export default function ReportsPage() {
 
     const filteredReports = useMemo(() => {
         return GENERATED_REPORTS.filter(report => {
-            const matchesSearch = report.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                 report.workspace.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesTab = activeTab === 'All Reports' || 
-                              (activeTab === 'My Reports' && report.owner.name === 'Sayab Ali') ||
-                              (activeTab === 'Team Reports' && report.type === 'Team') ||
-                              (activeTab === 'AI Generated' && report.name.includes('AI'));
+            const matchesSearch = report.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                report.workspace.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesTab = activeTab === 'All Reports' ||
+                (activeTab === 'My Reports' && report.owner.name === 'Sayab Ali') ||
+                (activeTab === 'Team Reports' && report.type === 'Team') ||
+                (activeTab === 'AI Generated' && report.name.includes('AI'));
             return matchesSearch && matchesTab;
         });
     }, [searchQuery, activeTab]);
@@ -223,12 +223,12 @@ export default function ReportsPage() {
     return (
         <main className="flex min-h-screen bg-[#F8FAFC]">
             <Sidebar />
-            
+
             <div className="flex-1 flex flex-col ml-[260px] transition-all duration-300 overflow-y-auto no-scrollbar relative">
                 {/* SUCCESS TOAST */}
                 <AnimatePresence>
                     {showSuccessToast && (
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: -20, x: '-50%' }}
                             animate={{ opacity: 1, y: 20, x: '-50%' }}
                             exit={{ opacity: 0, y: -20, x: '-50%' }}
@@ -259,15 +259,15 @@ export default function ReportsPage() {
                         </div>
                         <div className="relative w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input 
-                                type="text" 
-                                placeholder="Search reports, templates..." 
+                            <input
+                                type="text"
+                                placeholder="Search reports, templates..."
                                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={handleAiGenerate}
                             disabled={isGenerating}
                             className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100 disabled:opacity-50"
@@ -315,9 +315,9 @@ export default function ReportsPage() {
                                     <span className="px-2 py-0.5 bg-indigo-50 text-indigo-500 text-[10px] font-bold rounded uppercase border border-indigo-100">AI-Powered</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><RotateCcw size={16}/></button>
-                                    <button onClick={() => setShowSuccessToast('Draft saved successfully!')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><Save size={16}/></button>
-                                    <button className="px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 flex items-center gap-2"><Eye size={14}/> Preview</button>
+                                    <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><RotateCcw size={16} /></button>
+                                    <button onClick={() => setShowSuccessToast('Draft saved successfully!')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><Save size={16} /></button>
+                                    <button className="px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 flex items-center gap-2"><Eye size={14} /> Preview</button>
                                     <button onClick={() => setShowSuccessToast('Report published!')} className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md">Save Report</button>
                                 </div>
                             </div>
@@ -339,8 +339,8 @@ export default function ReportsPage() {
                                                     { icon: PieIcon, label: 'Donut' },
                                                     { icon: Activity, label: 'Area' },
                                                 ].map(w => (
-                                                    <button 
-                                                        key={w.label} 
+                                                    <button
+                                                        key={w.label}
                                                         onClick={() => setShowSuccessToast(`${w.label} chart added to canvas`)}
                                                         className="p-3 bg-gray-50 border border-gray-100 rounded-xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-100 transition-all group"
                                                     >
@@ -377,7 +377,7 @@ export default function ReportsPage() {
                                                     <h4 className="text-xs font-bold text-gray-900 uppercase">Delivery Performance Trend</h4>
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase">Last 7 days</p>
                                                 </div>
-                                                <button className="p-1 hover:bg-gray-50 rounded text-gray-300"><MoreHorizontal size={14}/></button>
+                                                <button className="p-1 hover:bg-gray-50 rounded text-gray-300"><MoreHorizontal size={14} /></button>
                                             </div>
                                             <div className="h-[220px] w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
@@ -399,7 +399,7 @@ export default function ReportsPage() {
                                                     <h4 className="text-xs font-bold text-gray-900 uppercase">Task Breakdown</h4>
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase">This Week</p>
                                                 </div>
-                                                <button className="p-1 hover:bg-gray-50 rounded text-gray-300"><MoreHorizontal size={14}/></button>
+                                                <button className="p-1 hover:bg-gray-50 rounded text-gray-300"><MoreHorizontal size={14} /></button>
                                             </div>
                                             <div className="h-[220px] w-full flex flex-col items-center justify-center relative">
                                                 <div className="w-full h-32">
@@ -468,8 +468,8 @@ export default function ReportsPage() {
                                                     { label: 'CSV', icon: Layers, color: 'indigo' },
                                                     { label: 'PNG', icon: Layout, color: 'cyan' },
                                                 ].map(ex => (
-                                                    <button 
-                                                        key={ex.label} 
+                                                    <button
+                                                        key={ex.label}
                                                         onClick={() => handleExport(ex.label)}
                                                         disabled={isExporting !== null}
                                                         className="p-3 bg-gray-50/50 border border-gray-100 rounded-xl flex flex-col items-center gap-2 hover:border-blue-200 hover:bg-white hover:shadow-sm transition-all group disabled:opacity-50"
@@ -479,7 +479,7 @@ export default function ReportsPage() {
                                                     </button>
                                                 ))}
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => handleExport('PDF')}
                                                 className="w-full py-3 bg-blue-600 text-white text-xs font-bold rounded-2xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
                                             >
@@ -499,7 +499,7 @@ export default function ReportsPage() {
                                                 </div>
                                                 <h5 className="text-[11px] font-bold text-emerald-800 uppercase mb-1">AI-Powered Recurring Delivery</h5>
                                                 <p className="text-[9px] text-emerald-600 font-medium max-w-[200px] mb-4">Set up automated weekly summaries to be sent to Slack or Email.</p>
-                                                <button 
+                                                <button
                                                     onClick={handleCreateSchedule}
                                                     disabled={isScheduling}
                                                     className="px-6 py-2 bg-white border border-emerald-200 text-emerald-600 text-[10px] font-bold rounded-xl hover:bg-emerald-100 transition-all shadow-sm disabled:opacity-50"
@@ -509,7 +509,7 @@ export default function ReportsPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
                                         <Layers size={400} />
                                     </div>
@@ -564,7 +564,7 @@ export default function ReportsPage() {
                                         <div className="text-[8px] font-bold text-gray-900 mb-0.5 uppercase tracking-tighter">Q2 Summary - Page {previewPage}</div>
                                         <div className="text-[5px] text-gray-400 mb-2 uppercase">April - June 2024</div>
                                         <div className="grid grid-cols-4 gap-1 mb-2">
-                                            {[1,2,3,4].map(i => <div key={i} className="h-2.5 bg-gray-50 rounded" />)}
+                                            {[1, 2, 3, 4].map(i => <div key={i} className="h-2.5 bg-gray-50 rounded" />)}
                                         </div>
                                         <div className="h-10 w-full bg-gray-50 rounded mb-1.5" />
                                         <div className="flex items-center justify-between">
@@ -572,26 +572,26 @@ export default function ReportsPage() {
                                             <div className="w-2.5 h-2.5 bg-gray-50 rounded-full" />
                                         </div>
                                     </div>
-                                    
+
                                     <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/90 transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Eye size={16}/></button>
-                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Download size={16}/></button>
-                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Share2 size={16}/></button>
+                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Eye size={16} /></button>
+                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Download size={16} /></button>
+                                        <button className="p-2 bg-white rounded-lg text-blue-600 hover:scale-110 transition-transform shadow-lg"><Share2 size={16} /></button>
                                     </div>
                                 </div>
                                 <div className="mt-4 flex items-center justify-between px-1">
-                                    <button 
+                                    <button
                                         onClick={() => setPreviewPage(prev => Math.max(1, prev - 1))}
                                         className="p-0.5 text-gray-400 hover:text-gray-900 transition-colors"
                                     >
-                                        <ChevronLeft size={16}/>
+                                        <ChevronLeft size={16} />
                                     </button>
                                     <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">Page {previewPage} / 12</span>
-                                    <button 
+                                    <button
                                         onClick={() => setPreviewPage(prev => Math.min(12, prev + 1))}
                                         className="p-0.5 text-gray-400 hover:text-gray-900 transition-colors"
                                     >
-                                        <ChevronRight size={16}/>
+                                        <ChevronRight size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -605,8 +605,8 @@ export default function ReportsPage() {
                                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Generated Reports</h3>
                                 <div className="flex items-center gap-6">
                                     {['All Reports', 'My Reports', 'Team Reports', 'AI Generated'].map(tab => (
-                                        <button 
-                                            key={tab} 
+                                        <button
+                                            key={tab}
                                             onClick={() => setActiveTab(tab)}
                                             className={`text-[11px] font-bold pb-2 border-b-2 transition-all ${activeTab === tab ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent'}`}
                                         >
@@ -620,8 +620,8 @@ export default function ReportsPage() {
                                     Sort: Last Modified <ChevronDown size={12} />
                                 </div>
                                 <div className="flex bg-gray-100 p-1 rounded-lg">
-                                    <button className="p-1 bg-white rounded shadow-sm text-blue-600"><Grid size={14}/></button>
-                                    <button className="p-1 text-gray-400"><Layers size={14}/></button>
+                                    <button className="p-1 bg-white rounded shadow-sm text-blue-600"><Grid size={14} /></button>
+                                    <button className="p-1 text-gray-400"><Layers size={14} /></button>
                                 </div>
                             </div>
                         </div>
@@ -651,12 +651,11 @@ export default function ReportsPage() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                    report.type === 'Executive' ? 'bg-purple-50 text-purple-600' :
-                                                    report.type === 'Sprint' ? 'bg-blue-50 text-blue-600' :
-                                                    report.type === 'Financial' ? 'bg-amber-50 text-amber-600' :
-                                                    report.type === 'Team' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
-                                                }`}>
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${report.type === 'Executive' ? 'bg-purple-50 text-purple-600' :
+                                                        report.type === 'Sprint' ? 'bg-blue-50 text-blue-600' :
+                                                            report.type === 'Financial' ? 'bg-amber-50 text-amber-600' :
+                                                                report.type === 'Team' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
+                                                    }`}>
                                                     {report.type}
                                                 </span>
                                             </td>
@@ -673,10 +672,10 @@ export default function ReportsPage() {
                                             <td className="py-4 px-6 text-xs font-bold text-gray-700">{report.downloads}</td>
                                             <td className="py-4 px-6 text-right">
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => setShowSuccessToast('Opening report...')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500"><Eye size={16}/></button>
-                                                    <button onClick={() => setShowSuccessToast('Share link copied!')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-emerald-500"><Share2 size={16}/></button>
-                                                    <button onClick={() => handleExport('PDF')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-indigo-500"><Download size={16}/></button>
-                                                    <button className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900"><MoreVertical size={16}/></button>
+                                                    <button onClick={() => setShowSuccessToast('Opening report...')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500"><Eye size={16} /></button>
+                                                    <button onClick={() => setShowSuccessToast('Share link copied!')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-emerald-500"><Share2 size={16} /></button>
+                                                    <button onClick={() => handleExport('PDF')} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-indigo-500"><Download size={16} /></button>
+                                                    <button className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900"><MoreVertical size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -688,8 +687,8 @@ export default function ReportsPage() {
                                                         <Search size={32} />
                                                     </div>
                                                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No reports found matching your criteria</p>
-                                                    <button 
-                                                        onClick={() => {setSearchQuery(''); setActiveTab('All Reports');}}
+                                                    <button
+                                                        onClick={() => { setSearchQuery(''); setActiveTab('All Reports'); }}
                                                         className="text-xs font-bold text-blue-600 hover:underline uppercase"
                                                     >
                                                         Clear all filters

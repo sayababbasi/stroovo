@@ -16,6 +16,20 @@ export interface KeyResultData {
   goalId: string;
 }
 
+export interface ObjectiveData {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  progress: number;
+  targetDate?: string | Date | null;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  ownerId?: string | null;
+  owner?: { id: string; name?: string; email?: string } | null;
+  keyResults: KeyResultData[];
+}
+
 export interface GoalData {
   id: string;
   title: string;
@@ -28,6 +42,7 @@ export interface GoalData {
   ownerId: string;
   cycleId?: string | null;
   keyResults: KeyResultData[];
+  objectives?: ObjectiveData[];
 }
 
 export interface ComputedKR {
@@ -410,18 +425,24 @@ export function generateRecommendations(goal: GoalData, computed: Omit<ComputedG
 
 export function computeGoalIntelligence(goal: GoalData): ComputedGoal {
   const daysRemaining = getDaysRemaining(goal.targetDate);
-  const progress = goal.keyResults.length > 0 ? computeGoalProgress(goal.keyResults) : goal.progress;
-  const velocity = computeVelocity({ ...goal, progress });
-  const expectedCompletion = computeExpectedCompletion({ ...goal, progress }, daysRemaining);
-  const riskScore = computeRiskScore({ ...goal, progress }, daysRemaining);
-  const healthScore = computeHealthScore({ ...goal, progress }, riskScore, daysRemaining);
-  const confidenceScore = computeConfidenceScore({ ...goal, progress }, healthScore, riskScore, expectedCompletion);
-  const delayProbability = computeDelayProbability(riskScore, expectedCompletion, daysRemaining);
-  const riskFactors = generateRiskFactors({ ...goal, progress }, daysRemaining, velocity);
+  const effectiveKRs = [
+    ...(goal.keyResults || []),
+    ...(goal.objectives ? goal.objectives.flatMap(o => o.keyResults || []) : [])
+  ];
+  const progress = effectiveKRs.length > 0 ? computeGoalProgress(effectiveKRs) : goal.progress;
+  const goalWithKRs = { ...goal, keyResults: effectiveKRs, progress };
 
-  const computedKRs: ComputedKR[] = goal.keyResults.map((kr, idx) => {
+  const velocity = computeVelocity(goalWithKRs);
+  const expectedCompletion = computeExpectedCompletion(goalWithKRs, daysRemaining);
+  const riskScore = computeRiskScore(goalWithKRs, daysRemaining);
+  const healthScore = computeHealthScore(goalWithKRs, riskScore, daysRemaining);
+  const confidenceScore = computeConfidenceScore(goalWithKRs, healthScore, riskScore, expectedCompletion);
+  const delayProbability = computeDelayProbability(riskScore, expectedCompletion, daysRemaining);
+  const riskFactors = generateRiskFactors(goalWithKRs, daysRemaining, velocity);
+
+  const computedKRs: ComputedKR[] = effectiveKRs.map((kr) => {
     const krProgress = computeKRProgress(kr);
-    const totalProgress = computeGoalProgress(goal.keyResults);
+    const totalProgress = computeGoalProgress(effectiveKRs);
     return {
       id: kr.id,
       title: kr.title,
@@ -434,7 +455,7 @@ export function computeGoalIntelligence(goal: GoalData): ComputedGoal {
       healthStatus: computeKRHealthStatus(kr, krProgress, daysRemaining),
       isStagnant: getDaysSinceUpdate(kr.updatedAt) >= 3,
       daysSinceUpdate: getDaysSinceUpdate(kr.updatedAt),
-      contribution: totalProgress > 0 ? Math.round((krProgress * (kr.weight || 1)) / goal.keyResults.reduce((s, k) => s + (k.weight || 1), 0)) : 0
+      contribution: totalProgress > 0 ? Math.round((krProgress * (kr.weight || 1)) / effectiveKRs.reduce((s, k) => s + (k.weight || 1), 0)) : 0
     };
   });
 

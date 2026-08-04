@@ -12,6 +12,13 @@ export async function GET() {
       where: { parentId: null },
       include: {
         owner: { select: { id: true, name: true, email: true, image: true } },
+        objectives: {
+          include: {
+            owner: { select: { id: true, name: true, email: true, image: true } },
+            keyResults: true
+          },
+          orderBy: { createdAt: 'asc' }
+        },
         keyResults: true,
         projects: { select: { id: true, name: true, status: true } },
         cycle: { select: { id: true, name: true, startDate: true, endDate: true } },
@@ -21,15 +28,15 @@ export async function GET() {
             keyResults: true,
           }
         }
-      },
+      } as any,
       orderBy: { createdAt: 'desc' }
     });
 
     // Compute intelligence for each goal
-    const computedGoals = goals.map(goal => computeGoalIntelligence(goal as GoalData));
+    const computedGoals = goals.map(goal => computeGoalIntelligence(goal as unknown as GoalData));
 
     // Compute execution summary
-    const summary = computeExecutionSummary(goals as GoalData[], computedGoals);
+    const summary = computeExecutionSummary(goals as unknown as GoalData[], computedGoals);
 
     // Merge computed intel back onto goals
     const enrichedGoals = goals.map((goal, idx) => ({
