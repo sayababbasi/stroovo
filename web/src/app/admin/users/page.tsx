@@ -17,6 +17,7 @@ import UserTable from '@/components/admin/users/UserTable';
 import UserCard from '@/components/admin/users/UserCard';
 import UserDetailDrawer from '@/components/admin/users/UserDetailDrawer';
 import DemoRequestPipeline from '@/components/admin/users/DemoRequestPipeline';
+import AddUserModal from '@/components/admin/users/AddUserModal';
 
 interface User {
     id: string;
@@ -72,6 +73,7 @@ export default function AdminUsersPage() {
     
     // UI State
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
@@ -291,7 +293,10 @@ export default function AdminUsersPage() {
                         <RefreshCw size={20} />
                     </button>
                     <button 
-                        onClick={() => setShowInviteModal(true)}
+                        onClick={() => {
+                            setEditingUser(null);
+                            setShowInviteModal(true);
+                        }}
                         style={{ 
                             padding: '12px 24px', 
                             background: '#0052CC', 
@@ -515,7 +520,11 @@ export default function AdminUsersPage() {
                             <UserTable 
                                 users={filteredUsers}
                                 loading={loading}
-                                onUserClick={setSelectedUser}
+                                onUserClick={(user) => setSelectedUser(user)}
+                                onEditUser={(user) => {
+                                    setEditingUser(user);
+                                    setShowInviteModal(true);
+                                }}
                                 onRoleChange={handleRoleChange}
                                 onStatusToggle={handleStatusToggle}
                                 onDelete={handleDelete}
@@ -554,32 +563,23 @@ export default function AdminUsersPage() {
                 onDelete={handleDelete}
             />
 
-            {showInviteModal && (
-                <div 
-                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(9, 30, 66, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}
-                    onClick={() => setShowInviteModal(false)}
-                >
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        style={{ background: 'white', padding: '40px', borderRadius: '24px', width: '500px', boxShadow: '0 24px 64px rgba(0,0,0,0.15)', border: '1px solid #EBECF0' }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#172B4D', marginBottom: '8px', letterSpacing: '-0.02em' }}>Add New User</h2>
-                        <p style={{ color: '#6B778C', marginBottom: '32px', fontSize: '15px' }}>Enter the details below to add a new person to your team.</p>
-                        <InviteForm 
-                            onSuccess={() => { setShowInviteModal(false); fetchUsers(); }}
-                            onCancel={() => setShowInviteModal(false)}
-                        />
-                    </motion.div>
-                </div>
-            )}
+            <AddUserModal
+                isOpen={showInviteModal}
+                initialUser={editingUser}
+                onClose={() => {
+                    setShowInviteModal(false);
+                    setTimeout(() => setEditingUser(null), 300);
+                }}
+                onSuccess={() => {
+                    setShowInviteModal(false);
+                    setTimeout(() => setEditingUser(null), 300);
+                    fetchUsers();
+                }}
+            />
 
             <style>{`
-                @font-face {
-                    font-family: 'Inter';
-                    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-                }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+                
                 body {
                     font-family: 'Inter', sans-serif;
                 }

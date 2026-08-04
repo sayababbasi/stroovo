@@ -76,6 +76,9 @@ model Team {
   children         Team[]           @relation("TeamHierarchy")
   leadId           String?
   lead             User?            @relation("TeamLead", fields: [leadId], references: [id])
+  departmentId     String?
+  department       Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  visibility       String           @default("PRIVATE")
 }
 
 model TeamMember {
@@ -154,6 +157,23 @@ model User {
   updatedAt              DateTime              @updatedAt
   tenantId               String?
   skills                 String[]
+  firstName              String?
+  lastName               String?
+  displayName            String?
+  username               String?               @unique
+  employeeId             String?
+  dob                    DateTime?
+  joiningDate            DateTime?
+  employmentType         String?
+  country                String?
+  city                   String?
+  officeLocation         String?
+  timezone               String?               @default("UTC+05:00 Asia/Karachi")
+  language               String?               @default("English")
+  bio                    String?
+  managerId              String?
+  manager                User?                 @relation("ReportingManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports          User[]                @relation("ReportingManager")
   department             String?
   designation            String?
   experienceLevel        String?
@@ -194,6 +214,9 @@ model User {
   teamMembers            TeamMember[]
   teamMessages           TeamMessage[]
   ledTeams               Team[]                @relation("TeamLead")
+  deptId                 String?
+  departmentRel          Department?           @relation("DepartmentMembers", fields: [deptId], references: [id], onDelete: SetNull)
+  headedDepartments      Department[]          @relation("DepartmentHead")
   systemRole             Role?                 @relation(fields: [roleId], references: [id])
   tenant                 Tenant?               @relation(fields: [tenantId], references: [id])
   additionalRoles        MemberRole[]
@@ -201,6 +224,24 @@ model User {
   accessPolicies         AccessPolicyUser[]
   policyExceptions       AccessPolicyException[]
   sentOrgInvitations     OrganizationInvitation[] @relation("OrgInvitedBy")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?  @unique
+  description String?
+  budget      Float?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenantId    String?
+
+  headId      String?
+  head        User?    @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+
+  members     User[]   @relation("DepartmentMembers")
+  teams       Team[]
 }
 
 model Role {
@@ -386,6 +427,26 @@ model Task {
   files             TaskFile[]
   dependencies      Task[]                  @relation("TaskDeps")
   dependedBy        Task[]                  @relation("TaskDeps")
+
+  // Goal Alignment (OKR)
+  goalId            String?
+  objectiveId       String?
+  keyResultId       String?
+  
+  // Agile & Estimation
+  storyPoints       Float?
+  milestone         String? 
+  
+  // Custom Fields & Time Tracking
+  customFields      Json?
+  timeTrackingEnabled Boolean @default(false)
+  isBillable        Boolean @default(false)
+  hourlyRate        Float?
+  
+  // Recurrence & Notifications
+  recurringRule     String?    @default("Does not repeat")
+  reminderRule      String?    @default("On due date")
+  notifyRule        String?    @default("Assignee only")
 
   @@index([spaceId])
   @@index([listId])

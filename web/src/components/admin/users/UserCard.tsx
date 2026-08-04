@@ -76,21 +76,35 @@ export default function UserCard({ user, onClick }: UserCardProps) {
             {/* Header: Avatar + Status */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ position: 'relative' }}>
-                    <div style={{ 
-                        width: '64px', 
-                        height: '64px', 
-                        borderRadius: '18px', 
-                        background: user.isActive ? '#0052CC' : '#6B778C', 
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '24px',
-                        fontWeight: 800,
-                        boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
-                    }}>
-                        {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                    </div>
+                    {user.image ? (
+                        <img 
+                            src={user.image} 
+                            alt={user.name || 'User DP'} 
+                            style={{ 
+                                width: '64px', 
+                                height: '64px', 
+                                borderRadius: '18px', 
+                                objectFit: 'cover',
+                                boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
+                            }} 
+                        />
+                    ) : (
+                        <div style={{ 
+                            width: '64px', 
+                            height: '64px', 
+                            borderRadius: '18px', 
+                            background: user.isActive ? '#0052CC' : '#6B778C', 
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '24px',
+                            fontWeight: 800,
+                            boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
+                        }}>
+                            {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                        </div>
+                    )}
                     <div style={{ 
                         position: 'absolute', 
                         bottom: '-4px', 

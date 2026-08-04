@@ -59,7 +59,14 @@ export default function AdminTeamTable({ teams, onRefresh }: AdminTeamTableProps
                                         {team.name.substring(0,2).toUpperCase()}
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D', marginBottom: '2px' }}>{team.name}</div>
+                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#172B4D', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            {team.name}
+                                            {team.department && (
+                                                <span style={{ fontSize: '10px', fontWeight: 800, background: '#E3F2FD', color: '#0052CC', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                                                    {team.department.name}
+                                                </span>
+                                            )}
+                                        </div>
                                         <div style={{ fontSize: '12px', color: '#6B778C', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             {team.status === 'ACTIVE' ? <ShieldCheck size={12} color="#36B37E" /> : <ShieldAlert size={12} color="#FF8B00" />}
                                             {team.status === 'ACTIVE' ? 'Healthy' : 'Restricted'}

@@ -112,21 +112,35 @@ export default function UserDetailDrawer({
                         {/* Profile Summary Card */}
                         <div style={{ padding: '24px 24px 0' }}>
                             <div style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #EBECF0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', gap: '20px' }}>
-                                <div style={{ 
-                                    width: '80px', 
-                                    height: '80px', 
-                                    borderRadius: '20px', 
-                                    background: user.isActive ? '#0052CC' : '#6B778C', 
-                                    color: 'white', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    fontSize: '32px',
-                                    fontWeight: 800,
-                                    boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
-                                }}>
-                                    {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                                </div>
+                                {user.image ? (
+                                    <img
+                                        src={user.image}
+                                        alt={user.name || 'User DP'}
+                                        style={{
+                                            width: '80px',
+                                            height: '80px',
+                                            borderRadius: '20px',
+                                            objectFit: 'cover',
+                                            boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
+                                        }}
+                                    />
+                                ) : (
+                                    <div style={{ 
+                                        width: '80px', 
+                                        height: '80px', 
+                                        borderRadius: '20px', 
+                                        background: user.isActive ? '#0052CC' : '#6B778C', 
+                                        color: 'white', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        fontSize: '32px',
+                                        fontWeight: 800,
+                                        boxShadow: '0 4px 12px rgba(0, 82, 204, 0.2)'
+                                    }}>
+                                        {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <div>

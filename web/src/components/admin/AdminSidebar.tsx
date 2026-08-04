@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, Users, Network, FolderKanban, 
     ShieldCheck, Activity, CreditCard, Puzzle, 
-    Bot, Settings, Zap, CheckSquare, LogOut, ArrowLeft
+    Bot, Settings, Zap, CheckSquare, LogOut, ArrowLeft, Building2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { P } from '@/lib/permissions/registry';
@@ -20,6 +20,7 @@ export default function AdminSidebar() {
         { name: 'Overview', href: '/admin', icon: LayoutDashboard, requiredPermission: P.DASHBOARD_ADMIN_VIEW },
         { name: 'Users', href: '/admin/users', icon: Users, requiredPermission: P.USERS_VIEW },
         { name: 'Teams', href: '/admin/teams', icon: Network, requiredPermission: P.TEAMS_VIEW },
+        { name: 'Departments', href: '/admin/departments', icon: Building2, requiredPermission: P.USERS_VIEW },
         { name: 'Projects', href: '/admin/projects', icon: FolderKanban, requiredPermission: P.PROJECTS_VIEW },
         { name: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck, requiredPermission: P.ROLES_VIEW },
         { name: 'System Logs', href: '/admin/logs', icon: Activity, requiredPermission: P.SYSTEM_LOGS_VIEW },
