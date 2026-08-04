@@ -370,18 +370,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // ── Permission check methods ──
+    const isSuperRole = (user?.role === 'CEO' || user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN');
+
     const hasPermission = (key: string): boolean => {
+        if (isSuperRole || permissions.includes('*')) return true;
         const normalized = normalizePermissionKey(key);
-        return permissions.includes('*') || permissions.includes(normalized);
+        return permissions.includes(normalized);
     };
 
     const hasAnyPermission = (...keys: string[]): boolean => {
-        if (permissions.includes('*')) return true;
+        if (isSuperRole || permissions.includes('*')) return true;
         return keys.some(k => permissions.includes(normalizePermissionKey(k)));
     };
 
     const hasAllPermissions = (...keys: string[]): boolean => {
-        if (permissions.includes('*')) return true;
+        if (isSuperRole || permissions.includes('*')) return true;
         return keys.every(k => permissions.includes(normalizePermissionKey(k)));
     };
 

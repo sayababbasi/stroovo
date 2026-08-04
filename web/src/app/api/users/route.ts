@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
     try {
         const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
+        const tenantId = headerList.get('x-tenant-id') || authResult.user.tenantId;
 
         if (!tenantId) {
             return NextResponse.json({ error: 'Tenant ID is required' }, { status: 400 });
@@ -60,8 +60,8 @@ export async function POST(request: Request) {
 
     try {
         const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
-        const userId = headerList.get('x-user-id');
+        const tenantId = headerList.get('x-tenant-id') || authResult.user.tenantId;
+        const userId = headerList.get('x-user-id') || authResult.user.id;
         
         if (!tenantId || !userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

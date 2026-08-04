@@ -174,15 +174,8 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
 
     objectives.forEach(obj => {
       obj.keyResults.forEach(kr => {
-        const target = parseFloat(kr.targetValue) || 0;
-        const initial = parseFloat(kr.initialValue) || 0;
-        const current = parseFloat(kr.currentValue) || 0;
-        const range = target - initial;
-        if (range > 0) {
-          const prog = Math.min(100, Math.max(0, ((current - initial) / range) * 100));
-          sumKRProgress += prog;
-          totalKRs++;
-        }
+        sumKRProgress += getKRProgress(kr);
+        totalKRs++;
       });
     });
 
@@ -191,19 +184,9 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
 
   // Objective progress calculation
   const getObjectiveProgress = (obj: ObjectiveState) => {
-    let totalKRs = 0;
-    let sumProg = 0;
-    obj.keyResults.forEach(kr => {
-      const target = parseFloat(kr.targetValue) || 0;
-      const initial = parseFloat(kr.initialValue) || 0;
-      const current = parseFloat(kr.currentValue) || 0;
-      const range = target - initial;
-      if (range > 0) {
-        sumProg += Math.min(100, Math.max(0, ((current - initial) / range) * 100));
-        totalKRs++;
-      }
-    });
-    return totalKRs > 0 ? Math.round(sumProg / totalKRs) : 0;
+    if (!obj.keyResults || obj.keyResults.length === 0) return 0;
+    const sumProg = obj.keyResults.reduce((acc, kr) => acc + getKRProgress(kr), 0);
+    return Math.round(sumProg / obj.keyResults.length);
   };
 
   // KR progress calculation
@@ -211,8 +194,12 @@ export default function GoalFormModal({ editingGoal, onClose, onSuccess, current
     const target = parseFloat(kr.targetValue) || 0;
     const initial = parseFloat(kr.initialValue) || 0;
     const current = parseFloat(kr.currentValue) || 0;
+    if (target <= 0) return 0;
+    
     const range = target - initial;
-    if (range <= 0) return 0;
+    if (range <= 0 || (initial === current && current > 0 && initial > 0)) {
+      return Math.min(100, Math.max(0, Math.round((current / target) * 100)));
+    }
     return Math.min(100, Math.max(0, Math.round(((current - initial) / range) * 100)));
   };
 

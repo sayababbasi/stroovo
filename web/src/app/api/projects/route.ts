@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         }
 
         const cacheKey = tenantId ? `projects:${tenantId}:${status || 'all'}:${health || 'all'}` : 'projects:all';
-        const cachedProjects = await cache.get<any[]>(cacheKey);
+        const cachedProjects = await cache.get<any>(cacheKey);
         if (cachedProjects) {
             return NextResponse.json(cachedProjects);
         }
@@ -51,16 +51,34 @@ export async function GET(request: Request) {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Ensure real-time stats are accurate
+        // Fetch recent activity logs related to projects
+        const activities = await (prisma as any).activityLog.findMany({
+            where: { tenantId, entity: 'PROJECT' },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            include: { user: { select: { name: true, image: true } } }
+        });
+
         const enhancedProjects = await Promise.all(projects.map(async (project: any) => {
-            // We could update each project here, but for list view we'll trust current state
-            // and have a background job keep them fresh.
             return project;
         }));
 
-        await cache.set(cacheKey, enhancedProjects);
-        return NextResponse.json(enhancedProjects.length > 0 ? enhancedProjects : { 
+        const responseData = {
+            projects: enhancedProjects,
+            activities: activities.map((a: any) => ({
+                id: a.id,
+                action: a.action,
+                entityId: a.entityId,
+                user: a.user?.name || 'System',
+                userImage: a.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.user?.name || 'S')}&background=random`,
+                createdAt: a.createdAt
+            }))
+        };
+
+        await cache.set(cacheKey, responseData);
+        return NextResponse.json(responseData.projects.length > 0 ? responseData : { 
             message: 'No projects found', 
+            projects: [],
             debug: { 
                 userId: authResult.user.id, 
                 tenantId: authResult.user.tenantId,

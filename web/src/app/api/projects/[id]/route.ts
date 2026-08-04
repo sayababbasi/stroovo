@@ -22,9 +22,13 @@ export async function GET(
                 manager: { select: { id: true, name: true, email: true, image: true } },
                 _count: { select: { tasks: true } },
                 goal: true,
+                risks: true,
                 tasks: {
                     include: {
-                        assignee: { select: { name: true, image: true } },
+                        assignee: { select: { id: true, name: true, image: true } },
+                        subtasks: true,
+                        dependencies: { select: { id: true, status: true } },
+                        dependedBy: { select: { id: true, status: true } }
                     },
                     orderBy: { dueDate: 'asc' }
                 }
@@ -61,9 +65,13 @@ export async function GET(
                     manager: { select: { id: true, name: true, email: true, image: true } },
                     _count: { select: { tasks: true } },
                     goal: true,
+                    risks: true,
                     tasks: {
                         include: {
-                            assignee: { select: { name: true, image: true } },
+                            assignee: { select: { id: true, name: true, image: true } },
+                            subtasks: true,
+                            dependencies: { select: { id: true, status: true } },
+                            dependedBy: { select: { id: true, status: true } }
                         },
                         orderBy: { dueDate: 'asc' }
                     }

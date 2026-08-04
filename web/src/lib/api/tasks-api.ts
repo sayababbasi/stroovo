@@ -44,7 +44,7 @@ export class TasksAPI {
         // Create the task
         const task = await tx.task.create({
           data: {
-            ...validatedData,
+            ...(validatedData as any),
             createdAt: new Date(),
             updatedAt: new Date()
           },

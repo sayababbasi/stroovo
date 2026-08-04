@@ -9,11 +9,26 @@ export const CreateTaskSchema = z.object({
   type: z.string().default('TASK'),
   projectId: z.string().min(1, 'Project ID is required'),
   assigneeId: z.string().optional().nullable(),
+  assigneeIds: z.array(z.string()).optional().nullable(),
   parentId: z.string().optional().nullable(),
   teamId: z.string().optional().nullable(),
   startDate: z.string().datetime().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
-}).strict();
+  
+  // New Enterprise Fields
+  goalId: z.string().optional().nullable(),
+  objectiveId: z.string().optional().nullable(),
+  keyResultId: z.string().optional().nullable(),
+  storyPoints: z.number().optional().nullable(),
+  milestone: z.string().optional().nullable(),
+  customFields: z.any().optional().nullable(),
+  timeTrackingEnabled: z.boolean().optional(),
+  isBillable: z.boolean().optional(),
+  hourlyRate: z.number().optional().nullable(),
+  recurringRule: z.string().optional().nullable(),
+  reminderRule: z.string().optional().nullable(),
+  notifyRule: z.string().optional().nullable(),
+}).passthrough();
 
 export type CreateTaskDTO = z.infer<typeof CreateTaskSchema>;
 
@@ -25,11 +40,12 @@ export const UpdateTaskSchema = z.object({
   type: z.string().optional(),
   projectId: z.string().min(1).optional().nullable().transform(val => val === '' ? null : val),
   assigneeId: z.string().optional().nullable().transform(val => val === '' ? null : val),
+  assigneeIds: z.array(z.string()).optional().nullable(),
   parentId: z.string().optional().nullable().transform(val => val === '' ? null : val),
   teamId: z.string().optional().nullable().transform(val => val === '' ? null : val),
   startDate: z.string().datetime().optional().nullable().transform(val => val === '' ? null : val),
   dueDate: z.string().datetime().optional().nullable().transform(val => val === '' ? null : val),
   progress: z.number().min(0).max(100).optional(),
-}).strict();
+}).passthrough();
 
 export type UpdateTaskDTO = z.infer<typeof UpdateTaskSchema>;

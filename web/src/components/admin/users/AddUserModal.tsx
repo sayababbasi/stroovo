@@ -451,7 +451,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, initialUser }
             padding: '24px 16px',
             display: 'flex',
             flexDirection: 'column',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             flexShrink: 0
           }}>
             <div>

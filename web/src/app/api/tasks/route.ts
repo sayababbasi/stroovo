@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     try {
         const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id');
+        const tenantId = headerList.get('x-tenant-id') || authResult.user.tenantId;
         const { searchParams } = new URL(request.url);
         const assigneeId = searchParams.get('assigneeId');
         const projectId = searchParams.get('projectId');
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     try {
         const headerList = await headers();
-        const tenantId = headerList.get('x-tenant-id') || undefined;
+        const tenantId = headerList.get('x-tenant-id') || authResult.user.tenantId;
         const userId = authResult.user.id;
 
         const body = await request.json();
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         }
 
         // 2. Delegate to TaskService
-        const task = await TaskService.createTask(parsed.data, userId, tenantId);
+        const task = await TaskService.createTask(parsed.data, userId, tenantId || undefined);
 
         // 3. Return newly created task with relations populated
         const fullTask = await prisma.task.findUnique({

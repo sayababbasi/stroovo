@@ -41,14 +41,27 @@ export class TaskService {
    * Create a new task and emit event.
    */
   public static async createTask(data: CreateTaskDTO, userId: string, tenantId?: string): Promise<Task> {
+    const { assigneeIds, ...taskData } = data;
     const task = await prisma.task.create({
       data: {
-        ...data,
+        ...taskData,
+        assigneeId: assigneeIds?.[0] || taskData.assigneeId || null,
         tenantId: tenantId || null,
-        startDate: data.startDate ? new Date(data.startDate) : new Date(),
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        startDate: taskData.startDate ? new Date(taskData.startDate) : new Date(),
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
       },
     });
+
+    if (assigneeIds && assigneeIds.length > 0) {
+      await prisma.taskAssignment.createMany({
+        data: assigneeIds.map(assigneeId => ({
+          taskId: task.id,
+          userId: assigneeId,
+          assignedBy: userId
+        })),
+        skipDuplicates: true
+      });
+    }
     console.log(`[TaskService] Successfully created task in DB: ${task.id} - ${task.title}`);
 
     // Emit event

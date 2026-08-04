@@ -6,38 +6,206 @@ import {
   Folder, FolderCheck, AlertTriangle, CheckCircle,
   TrendingUp, Search, SlidersHorizontal, ChevronDown,
   Star, MoreVertical, LayoutGrid, List, Clock, ShieldAlert,
-  Zap, Calendar, ChevronRight, CheckSquare, Activity, Settings
+  Zap, Calendar, ChevronRight, CheckSquare, Activity, Settings, Edit, Copy, Trash2, Archive
 } from 'lucide-react';
-
-// MOCK DATA GENERATOR FOR REAL-TIME SIMULATION
-const initialProjects = [
-  { id: '1', name: 'E-Commerce Platform', desc: 'Build next-gen e-commerce solution', owner: 'Ali Raza', ownerAvatar: 'https://i.pravatar.cc/150?u=ali', status: 'Active', progress: 64, health: 'Good', healthColor: '#10B981', endStr: 'May 30, 2026', endSub: 'in 25 days', team: ['https://i.pravatar.cc/150?u=t1', 'https://i.pravatar.cc/150?u=t2', 'https://i.pravatar.cc/150?u=t3'], lastUpdated: '2h ago', starred: true },
-  { id: '2', name: 'Mobile Application', desc: 'Cross-platform mobile app', owner: 'Sara Khan', ownerAvatar: 'https://i.pravatar.cc/150?u=sara', status: 'Active', progress: 48, health: 'At Risk', healthColor: '#EF4444', endStr: 'Jun 15, 2026', endSub: 'in 41 days', team: ['https://i.pravatar.cc/150?u=t4', 'https://i.pravatar.cc/150?u=t5', 'https://i.pravatar.cc/150?u=t6'], lastUpdated: '5h ago', starred: true },
-  { id: '3', name: 'Internal Dashboard', desc: 'Analytics & reporting dashboard', owner: 'Usman Tariq', ownerAvatar: 'https://i.pravatar.cc/150?u=usman', status: 'Active', progress: 72, health: 'Good', healthColor: '#10B981', endStr: 'Jun 05, 2026', endSub: 'in 31 days', team: ['https://i.pravatar.cc/150?u=t7', 'https://i.pravatar.cc/150?u=t8'], lastUpdated: '1h ago', starred: true },
-  { id: '4', name: 'Marketing Website Redesign', desc: 'Revamp corporate website', owner: 'Zainab Fatima', ownerAvatar: 'https://i.pravatar.cc/150?u=zainab', status: 'Planning', progress: 15, health: 'On Track', healthColor: '#3B82F6', endStr: 'Jul 10, 2026', endSub: 'in 66 days', team: ['https://i.pravatar.cc/150?u=t9'], lastUpdated: '1d ago', starred: false },
-  { id: '5', name: 'CRM Integration', desc: 'Integrate CRM with existing tools', owner: 'Ahmed Hassan', ownerAvatar: 'https://i.pravatar.cc/150?u=ahmed', status: 'Active', progress: 55, health: 'At Risk', healthColor: '#EF4444', endStr: 'May 25, 2026', endSub: 'in 20 days', team: ['https://i.pravatar.cc/150?u=t10', 'https://i.pravatar.cc/150?u=t11'], lastUpdated: '3h ago', starred: true },
-  { id: '6', name: 'AI Chatbot Development', desc: 'AI-powered customer support bot', owner: 'Ayesha Noor', ownerAvatar: 'https://i.pravatar.cc/150?u=ayesha', status: 'Active', progress: 38, health: 'On Track', healthColor: '#3B82F6', endStr: 'Jun 20, 2026', endSub: 'in 46 days', team: ['https://i.pravatar.cc/150?u=t12', 'https://i.pravatar.cc/150?u=t13'], lastUpdated: '6h ago', starred: false },
-  { id: '7', name: 'Data Migration Project', desc: 'Migrate legacy data to new system', owner: 'Hamza Ali', ownerAvatar: 'https://i.pravatar.cc/150?u=hamza', status: 'On Hold', progress: 10, health: 'At Risk', healthColor: '#EF4444', endStr: 'Jul 01, 2026', endSub: 'in 57 days', team: ['https://i.pravatar.cc/150?u=t14'], lastUpdated: '2d ago', starred: false },
-  { id: '8', name: 'Performance Optimization', desc: 'Improve system performance', owner: 'Bilal Ahmed', ownerAvatar: 'https://i.pravatar.cc/150?u=bilal', status: 'Completed', progress: 100, health: 'Excellent', healthColor: '#8B5CF6', endStr: 'Apr 20, 2026', endSub: 'Completed', team: ['https://i.pravatar.cc/150?u=t15', 'https://i.pravatar.cc/150?u=t16'], lastUpdated: '3d ago', starred: true },
-];
+import CreateProjectModal from '@/components/projects/CreateProjectModal';
+import EditProjectModal from '@/components/projects/EditProjectModal';
 
 export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState('All Projects');
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('ALL');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editProjectId, setEditProjectId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Simulate Real-time Updates
+  // Close menu when clicking outside
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProjects(prev => prev.map(p => {
-        if (p.status === 'Active' && Math.random() > 0.7) {
-          const newProg = Math.min(100, p.progress + Math.floor(Math.random() * 3));
-          return { ...p, progress: newProg, lastUpdated: 'Just now' };
-        }
-        return p;
-      }));
-    }, 15000);
-    return () => clearInterval(interval);
+    const closeMenu = () => setMenuOpenId(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
   }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/projects?search=${searchQuery}&status=${statusFilter}`);
+      if (res.ok) {
+        const data = await res.json();
+        const projectsData = Array.isArray(data) ? data : (data.projects || []);
+        if (data.activities) setActivities(data.activities);
+
+        const formatted = projectsData.map((p: any, idx: number) => {
+            const endDate = p.endDate ? new Date(p.endDate) : null;
+            const diffDays = endDate ? Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : null;
+            const endSub = diffDays !== null ? (diffDays < 0 ? `${Math.abs(diffDays)} days overdue` : `in ${diffDays} days`) : '';
+            
+            const words = p.name.split(' ').filter(Boolean);
+            const prefix = words.length >= 2 ? (words[0][0] + words[1][0] + (words[2]?.[0] || words[1][1] || 'X')).toUpperCase() : p.name.substring(0, 3).toUpperCase();
+            const readableId = `${prefix}-${String(idx + 1).padStart(3, '0')}`;
+            
+            return {
+                id: p.id,
+                readableId,
+                name: p.name,
+                desc: p.description || '',
+                owner: p.manager?.name || 'Unknown',
+                ownerAvatar: p.manager?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.manager?.name || 'U')}&background=random`,
+                status: p.status === 'ACTIVE' ? 'In Progress' : p.status === 'COMPLETED' ? 'Completed' : p.status === 'PLANNING' ? 'Planning' : 'On Hold',
+                progress: p.progress || 0,
+                health: p.healthStatus === 'ON_TRACK' ? 'On Track' : p.healthStatus === 'AT_RISK' ? 'At Risk' : p.healthStatus === 'OFF_TRACK' ? 'Off Track' : 'Good',
+                healthColor: p.healthStatus === 'ON_TRACK' ? '#3B82F6' : p.healthStatus === 'AT_RISK' ? '#F59E0B' : p.healthStatus === 'OFF_TRACK' ? '#EF4444' : '#10B981',
+                endStr: endDate ? endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No deadline',
+                endSub: endSub,
+                diffDays,
+                team: p.teamIds?.map((id: string) => `https://ui-avatars.com/api/?name=${id.substring(0,2)}&background=random`) || [],
+                lastUpdated: new Date(p.updatedAt).toLocaleDateString(),
+                starred: p.isStarred || false,
+                totalTasks: p._count?.tasks || 0,
+                completedTasks: Math.floor((p.progress || 0) / 100 * (p._count?.tasks || 0)), // estimate for UI
+                raw: p
+            };
+        });
+        setProjects(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleStar = async (id: string, current: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, starred: !current } : p));
+      await fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isStarred: !current })
+      });
+    } catch (err) {
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, starred: current } : p)); // revert
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project?')) return;
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      if (res.ok) setProjects(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      alert('Failed to delete project');
+    }
+  };
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const p = projects.find(x => x.id === id);
+      if (!p) return;
+      await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...p.raw,
+          name: p.name + ' (Copy)'
+        })
+      });
+      fetchProjects();
+    } catch (err) {
+      alert('Failed to duplicate project');
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, [searchQuery, statusFilter]);
+
+  // KPIs
+  const totalProjects = projects.length;
+  const activeProjects = projects.filter(p => p.status === 'Active').length;
+  const atRiskProjects = projects.filter(p => p.health === 'At Risk' || p.health === 'Off Track').length;
+  const completedProjects = projects.filter(p => p.status === 'Completed').length;
+  const onTrackProjects = projects.filter(p => p.health === 'On Track' || p.health === 'Good').length;
+
+  const filteredProjects = projects.filter(p => {
+    let tabMatch = true;
+    if (activeTab === 'Starred') tabMatch = p.starred;
+    else if (activeTab === 'Archived') tabMatch = p.status === 'Archived';
+    else if (activeTab === 'All Projects') tabMatch = p.status !== 'Archived';
+    
+    if (!tabMatch) return false;
+
+    if (dateFilter !== 'ALL') {
+      const pDate = new Date(p.raw.createdAt || p.raw.updatedAt || new Date());
+      const now = new Date();
+      if (dateFilter === 'TODAY') {
+        if (pDate.toDateString() !== now.toDateString()) return false;
+      } else if (dateFilter === 'THIS_WEEK') {
+        const diffDays = (now.getTime() - pDate.getTime()) / (1000 * 3600 * 24);
+        if (diffDays > 7 || diffDays < 0) return false;
+      } else if (dateFilter === 'THIS_MONTH') {
+        if (pDate.getMonth() !== now.getMonth() || pDate.getFullYear() !== now.getFullYear()) return false;
+      }
+    }
+    return true;
+  });
+
+  // Advanced Widgets
+  const overviewCounts = {
+    inProgress: projects.filter(p => p.status === 'In Progress').length,
+    planning: projects.filter(p => p.status === 'Planning').length,
+    inReview: projects.filter(p => p.status === 'In Review').length,
+    completed: projects.filter(p => p.status === 'Completed').length,
+    onHold: projects.filter(p => p.status === 'On Hold').length,
+  };
+  
+  const oInProgPct = totalProjects ? Math.round((overviewCounts.inProgress / totalProjects) * 100) : 0;
+  const oPlanPct = totalProjects ? Math.round((overviewCounts.planning / totalProjects) * 100) : 0;
+  const oRevPct = totalProjects ? Math.round((overviewCounts.inReview / totalProjects) * 100) : 0;
+  const oCompPct = totalProjects ? Math.round((overviewCounts.completed / totalProjects) * 100) : 0;
+  const oHoldPct = totalProjects ? Math.round((overviewCounts.onHold / totalProjects) * 100) : 0;
+
+  let currentOffset = 0;
+  const oDashInProg = `${oInProgPct} ${100 - oInProgPct}`;
+  const oOffInProg = currentOffset;
+  currentOffset -= oInProgPct;
+  const oDashPlan = `${oPlanPct} ${100 - oPlanPct}`;
+  const oOffPlan = currentOffset;
+  currentOffset -= oPlanPct;
+  const oDashRev = `${oRevPct} ${100 - oRevPct}`;
+  const oOffRev = currentOffset;
+  currentOffset -= oRevPct;
+  const oDashComp = `${oCompPct} ${100 - oCompPct}`;
+  const oOffComp = currentOffset;
+  currentOffset -= oCompPct;
+  const oDashHold = `${oHoldPct} ${100 - oHoldPct}`;
+  const oOffHold = currentOffset;
+
+  const upcomingDeadlines = [...projects]
+    .filter(p => p.raw.endDate && p.status !== 'Completed')
+    .sort((a, b) => new Date(a.raw.endDate).getTime() - new Date(b.raw.endDate).getTime())
+    .slice(0, 4);
+
+  const mockActivity = [
+    { u: 'Asad Minhas', a: 'updated project progress', p: 'Stroovo Platform Development', t: '2m ago', img: 'https://ui-avatars.com/api/?name=AM&background=random' },
+    { u: 'Zain Ali', a: 'added a new task', p: 'Marketing Automation System', t: '15m ago', img: 'https://ui-avatars.com/api/?name=ZA&background=random' },
+    { u: 'Hassan Farooq', a: 'uploaded a file', p: 'REVOTIC AI Website Redesign', t: '1h ago', img: 'https://ui-avatars.com/api/?name=HF&background=random' },
+    { u: 'You', a: 'created a new project', p: 'Mobile App for Stroovo', t: '2h ago', img: 'https://ui-avatars.com/api/?name=Y&background=random' }
+  ];
+
+  const atRiskList = projects.filter(p => p.health === 'At Risk' || p.health === 'Off Track');
+  const delayedList = projects.filter(p => {
+    if (!p.raw.endDate) return false;
+    const diff = new Date(p.raw.endDate).getTime() - new Date().getTime();
+    return diff < 0 && p.status !== 'Completed';
+  });
+  const topProject = [...projects].filter(p => p.status !== 'Completed').sort((a, b) => b.progress - a.progress)[0];
 
   return (
     <main style={{ display: 'flex', minHeight: '100vh', background: '#F8F9FA', fontFamily: "'Inter', -apple-system, sans-serif" }}>
@@ -78,24 +246,36 @@ export default function ProjectsPage() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
                 <Search size={16} color="#8A94A6" style={{ position: 'absolute', left: 12, top: 10 }} />
-                <input type="text" placeholder="Search projects..." style={{ height: 36, paddingLeft: 36, paddingRight: 16, borderRadius: 8, border: '1px solid #DFE1E6', fontSize: 13, width: 240, outline: 'none' }} />
+                <input type="text" placeholder="Search projects..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ height: 36, paddingLeft: 36, paddingRight: 16, borderRadius: 8, border: '1px solid #DFE1E6', fontSize: 13, width: 240, outline: 'none' }} />
                 <div style={{ position: 'absolute', right: 8, top: 8, background: '#F4F5F7', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#6B778C' }}>⌘K</div>
               </div>
               <button className="btn-secondary"><SlidersHorizontal size={14} /> Filters</button>
-              <button className="btn-secondary">View: Active <ChevronDown size={14} color="#8A94A6" /></button>
-              <button className="btn-primary"><Folder size={14} /> Create Project</button>
+              <select className="btn-secondary" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ height: 36 }}>
+                <option value="ALL">All Time</option>
+                <option value="TODAY">Created Today</option>
+                <option value="THIS_WEEK">Created This Week</option>
+                <option value="THIS_MONTH">Created This Month</option>
+              </select>
+              <select className="btn-secondary" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ height: 36 }}>
+                <option value="ALL">All Status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="PLANNING">Planning</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="ON_HOLD">On Hold</option>
+              </select>
+              <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}><Folder size={14} /> Create Project</button>
             </div>
           </div>
 
           {/* ── KPI CARDS ── */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-            {[
-              { title: 'Total Projects', value: '24', sub: '↑ 4 from last month', icon: Folder, color: '#0052CC', bg: '#E6EFFF' },
-              { title: 'Active Projects', value: '16', sub: '↑ 3 from last month', icon: FolderCheck, color: '#10B981', bg: '#D1FAE5' },
-              { title: 'At Risk Projects', value: '3', sub: '↓ 1 from last month', icon: AlertTriangle, color: '#EF4444', bg: '#FEE2E2', subColor: '#EF4444' },
-              { title: 'Completed Projects', value: '5', sub: '↑ 2 from last month', icon: CheckCircle, color: '#8B5CF6', bg: '#EDE9FE' },
-              { title: 'On Track', value: '13', sub: '54% of total', icon: TrendingUp, color: '#10B981', bg: '#D1FAE5', isGraph: true }
-            ].map(k => (
+            {([
+              { title: 'Total Projects', value: totalProjects, sub: '↑ 12% vs last month', icon: Folder, color: '#0052CC', bg: '#E6EFFF' },
+              { title: 'Active Projects', value: activeProjects, sub: '↑ 8% vs last month', icon: FolderCheck, color: '#10B981', bg: '#D1FAE5' },
+              { title: 'Completed Projects', value: completedProjects, sub: '↑ 16% vs last month', icon: CheckCircle, color: '#8B5CF6', bg: '#EDE9FE' },
+              { title: 'On Hold', value: overviewCounts.onHold, sub: '↓ 2% vs last month', icon: Clock, color: '#F59E0B', bg: '#FEF3C7' },
+              { title: 'Overdue Projects', value: upcomingDeadlines.filter(p => p.diffDays !== null && p.diffDays < 0).length, sub: '↓ 25% vs last month', icon: AlertTriangle, color: '#EF4444', bg: '#FEE2E2', subColor: '#EF4444' }
+            ] as Array<{ title: string; value: number; sub: string; icon: any; color: string; bg: string; subColor?: string; isGraph?: boolean }>).map(k => (
               <div key={k.title} className="p-stat-card">
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, color: k.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -130,9 +310,12 @@ export default function ProjectsPage() {
                 Group: <span style={{ color: '#172B4D', background: '#F4F5F7', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>None <ChevronDown size={14} /></span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#42526E', fontWeight: 600 }}>
-                Sort: <span style={{ color: '#172B4D', background: '#F4F5F7', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>Recently Updated <ChevronDown size={14} /></span>
+                Sort: <span style={{ color: '#172B4D', background: '#F4F5F7', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>Newest <ChevronDown size={14} /></span>
               </div>
-              <button className="btn-secondary" style={{ padding: '0 8px', height: 28 }}><LayoutGrid size={14} /></button>
+              <div style={{ display: 'flex', gap: 2, background: '#F4F5F7', padding: 2, borderRadius: 8 }}>
+                <button className={`btn-secondary ${viewMode === 'list' ? 'active' : ''}`} style={{ padding: '0 8px', height: 28, background: viewMode === 'list' ? 'white' : 'transparent', border: 'none', boxShadow: viewMode === 'list' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none' }} onClick={() => setViewMode('list')}><List size={14} color={viewMode === 'list' ? '#0052CC' : '#6B778C'} /></button>
+                <button className={`btn-secondary ${viewMode === 'grid' ? 'active' : ''}`} style={{ padding: '0 8px', height: 28, background: viewMode === 'grid' ? 'white' : 'transparent', border: 'none', boxShadow: viewMode === 'grid' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none' }} onClick={() => setViewMode('grid')}><LayoutGrid size={14} color={viewMode === 'grid' ? '#0052CC' : '#6B778C'} /></button>
+              </div>
             </div>
           </div>
         </div>
@@ -143,276 +326,342 @@ export default function ProjectsPage() {
           {/* ── MAIN AREA ── */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
 
-            {/* PROJECT TABLE */}
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', boxShadow: '0 1px 3px rgba(9,30,66,0.03)', overflow: 'hidden', overflowX: 'auto', minHeight: '50vh' }}>
-              <table className="p-table" style={{ minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 36 }}></th>
-                    <th style={{ width: '18%' }}>Project</th>
-                    <th style={{ width: '12%' }}>Owner</th>
-                    <th style={{ width: '8%' }}>Status</th>
-                    <th style={{ width: '14%' }}>Progress</th>
-                    <th style={{ width: '9%' }}>Health</th>
-                    <th style={{ width: '12%' }}>End Date</th>
-                    <th style={{ width: '10%' }}>Team</th>
-                    <th style={{ width: '10%' }}>Updated</th>
-                    <th style={{ width: 40 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {projects.map(p => (
-                    <tr key={p.id} onClick={() => window.location.href = `/projects/${p.id}`} style={{ cursor: 'pointer' }}>
-                      <td style={{ textAlign: 'center' }}>
-                        <Star size={16} fill={p.starred ? "#F59E0B" : "none"} color={p.starred ? "#F59E0B" : "#C1C7D0"} />
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700, color: '#172B4D', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                        <div style={{ color: '#6B778C', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.desc}</div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <img src={p.ownerAvatar} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} />
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.owner}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="status-pill" style={{
-                          background: p.status === 'Active' ? '#E6EFFF' : p.status === 'Completed' ? '#EDE9FE' : p.status === 'Planning' ? '#E3FCEF' : '#F4F5F7',
-                          color: p.status === 'Active' ? '#0052CC' : p.status === 'Completed' ? '#8B5CF6' : p.status === 'Planning' ? '#006644' : '#42526E'
-                        }}>{p.status}</span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ flex: 1, height: 6, background: '#EBECF0', borderRadius: 3 }}>
-                            <div style={{ width: `${p.progress}%`, height: '100%', background: p.status === 'Completed' ? '#8B5CF6' : '#0052CC', borderRadius: 3, transition: 'width 0.5s ease' }} />
+            {/* PROJECT LIST/GRID VIEW */}
+            {viewMode === 'list' ? (
+              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', boxShadow: '0 1px 3px rgba(9,30,66,0.03)', overflow: 'hidden', overflowX: 'auto', minHeight: '50vh' }}>
+                <table className="p-table" style={{ minWidth: 900 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 36 }}></th>
+                      <th style={{ width: '18%' }}>Project</th>
+                      <th style={{ width: '12%' }}>Owner</th>
+                      <th style={{ width: '8%' }}>Status</th>
+                      <th style={{ width: '14%' }}>Progress</th>
+                      <th style={{ width: '9%' }}>Health</th>
+                      <th style={{ width: '12%' }}>End Date</th>
+                      <th style={{ width: '10%' }}>Team</th>
+                      <th style={{ width: '10%' }}>Updated</th>
+                      <th style={{ width: 40 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProjects.map(p => (
+                      <tr key={p.id} onClick={() => window.location.href = `/projects/${p.id}`} style={{ cursor: 'pointer', position: 'relative' }}>
+                        <td style={{ textAlign: 'center' }} onClick={(e) => toggleStar(p.id, p.starred, e)}>
+                          <Star size={16} fill={p.starred ? "#F59E0B" : "none"} color={p.starred ? "#F59E0B" : "#C1C7D0"} style={{ cursor: 'pointer' }} />
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#172B4D', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                          <div style={{ color: '#6B778C', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.desc}</div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <img src={p.ownerAvatar} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.owner}</span>
                           </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#42526E', width: 32 }}>{p.progress}%</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#172B4D' }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.healthColor }} /> {p.health}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.endStr}</div>
-                        <div style={{ fontSize: 11, color: '#6B778C', marginTop: 2 }}>{p.endSub}</div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex' }}>
-                          {p.team.map((img, i) => (
-                            <img key={i} src={img} alt="" className="p-avatar" style={{ zIndex: 10 - i }} />
-                          ))}
-                          {p.team.length > 3 && (
-                            <div className="p-avatar" style={{ background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#42526E', zIndex: 1 }}>+2</div>
+                        </td>
+                        <td>
+                          <span className="status-pill" style={{
+                            background: p.status === 'In Progress' ? '#E6EFFF' : p.status === 'Completed' ? '#EDE9FE' : p.status === 'Planning' ? '#E3FCEF' : '#F4F5F7',
+                            color: p.status === 'In Progress' ? '#0052CC' : p.status === 'Completed' ? '#8B5CF6' : p.status === 'Planning' ? '#006644' : '#42526E'
+                          }}>{p.status}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ flex: 1, height: 6, background: '#EBECF0', borderRadius: 3 }}>
+                              <div style={{ width: `${p.progress}%`, height: '100%', background: p.status === 'Completed' ? '#8B5CF6' : '#0052CC', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#42526E', width: 32 }}>{p.progress}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#172B4D' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.healthColor }} /> {p.health}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{p.endStr}</div>
+                          <div style={{ fontSize: 11, color: '#6B778C', marginTop: 2 }}>{p.endSub}</div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex' }}>
+                            {p.team.map((img: string, i: number) => (
+                              <img key={i} src={img} alt="" className="p-avatar" style={{ zIndex: 10 - i }} />
+                            ))}
+                            {p.team.length > 3 && (
+                              <div className="p-avatar" style={{ background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#42526E', zIndex: 1 }}>+2</div>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ fontSize: 13, color: '#6B778C', fontWeight: 500 }}>{p.lastUpdated}</td>
+                        <td style={{ position: 'relative' }}>
+                          <div style={{ padding: 6, borderRadius: 6, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === p.id ? null : p.id); }} className="hover:bg-gray-100">
+                            <MoreVertical size={16} color="#8A94A6" />
+                          </div>
+                          {menuOpenId === p.id && (
+                            <div style={{ position: 'absolute', right: 30, top: '50%', transform: 'translateY(-50%)', background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(9, 30, 66, 0.15)', border: '1px solid #DFE1E6', zIndex: 100, width: 160, padding: '4px 0' }} onClick={e => e.stopPropagation()}>
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#172B4D', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => { e.stopPropagation(); setEditProjectId(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Edit size={14} /> Edit Project</div>
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#172B4D', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => { e.stopPropagation(); handleDuplicate(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Copy size={14} /> Duplicate</div>
+                              <div style={{ height: 1, background: '#DFE1E6', margin: '4px 0' }} />
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#DE350B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => { e.stopPropagation(); handleDelete(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Trash2 size={14} /> Delete</div>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #DFE1E6', background: '#FAFBFC' }}>
+                  <span style={{ fontSize: 12, color: '#6B778C', fontWeight: 600 }}>Showing 1 to {Math.min(filteredProjects.length, 8)} of {filteredProjects.length} projects</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} /></button>
+                    <button className="btn-primary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>1</button>
+                    <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} /></button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+                {filteredProjects.map(p => (
+                  <div key={p.id} onClick={() => window.location.href = `/projects/${p.id}`} style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(9,30,66,0.03)', transition: 'all 0.2s', position: 'relative' }} className="hover:shadow-md hover:border-gray-300">
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700, color: '#172B4D', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {p.name}
+                          <Star size={14} fill={p.starred ? "#0052CC" : "none"} color={p.starred ? "#0052CC" : "transparent"} onClick={(e) => toggleStar(p.id, p.starred, e)} />
+                        </h3>
+                        <div style={{ position: 'relative' }}>
+                          <div style={{ padding: 4, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === p.id ? null : p.id); }}>
+                            <MoreVertical size={16} color="#8A94A6" />
+                          </div>
+                          {menuOpenId === p.id && (
+                            <div style={{ position: 'absolute', right: 0, top: 24, background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(9, 30, 66, 0.15)', border: '1px solid #DFE1E6', zIndex: 100, width: 160, padding: '4px 0' }} onClick={e => e.stopPropagation()}>
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#172B4D', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => { setEditProjectId(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Edit size={14} /> Edit Project</div>
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#172B4D', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => { handleDuplicate(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Copy size={14} /> Duplicate</div>
+                              <div style={{ height: 1, background: '#DFE1E6', margin: '4px 0' }} />
+                              <div style={{ padding: '8px 12px', fontSize: 13, color: '#DE350B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => { handleDelete(p.id); setMenuOpenId(null); }} className="hover:bg-gray-50"><Trash2 size={14} /> Delete</div>
+                            </div>
                           )}
                         </div>
-                      </td>
-                      <td style={{ fontSize: 13, color: '#6B778C', fontWeight: 500 }}>{p.lastUpdated}</td>
-                      <td>
-                        <div style={{ padding: 6, borderRadius: 6, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); }} className="hover:bg-gray-100">
-                          <MoreVertical size={16} color="#8A94A6" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #DFE1E6', background: '#FAFBFC' }}>
-                <span style={{ fontSize: 12, color: '#6B778C', fontWeight: 600 }}>Showing 1 to 8 of 24 projects</span>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} /></button>
-                  <button className="btn-primary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>1</button>
-                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>2</button>
-                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}>3</button>
-                  <button className="btn-secondary" style={{ width: 32, padding: 0, justifyContent: 'center' }}><ChevronRight size={14} /></button>
-                </div>
-              </div>
-            </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6B778C', fontWeight: 600 }}>{p.readableId}</div>
+                    </div>
+                    
+                    <p style={{ margin: 0, fontSize: 13, color: '#42526E', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {p.desc || 'No description provided.'}
+                    </p>
 
-            {/* BOTTOM WIDGETS ROW */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-
-              {/* Recent Activity */}
-              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Recent Activity</h3>
-                  <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[
-                    { u: 'Ali Raza', a: 'updated project', p: 'E-Commerce Platform', t: '2h ago', img: 'https://i.pravatar.cc/150?u=ali' },
-                    { u: 'Sara Khan', a: 'moved task to In Progress', p: 'Mobile Application', t: '5h ago', img: 'https://i.pravatar.cc/150?u=sara' },
-                    { u: 'Usman Tariq', a: 'completed milestone', p: 'Internal Dashboard', t: '6h ago', img: 'https://i.pravatar.cc/150?u=usman' }
-                  ].map((act, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <img src={act.img} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />
-                      <div>
-                        <div style={{ fontSize: 12, color: '#42526E', lineHeight: 1.4 }}>
-                          <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.u}</span> {act.a} <br />
-                          <span style={{ fontWeight: 600 }}>{act.p}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: '#8A94A6', marginTop: 4 }}>{act.t}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex' }}>
+                        {p.team.slice(0, 4).map((img: string, i: number) => (
+                          <img key={i} src={img} alt="" className="p-avatar" style={{ width: 28, height: 28, zIndex: 10 - i }} />
+                        ))}
+                        {p.team.length > 4 && (
+                          <div className="p-avatar" style={{ width: 28, height: 28, background: '#F4F5F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#42526E', zIndex: 1 }}>+{p.team.length - 4}</div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Projects Timeline (Gantt Mini) */}
-              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Projects Timeline</h3>
-                  <button className="btn-secondary" style={{ height: 28, fontSize: 11 }}>This Month <ChevronDown size={12} /></button>
-                </div>
-                <div style={{ position: 'relative', height: 160, borderLeft: '1px solid #DFE1E6', borderBottom: '1px solid #DFE1E6' }}>
-                  {/* Grid Lines */}
-                  {[20, 40, 60, 80].map(p => (
-                    <div key={p} style={{ position: 'absolute', left: `${p}%`, top: 0, bottom: 0, borderLeft: '1px dashed #EBECF0' }} />
-                  ))}
-                  {/* Today Line */}
-                  <div style={{ position: 'absolute', left: '45%', top: 0, bottom: 0, borderLeft: '2px solid #0052CC', zIndex: 5 }}>
-                    <div style={{ position: 'absolute', top: -20, left: -20, background: '#0052CC', color: 'white', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>Today</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="status-pill" style={{
+                          background: p.status === 'In Progress' ? '#E6EFFF' : p.status === 'Completed' ? '#EDE9FE' : p.status === 'Planning' ? '#E3FCEF' : p.status === 'On Hold' ? '#FEF3C7' : '#F4F5F7',
+                          color: p.status === 'In Progress' ? '#0052CC' : p.status === 'Completed' ? '#8B5CF6' : p.status === 'Planning' ? '#006644' : p.status === 'On Hold' ? '#974F0C' : '#42526E',
+                          padding: '2px 8px', fontSize: 11
+                        }}>{p.status}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#172B4D' }}>{p.progress}%</span>
+                      </div>
+                      <div style={{ height: 6, background: '#EBECF0', borderRadius: 3, width: '100%' }}>
+                        <div style={{ width: `${p.progress}%`, height: '100%', background: p.status === 'Completed' ? '#8B5CF6' : p.status === 'In Progress' ? '#0052CC' : p.status === 'Planning' ? '#10B981' : '#F59E0B', borderRadius: 3 }} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #DFE1E6', paddingTop: 16, marginTop: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6B778C', fontWeight: 600 }}>
+                        <Calendar size={14} /> Due: {p.raw.endDate ? new Date(p.raw.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No date'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6B778C', fontWeight: 600 }}>
+                        <CheckSquare size={14} /> {p.completedTasks}/{p.totalTasks}
+                      </div>
+                    </div>
                   </div>
-                  {/* Bars */}
-                  {[
-                    { n: 'E-Commerce Platform', top: 20, l: 10, w: 40, c: '#0052CC', p: 'Planning' },
-                    { n: 'Mobile Application', top: 60, l: 30, w: 50, c: '#F59E0B', p: 'Development' },
-                    { n: 'CRM Integration', top: 100, l: 20, w: 30, c: '#EF4444', p: 'Integration' },
-                    { n: 'AI Chatbot', top: 140, l: 50, w: 40, c: '#0052CC', p: 'Training' }
-                  ].map((b, i) => (
-                    <div key={i} style={{ position: 'absolute', top: b.top, left: 0, right: 0, height: 24, display: 'flex', alignItems: 'center' }}>
-                      <div style={{ width: 120, fontSize: 11, fontWeight: 600, color: '#42526E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{b.n}</div>
-                      <div style={{ position: 'relative', flex: 1, height: '100%' }}>
-                        <div style={{ position: 'absolute', left: `${b.l}%`, width: `${b.w}%`, height: 24, background: b.c, borderRadius: 4, display: 'flex', alignItems: 'center', padding: '0 8px', color: 'white', fontSize: 10, fontWeight: 700 }}>
-                          {b.p}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
+            )}
 
-              {/* Health Distribution */}
-              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: '0 0 16px 0', alignSelf: 'flex-start' }}>Health Distribution</h3>
-                <div style={{ position: 'relative', width: 120, height: 120, marginBottom: 16 }}>
-                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray="42 58" strokeDashoffset="0" />
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="29 71" strokeDashoffset="-42" />
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="13 87" strokeDashoffset="-71" />
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="8 92" strokeDashoffset="-84" />
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8B5CF6" strokeWidth="4" strokeDasharray="8 92" strokeDashoffset="-92" />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: '#172B4D', lineHeight: 1 }}>24</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: '#6B778C' }}>Total Projects</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', fontSize: 11, color: '#42526E', fontWeight: 600 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />Good</span><span>10 (42%)</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} />On Track</span><span>7 (29%)</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />At Risk</span><span>3 (13%)</span></div>
-                </div>
-              </div>
 
-              {/* Top Performers */}
-              <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Top Performers</h3>
-                  <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[
-                    { p: 'E-Commerce Platform', s: 86, c: '#0052CC' },
-                    { p: 'Internal Dashboard', s: 82, c: '#10B981' },
-                    { p: 'Performance Opt...', s: 100, c: '#8B5CF6' }
-                  ].map((tp, i) => (
-                    <div key={i}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#172B4D', marginBottom: 6 }}>
-                        <span>{tp.p}</span>
-                        <span style={{ color: tp.c }}>{tp.s}%</span>
-                      </div>
-                      <div style={{ width: '100%', height: 6, background: '#EBECF0', borderRadius: 3 }}>
-                        <div style={{ width: `${tp.s}%`, height: '100%', background: tp.c, borderRadius: 3 }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
           </div>
 
-          {/* ── RIGHT SIDEBAR (AI ASSISTANT) ── */}
-          <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* ── RIGHT SIDEBAR ── */}
+          <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-            {/* AI Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Zap size={18} color="#8B5CF6" />
-              <span style={{ fontSize: 16, fontWeight: 800, color: '#172B4D' }}>AI Project Assistant</span>
-              <span style={{ fontSize: 10, background: '#EDE9FE', color: '#8B5CF6', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>Beta</span>
-            </div>
-
-            {/* AI Insights Boxes */}
-            <div>
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: '#172B4D', margin: '0 0 12px 0' }}>AI Insights</h4>
-
-              <div style={{ background: '#FFF0F0', border: '1px solid #FFEBEB', borderLeft: '3px solid #EF4444', borderRadius: 8, padding: 16, marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <AlertTriangle size={14} color="#EF4444" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#BF2600' }}>3 projects are at risk</span>
-                </div>
-                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>Mobile Application, CRM Integration and Data Migration need attention.</p>
-                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View analysis →</a>
-              </div>
-
-              <div style={{ background: '#FFF7E6', border: '1px solid #FFF1C6', borderLeft: '3px solid #F59E0B', borderRadius: 8, padding: 16, marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Clock size={14} color="#F59E0B" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#974F0C' }}>2 projects behind schedule</span>
-                </div>
-                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>They may miss the deadline by 4-7 days.</p>
-                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View details →</a>
-              </div>
-
-              <div style={{ background: '#E3FCEF', border: '1px solid #D3F9E8', borderLeft: '3px solid #10B981', borderRadius: 8, padding: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <CheckSquare size={14} color="#10B981" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#006644' }}>E-Commerce Platform</span>
-                </div>
-                <p style={{ fontSize: 12, color: '#42526E', margin: '0 0 12px 0', lineHeight: 1.4 }}>On track to complete ahead of schedule.</p>
-                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View prediction →</a>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
+            {/* Projects Overview (Donut Chart) */}
             <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: '#172B4D', margin: '0 0 12px 0' }}>Quick Actions</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { l: 'Create Project', i: Folder },
-                  { l: 'Import Project', i: Calendar },
-                  { l: 'Project Templates', i: LayoutGrid },
-                  { l: 'AI Auto Plan', i: Zap, c: '#8B5CF6' },
-                  { l: 'Project Report', i: Activity }
-                ].map(a => (
-                  <div key={a.l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#FAFBFC', borderRadius: 8, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }} className="hover:border-gray-300">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <a.i size={16} color={a.c || "#6B778C"} />
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#172B4D' }}>{a.l}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Projects Overview</h3>
+                <button className="btn-secondary" style={{ height: 28, fontSize: 11 }}>This Month <ChevronDown size={12} /></button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: 140, height: 140, marginBottom: 24 }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                    {oInProgPct > 0 && <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0052CC" strokeWidth="4" strokeDasharray={oDashInProg} strokeDashoffset={oOffInProg} />}
+                    {oPlanPct > 0 && <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8B5CF6" strokeWidth="4" strokeDasharray={oDashPlan} strokeDashoffset={oOffPlan} />}
+                    {oRevPct > 0 && <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={oDashRev} strokeDashoffset={oOffRev} />}
+                    {oCompPct > 0 && <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={oDashComp} strokeDashoffset={oOffComp} />}
+                    {oHoldPct > 0 && <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray={oDashHold} strokeDashoffset={oOffHold} />}
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: '#172B4D', lineHeight: 1 }}>{totalProjects}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>Projects</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', fontSize: 12, color: '#42526E', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0052CC' }} />In Progress</span>
+                    <span style={{ display: 'flex', gap: 16 }}><span>{overviewCounts.inProgress}</span><span style={{ color: '#6B778C', width: 30, textAlign: 'right' }}>({oInProgPct}%)</span></span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#8B5CF6' }} />Planning</span>
+                    <span style={{ display: 'flex', gap: 16 }}><span>{overviewCounts.planning}</span><span style={{ color: '#6B778C', width: 30, textAlign: 'right' }}>({oPlanPct}%)</span></span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />In Review</span>
+                    <span style={{ display: 'flex', gap: 16 }}><span>{overviewCounts.inReview}</span><span style={{ color: '#6B778C', width: 30, textAlign: 'right' }}>({oRevPct}%)</span></span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />Completed</span>
+                    <span style={{ display: 'flex', gap: 16 }}><span>{overviewCounts.completed}</span><span style={{ color: '#6B778C', width: 30, textAlign: 'right' }}>({oCompPct}%)</span></span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />On Hold</span>
+                    <span style={{ display: 'flex', gap: 16 }}><span>{overviewCounts.onHold}</span><span style={{ color: '#6B778C', width: 30, textAlign: 'right' }}>({oHoldPct}%)</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Deadlines */}
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Upcoming Deadlines</h3>
+                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.diffDays !== null && p.diffDays < 0 ? '#EF4444' : p.diffDays !== null && p.diffDays < 3 ? '#F59E0B' : '#C1C7D0', marginTop: 6 }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#172B4D' }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: '#6B778C', marginTop: 2 }}>{p.endSub}</div>
+                      </div>
                     </div>
-                    <ChevronRight size={14} color="#C1C7D0" />
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#42526E' }}>
+                      {p.endStr.split(',')[0]}
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ fontSize: 12, color: '#6B778C', fontWeight: 600, textAlign: 'center' }}>No upcoming deadlines</div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #DFE1E6', padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#172B4D', margin: 0 }}>Recent Activity</h3>
+                <a href="#" style={{ fontSize: 12, color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>View all</a>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {(activities.length > 0 ? activities : mockActivity).map((act, i) => (
+                  <div key={act.id || i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <img src={act.userImage || act.img} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+                    <div>
+                      <div style={{ fontSize: 12, color: '#42526E', lineHeight: 1.4 }}>
+                        <span style={{ fontWeight: 700, color: '#172B4D' }}>{act.user || act.u}</span> {act.action || act.a} <br />
+                        <span style={{ fontWeight: 600 }}>{act.entityId || act.p}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#8A94A6', marginTop: 4 }}>
+                        {act.createdAt ? new Date(act.createdAt).toLocaleDateString() : act.t}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-
           </div>
         </div>
+
+        {/* ── BOTTOM STATS ROW ── */}
+        <div style={{ background: 'white', borderTop: '1px solid #DFE1E6', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#E6EFFF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LayoutGrid size={18} /></div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#172B4D' }}>{projects.reduce((acc, p) => acc + (p.totalTasks || 0), 0)}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>Across all projects</div>
+            </div>
+          </div>
+          
+          <div style={{ width: 1, height: 32, background: '#DFE1E6' }} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#E6EFFF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={18} /></div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#172B4D' }}>{projects.reduce((acc, p) => acc + (p.completedTasks || 0), 0)}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>
+                {Math.round((projects.reduce((acc, p) => acc + (p.completedTasks || 0), 0) / (projects.reduce((acc, p) => acc + (p.totalTasks || 0), 0) || 1)) * 100)}% completion rate
+              </div>
+            </div>
+          </div>
+
+          <div style={{ width: 1, height: 32, background: '#DFE1E6' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#E6EFFF', color: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Folder size={18} /></div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#172B4D' }}>{projects.filter(p => p.status === 'In Progress').length}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>Working on projects</div>
+            </div>
+          </div>
+
+          <div style={{ width: 1, height: 32, background: '#DFE1E6' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FFF0B3', color: '#FF991F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Folder size={18} /></div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#172B4D' }}>{projects.length}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>Across all projects</div>
+            </div>
+          </div>
+
+          <div style={{ width: 1, height: 32, background: '#DFE1E6' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EDE9FE', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Clock size={18} /></div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#172B4D' }}>0h</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6B778C' }}>This month</div>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      {isCreateModalOpen && (
+        <CreateProjectModal 
+          onClose={() => setIsCreateModalOpen(false)} 
+          onSuccess={() => { setIsCreateModalOpen(false); fetchProjects(); }} 
+        />
+      )}
+      {editProjectId && (
+        <EditProjectModal 
+          projectId={editProjectId!} 
+          onClose={() => setEditProjectId(null)} 
+
+          onSuccess={() => { setEditProjectId(null); fetchProjects(); }} 
+        />
+      )}
     </main>
   );
 }

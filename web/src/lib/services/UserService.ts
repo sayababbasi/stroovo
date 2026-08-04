@@ -81,6 +81,25 @@ export interface UpdateUserInput {
 
 export class UserService {
   /**
+   * Get user statistics
+   */
+  static async getStatistics(tenantId?: string) {
+    const where = tenantId ? { tenantId } : {};
+    const [total, active, admins] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.count({ where: { ...where, isActive: true } }),
+      prisma.user.count({ where: { ...where, role: 'SUPER_ADMIN' } })
+    ]);
+    return { total, active, admins };
+  }
+
+  /**
+   * Generate a secure temporary password
+   */
+  static generateTemporaryPassword(): string {
+    return crypto.randomBytes(8).toString('hex') + 'Aa1!';
+  }
+  /**
    * Create a new user with hashed password
    */
   static async create(input: CreateUserInput) {

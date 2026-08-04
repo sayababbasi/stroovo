@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { AdminService } from '@/lib/services/AdminService';
-import { createUserSchema, updateUserSchema, userQuerySchema } from '@/lib/validation/user-validation';
+import { createUserSchema, updateUserSchema } from '@/lib/validation/user-validation';
 import { logAdminAction, requirePermission } from '@/lib/authorization';
 
 export async function GET(request: Request) {

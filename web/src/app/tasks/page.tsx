@@ -38,6 +38,20 @@ function isDueToday(t: Task): boolean {
     if (!t.dueDate) return false;
     return new Date(t.dueDate).toDateString() === new Date().toDateString();
 }
+function getTaskDay(t: Task): string {
+    if (t.tags && Array.isArray(t.tags)) {
+        const dayTag = t.tags.find(tag => /^Day \d+$/i.test(tag));
+        if (dayTag) return dayTag.trim();
+    }
+    const sDate = (t as any).startDate;
+    if (sDate) {
+        const d = new Date(sDate);
+        const base = new Date('2026-08-01T00:00:00Z').getTime();
+        const diff = Math.floor((d.getTime() - base) / 86400000) + 1;
+        if (diff >= 1 && diff <= 30) return `Day ${diff}`;
+    }
+    return 'Unscheduled';
+}
 
 export default function TasksPage() {
     const { user, accessToken } = useAuth();
@@ -128,7 +142,9 @@ export default function TasksPage() {
     );
 
     const [filterStatus, setFilterStatus] = useState<TaskStatus | 'All'>('All');
-    const [groupBy, setGroupBy] = useState<'Status' | 'Priority' | 'Project' | 'None'>('Status');
+    const [filterDay, setFilterDay] = useState<string>('All');
+    const [filterDate, setFilterDate] = useState<string>('All');
+    const [groupBy, setGroupBy] = useState<'Status' | 'Priority' | 'Project' | 'Day' | 'Date' | 'None'>('Status');
     const [activeTipIndex, setActiveTipIndex] = useState(0);
     const tips = useMemo(() => [
         { text: 'Press / to search', icon: <Search size={12} /> },
@@ -184,13 +200,31 @@ export default function TasksPage() {
         // Status Filter
         if (filterStatus !== 'All' && t.status !== filterStatus) return false;
 
+        // Day Filter
+        if (filterDay !== 'All' && getTaskDay(t) !== filterDay) return false;
+
+        // Date Filter (Due Date)
+        if (filterDate !== 'All') {
+            if (!t.dueDate) return false;
+            const tDate = new Date(t.dueDate);
+            const now = new Date();
+            if (filterDate === 'TODAY') {
+                if (tDate.toDateString() !== now.toDateString()) return false;
+            } else if (filterDate === 'THIS_WEEK') {
+                const diffDays = (tDate.getTime() - now.getTime()) / (1000 * 3600 * 24);
+                if (diffDays > 7 || diffDays < -7) return false; // approx week
+            } else if (filterDate === 'THIS_MONTH') {
+                if (tDate.getMonth() !== now.getMonth() || tDate.getFullYear() !== now.getFullYear()) return false;
+            }
+        }
+
         if (focusMode) {
             // Focus mode: show only my tasks (IN_PROGRESS / HIGH priority)
             if (t.status !== 'IN_PROGRESS' && t.priority !== 'HIGH' && t.priority !== 'URGENT') return false;
         }
         
         return true;
-    }), [tasks, focusMode, searchQ, quickFilter, filterStatus, user?.id]);
+    }), [tasks, focusMode, searchQ, quickFilter, filterStatus, filterDay, filterDate, user?.id]);
 
     // Stats computed from real DB values
     const stats = useMemo(() => [
@@ -209,9 +243,30 @@ export default function TasksPage() {
             if (groupBy === 'Status') key = STATUS_LABELS[t.status] || t.status;
             else if (groupBy === 'Priority') key = PRIORITY_LABELS[t.priority] || t.priority;
             else if (groupBy === 'Project') key = getProjectName(t);
+            else if (groupBy === 'Day') key = getTaskDay(t);
+            else if (groupBy === 'Date') {
+                if (t.dueDate) {
+                    const d = new Date(t.dueDate);
+                    key = d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+                } else {
+                    key = 'No Due Date';
+                }
+            }
             if (!groups[key]) groups[key] = [];
             groups[key].push(t);
         });
+        
+        if (groupBy === 'Date') {
+            const sortedGroups: Record<string, Task[]> = {};
+            const keys = Object.keys(groups).sort((a, b) => {
+                if (a === 'No Due Date') return 1;
+                if (b === 'No Due Date') return -1;
+                return new Date(a).getTime() - new Date(b).getTime();
+            });
+            keys.forEach(k => sortedGroups[k] = groups[k]);
+            return sortedGroups;
+        }
+
         return groups;
     }, [filteredTasks, groupBy]);
 
@@ -393,6 +448,7 @@ export default function TasksPage() {
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {/* Status Filter */}
                             <div style={{ position: 'relative' }}>
                                 <select 
                                     value={filterStatus}
@@ -405,6 +461,7 @@ export default function TasksPage() {
                                 <Filter size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6', pointerEvents: 'none' }} />
                             </div>
 
+                            {/* Group By Select */}
                             <div style={{ position: 'relative' }}>
                                 <select 
                                     value={groupBy}
@@ -415,6 +472,8 @@ export default function TasksPage() {
                                     <option value="Status">Group: Status</option>
                                     <option value="Priority">Group: Priority</option>
                                     <option value="Project">Group: Project</option>
+                                    <option value="Day">Group: Day</option>
+                                    <option value="Date">Group: Date</option>
                                 </select>
                                 <Columns size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A94A6', pointerEvents: 'none' }} />
                             </div>
