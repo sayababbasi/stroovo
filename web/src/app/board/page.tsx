@@ -231,12 +231,7 @@ export function BoardView({ hideHeader }: { hideHeader?: boolean } = {}) {
                                 <div style={{ width: 1, height: 24, background: '#DFE1E6' }} />
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
-                                        Filter
-                                    </button>
-                                    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
-                                        Sort
-                                    </button>
+
                                     <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 8, border: '1px solid #DFE1E6', background: 'white', color: '#42526E', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(9, 30, 66, 0.05)' }}>
                                         ...
                                     </button>

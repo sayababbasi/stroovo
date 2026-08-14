@@ -1,134 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  ArrowRight,
-  Bot,
-  Check,
-  ChevronRight,
-  CirclePlay,
-  Clock3,
-  Command,
-  Gauge,
-  Layers3,
-  Menu,
-  ShieldCheck,
-  Sparkles,
-  WandSparkles,
-  X,
-  Zap,
-} from "lucide-react";
+// Phase 1 Components
+import Navbar from "@/components/landing/Navbar";
+import HeroSection from "@/components/landing/HeroSection";
+import TrustedBySection from "@/components/landing/TrustedBySection";
 
-const tasks = [
-  { title: "Launch customer onboarding", owner: "MK", color: "#B2A1FF", status: "Ready", score: "98%" },
-  { title: "Resolve growth experiment", owner: "AF", color: "#71E5C2", status: "In progress", score: "94%" },
-  { title: "Publish Q3 campaign", owner: "NO", color: "#FFD38A", status: "Review", score: "91%" },
-];
+// Phase 2 Components
+import ProductShowcaseSection from "@/components/landing/ProductShowcaseSection";
+import AnalyticsSection from "@/components/landing/AnalyticsSection";
+import CollaborationSection from "@/components/landing/CollaborationSection";
+import GoalsSection from "@/components/landing/GoalsSection";
+import IntegrationsSection from "@/components/landing/IntegrationsSection";
+import SecuritySection from "@/components/landing/SecuritySection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import PricingSection from "@/components/landing/PricingSection";
+import FAQSection from "@/components/landing/FAQSection";
+import FinalCTASection from "@/components/landing/FinalCTASection";
+import Footer from "@/components/landing/Footer";
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [demoState, setDemoState] = useState<"ready" | "thinking" | "complete">("ready");
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const runDemo = () => {
-    if (demoState === "thinking") return;
-    setDemoState("thinking");
-    window.setTimeout(() => setDemoState("complete"), 1600);
-  };
-
   return (
-    <main className="site-shell">
-      <nav className={`nav ${scrolled ? "nav-scrolled" : ""}`}>
-        <div className="nav-inner">
-          <Link href="/" className="brand-logo" aria-label="Stroovo home" style={{ display: 'flex', alignItems: 'center', width: '112px', height: '36px' }}>
-            <Image src="/logo.png" alt="Stroovo" width={1983} height={793} priority style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'left center', display: 'block' }} />
-          </Link>
-          <div className={`nav-links ${menuOpen ? "nav-links-open" : ""}`}>
-            <a href="#product" onClick={() => setMenuOpen(false)}>Product</a>
-            <a href="#intelligence" onClick={() => setMenuOpen(false)}>Intelligence</a>
-            <a href="#security" onClick={() => setMenuOpen(false)}>Security</a>
-            <a href="#demo" onClick={() => setMenuOpen(false)}>Live demo</a>
-            <Link href="/login" className="login-link">Log in</Link>
-            <Link href="/signup" className="nav-cta" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '9px', minWidth: '106px', height: '38px', color: '#fff', background: 'linear-gradient(135deg,#7462ef,#5d4ad7)', padding: '0 13px', border: '1px solid rgba(255,255,255,.18)', borderRadius: '9px', fontSize: '12px', fontWeight: 650, boxShadow: '0 8px 18px rgba(91,70,207,.2)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Start free <ArrowRight size={15} /></Link>
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900 relative">
+      
+      {/* Global Background Illustration */}
+      <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden bg-[#FAFBFC]">
+         {/* Subtle Topographic/Grid SVG */}
+         <svg className="absolute inset-0 w-full h-full opacity-[0.03] mix-blend-multiply" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+               <pattern id="landing-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+               </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#landing-grid)" />
+         </svg>
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+        <main className="relative">
+          {/* Scattered Scrollable Background Effects */}
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-[5%] right-[0%] w-[800px] h-[800px] bg-purple-300/20 rounded-full blur-[150px]"></div>
+            <div className="absolute top-[15%] left-[-10%] w-[700px] h-[700px] bg-emerald-200/20 rounded-full blur-[150px]"></div>
+            
+            <div className="absolute top-[28%] right-[-5%] w-[900px] h-[900px] bg-blue-300/15 rounded-full blur-[150px]"></div>
+            <div className="absolute top-[35%] left-[5%] w-[600px] h-[600px] bg-indigo-300/20 rounded-full blur-[150px]"></div>
+            
+            <div className="absolute top-[48%] right-[10%] w-[800px] h-[800px] bg-fuchsia-300/15 rounded-full blur-[150px]"></div>
+            <div className="absolute top-[55%] left-[-5%] w-[700px] h-[700px] bg-teal-200/20 rounded-full blur-[150px]"></div>
+            
+            <div className="absolute top-[70%] right-[-10%] w-[800px] h-[800px] bg-violet-300/20 rounded-full blur-[150px]"></div>
+            <div className="absolute top-[82%] left-[10%] w-[600px] h-[600px] bg-orange-200/15 rounded-full blur-[150px]"></div>
+            
+            <div className="absolute bottom-[2%] left-[30%] w-[1000px] h-[1000px] bg-blue-300/20 rounded-full blur-[150px]"></div>
           </div>
-          <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">
-            {menuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-      </nav>
 
-      <section className="hero">
-        <div className="aurora aurora-one" /><div className="aurora aurora-two" />
-        <div className="hero-content">
-          <div className="eyebrow"><Sparkles size={14} /> The autonomous work platform</div>
-          <h1>Work that moves <em>itself</em> forward.</h1>
-          <p className="hero-copy">Stroovo turns your team’s goals into momentum. An AI operations layer that sees the work, makes the right call, and keeps everyone moving.</p>
-          <div className="hero-actions">
-            <Link href="/signup" className="button button-primary">Build your workspace <ArrowRight size={18} /></Link>
-            <a href="#demo" className="button button-ghost"><CirclePlay size={19} /> Watch the demo</a>
+          <div className="relative z-10">
+            {/* Phase 1 Flow */}
+        <HeroSection />
+        <TrustedBySection />
+        
+        {/* Phase 2 Flow */}
+        <ProductShowcaseSection />
+        <AnalyticsSection />
+        <CollaborationSection />
+        <GoalsSection />
+        <IntegrationsSection />
+        <SecuritySection />
+        <TestimonialsSection />
+        <PricingSection />
+          <FAQSection />
+          <FinalCTASection />
           </div>
-          <div className="proof"><div className="faces"><i>AJ</i><i>MN</i><i>SL</i><i>+</i></div><span>Built for ambitious teams who refuse to stand still.</span></div>
-        </div>
-        <div className="hero-product" aria-label="Stroovo product preview">
-          <div className="product-glow" />
-          <div className="product-window">
-            <div className="app-sidebar"><div className="mini-logo"><span /></div><div className="side-active"><Layers3 size={16} /></div><div><Command size={16} /></div><div><Gauge size={16} /></div><div className="side-bottom"><span>MK</span></div></div>
-            <div className="app-main">
-              <div className="app-top"><div><p>Tuesday, 22 October</p><h3>Good morning, Maya <span>✦</span></h3></div><div className="top-actions"><button>⌘ K</button><span className="avatar">MK</span></div></div>
-              <div className="focus-card"><div><span className="small-label">AI PRIORITY</span><h4>Ship an exceptional week.</h4><p>3 critical paths are on track. Your team has 11 hours to win back.</p></div><div className="focus-ring"><b>84</b><small>focus</small></div></div>
-              <div className="dash-columns"><div className="task-panel"><div className="panel-head"><h5>Today’s momentum</h5><span>12 tasks</span></div>{tasks.map((task) => <div className="task-row" key={task.title}><span className="check-circle"><Check size={11} /></span><div className="task-title"><strong>{task.title}</strong><small><i style={{ background: task.color }}>{task.owner}</i> AI confidence {task.score}</small></div><b className={`status ${task.status.replace(" ", "-").toLowerCase()}`}>{task.status}</b></div>)}</div><div className="signal-panel"><div className="panel-head"><h5>Team signal</h5><span className="live-dot">Live</span></div><div className="signal-stat"><b>+32%</b><span>delivery velocity<br />this week</span></div><div className="bars"><i /><i /><i /><i /><i className="highlight" /><i /></div><p><Sparkles size={13} /> AI cleared one delivery risk</p></div></div>
-            </div>
-          </div>
-          <div className="floating-note note-one"><span className="icon-bubble purple"><WandSparkles size={16} /></span><div><b>Autopilot acted</b><small>Rebalanced 4 assignments</small></div><Check size={15} className="success" /></div>
-          <div className="floating-note note-two"><span className="pulse-dot" /><div><b>Focus score is rising</b><small>+12 points this sprint</small></div></div>
-        </div>
-      </section>
-
-      <section className="logo-strip"><p>ONE OPERATING SYSTEM. EVERY TEAM ALIGNED.</p><div><span>PRODUCT</span><span>MARKETING</span><span>OPERATIONS</span><span>SUCCESS</span><span>ENGINEERING</span></div></section>
-
-      <section className="statement" id="product"><div className="section-kicker">ONE PLACE. EVERY SIGNAL.</div><h2>Clarity for every person.<br /><span>Momentum for the whole company.</span></h2><p>Most tools record work after it happens. Stroovo understands the work as it unfolds—connecting priorities, people, execution, and the decisions between them.</p></section>
-
-      <section className="capabilities">
-        <article className="capability feature-large"><div className="feature-copy"><span className="feature-icon"><Bot /></span><span className="feature-number">01 / INTELLIGENCE</span><h3>Your AI chief of staff, inside the work.</h3><p>Ask anything. Get a real answer grounded in your projects, people, and plans—not another dashboard to decode.</p><a href="#demo">Meet Stroovo AI <ArrowRight size={16} /></a></div><div className="ai-chat"><div className="chat-header"><span className="small-logo">✦</span> Stroovo intelligence <i>•••</i></div><div className="chat-question">What could put our launch at risk?</div><div className="chat-answer"><span>✦</span><p>I found one dependency that needs attention. <b>Design review</b> is blocking the launch brief—moving it to today preserves your 14 Oct launch date.</p></div><div className="chat-action"><span>Review plan</span><ArrowRight size={15} /></div></div></article>
-        <article className="capability feature-small"><span className="feature-icon"><Zap /></span><span className="feature-number">02 / AUTOMATION</span><h3>From busywork to forward motion.</h3><p>Let intelligent automations coordinate the small decisions that slow your team down.</p><div className="automation-flow"><span>New priority</span><ArrowRight size={14} /><span className="flow-ai">AI routes it</span><ArrowRight size={14} /><span>Owner ready</span></div></article>
-        <article className="capability feature-small feature-dark"><span className="feature-icon"><ShieldCheck /></span><span className="feature-number">03 / CONTROL</span><h3>Autonomy with a human at the helm.</h3><p>Every recommendation is explainable. Every action is visible. You decide the level of control.</p><div className="control-line"><span>Autonomy</span><div><i /><b /></div><strong>Balanced</strong></div></article>
-      </section>
-
-      <section className="demo-section" id="demo"><div className="demo-intro"><div className="section-kicker">SEE IT DECIDE</div><h2>A live decision,<br /><span>in less than a minute.</span></h2><p>Give Stroovo a goal and watch it turn ambiguity into a clear, balanced plan for your team.</p><button className="button button-primary" onClick={runDemo}>{demoState === "thinking" ? "Thinking through the work…" : demoState === "complete" ? "Run it again" : "Run the live demo"} <ChevronRight size={18} /></button></div><div className={`demo-machine ${demoState}`}><div className="machine-top"><div><span className="small-logo">✦</span><b>Stroovo decision engine</b></div><span className="engine-status"><i /> {demoState === "thinking" ? "Analyzing" : demoState === "complete" ? "Plan ready" : "Ready"}</span></div><div className="machine-body"><div className="goal-input"><span>GOAL</span><p>Launch a new customer onboarding experience before Q4.</p></div><div className="engine-flow"><div className="flow-node"><i className="node-icon"><Clock3 size={16} /></i><div><b>Maps the work</b><small>8 milestones generated</small></div><Check size={16} /></div><div className="flow-line" /><div className="flow-node"><i className="node-icon"><Bot size={16} /></i><div><b>Finds the best owners</b><small>{demoState === "complete" ? "Skills and capacity balanced" : "Reading team capacity"}</small></div>{demoState === "complete" && <Check size={16} />}</div><div className="flow-line" /><div className="flow-node result"><i className="node-icon"><Sparkles size={16} /></i><div><b>{demoState === "complete" ? "Launch plan is ready" : "Protects your timeline"}</b><small>{demoState === "complete" ? "0 conflicts · 96% confidence" : "Risk-aware sequencing"}</small></div><ArrowRight size={16} /></div></div>{demoState === "complete" && <div className="success-toast"><Check size={15} /> Plan created and your team is notified.</div>}</div></div></section>
-
-      <section className="intelligence" id="intelligence"><div className="intelligence-copy"><div className="section-kicker">BUILT FOR THE WHOLE ORG</div><h2>One source of truth.<br /><span>Zero status-chasing.</span></h2><p>Leaders see the signal. Managers keep momentum. Teams know exactly what matters next.</p><div className="outcomes"><div><b>34%</b><span>less time in<br />status meetings</span></div><div><b>2.5×</b><span>faster path from<br />idea to outcome</span></div></div></div><div className="orbit"><div className="orbit-ring ring-one" /><div className="orbit-ring ring-two" /><div className="orbit-center"><span>✦</span><b>Stroovo</b><small>in sync</small></div><div className="orbit-pill pill-one"><i>MK</i> Strategy</div><div className="orbit-pill pill-two"><i>AF</i> Product</div><div className="orbit-pill pill-three"><i>SL</i> Delivery</div><div className="orbit-pill pill-four"><i>NO</i> Growth</div></div></section>
-
-      <section className="security" id="security"><div className="security-badge"><ShieldCheck /></div><div><div className="section-kicker">TRUST IS THE FOUNDATION</div><h2>Built for work that matters.</h2><p>Enterprise-grade controls, transparent AI decisions, and a complete activity trail—so progress never comes at the cost of confidence.</p></div><div className="security-points"><span><Check /> Human override, always</span><span><Check /> Explainable recommendations</span><span><Check /> Complete action history</span></div></section>
-
-      <section className="final-cta"><div className="cta-orb" /><div className="section-kicker">THE NEXT WAY OF WORKING</div><h2>Give your team<br /><em>more momentum.</em></h2><p>Set the direction. Stroovo helps the work find its way.</p><Link href="/signup" className="button button-light">Start building for free <ArrowRight size={18} /></Link><small>No credit card required · Set up in minutes</small></section>
-
-      <footer><div className="footer-main"><Link href="/" className="footer-logo" aria-label="Stroovo home" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '120px', height: '42px', background: '#fff', border: '1px solid rgba(255,255,255,.12)', borderRadius: '9px', padding: '5px 9px', boxShadow: '0 8px 18px rgba(0,0,0,.12)' }}><Image src="/logo.png" alt="Stroovo" width={1983} height={793} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} /></Link><p>Work, beautifully in motion.</p><div className="footer-links"><a href="#product">Product</a><a href="#intelligence">Intelligence</a><a href="#security">Security</a><Link href="/login">Log in</Link></div></div><div className="footer-bottom"><span>© 2026 Stroovo AI. All rights reserved.</span><span>Made for teams that move.</span></div></footer>
-
-      <style jsx>{`
-        .site-shell { --ink:#161427; --muted:#757188; --purple:#6e5af7; --cream:#fbfaf7; background:var(--cream); color:var(--ink); overflow:hidden; font-family:var(--font-geist-sans), Arial, sans-serif; }
-        .nav { height:76px; display:flex; align-items:center; position:fixed; inset:0 0 auto; z-index:20; transition:.3s; } .nav-scrolled { height:68px; background:rgba(251,250,247,.9); backdrop-filter:blur(18px); border-bottom:1px solid rgba(22,20,39,.06); box-shadow:0 8px 28px rgba(32,27,52,.04); }
-        .nav-inner { width:min(1180px,calc(100% - 48px)); margin:auto; display:grid; grid-template-columns:160px 1fr 160px; align-items:center; }.brand-logo { display:flex; align-items:center; width:112px; height:36px; }.brand-logo img { width:100%; height:100%; object-fit:contain; object-position:left center; display:block; }.nav-links { display:flex; align-items:center; justify-content:center; gap:25px; font-size:13px; font-weight:550; }.nav-links>a { color:#514d60; white-space:nowrap; }.nav-links>a:hover { color:var(--purple); }.login-link { margin-left:14px; }.nav-cta,.button { display:inline-flex; align-items:center; justify-content:center; gap:9px; border:0; cursor:pointer; font-family:inherit; font-weight:650; transition:transform .2s,box-shadow .2s; }.nav-cta { min-width:106px; height:38px; color:#fff!important; background:linear-gradient(135deg,#7462ef,#5d4ad7); padding:0 13px; border:1px solid rgba(255,255,255,.18); border-radius:9px; font-size:12px; box-shadow:0 8px 18px rgba(91,70,207,.2); }.nav-cta:hover { transform:translateY(-1px); box-shadow:0 11px 22px rgba(91,70,207,.28); }.button:hover { transform:translateY(-2px); }.menu-button { display:none; background:none; border:0; color:var(--ink); }
-        .hero { min-height:800px; padding:166px max(24px,calc((100vw - 1180px)/2)) 90px; position:relative; display:grid; grid-template-columns:.94fr 1.06fr; align-items:center; gap:48px; background:radial-gradient(circle at 73% 37%,#e4defd 0,rgba(237,233,255,.66) 17%,transparent 41%),var(--cream); }.aurora { position:absolute; border-radius:50%; pointer-events:none; filter:blur(4px); }.aurora-one { width:380px;height:380px;background:#f4dcf5;right:-90px;top:160px;opacity:.7; }.aurora-two { width:220px;height:220px;background:#d8f0e8;left:39%;bottom:-70px;opacity:.7; }.hero-content { position:relative; z-index:1; }.eyebrow,.section-kicker { color:#6d55ed; letter-spacing:.12em; font-size:11px; font-weight:750; }.eyebrow { background:#eeeafe; display:inline-flex;align-items:center;gap:7px;border-radius:100px;padding:8px 12px;letter-spacing:.04em; }.hero h1 { font-size:clamp(52px,6vw,82px); line-height:.98; letter-spacing:-.075em; margin:24px 0; max-width:620px; font-weight:650; }.hero h1 em,.final-cta em { color:var(--purple); font-family:Georgia,serif; font-weight:400; }.hero-copy { color:#686477; font-size:18px; line-height:1.65; max-width:520px; }.hero-actions { display:flex;gap:13px;margin-top:34px; }.button { padding:15px 20px;border-radius:11px;font-size:14px; }.button-primary { color:white;background:#6754ec;box-shadow:0 12px 30px rgba(103,84,236,.22); }.button-ghost { color:#373246;background:#fff;border:1px solid #e7e3ed; }.proof { display:flex;gap:13px;align-items:center;margin-top:30px;color:#777386;font-size:12px; }.faces { display:flex; }.faces i { width:26px;height:26px;border:2px solid var(--cream);border-radius:50%;display:grid;place-items:center;margin-left:-6px;font-style:normal;font-size:8px;font-weight:700;background:#e7d8ff;color:#5e489d; }.faces i:nth-child(2){background:#c5eee5;color:#237a66}.faces i:nth-child(3){background:#ffe0ad;color:#90621e}.faces i:last-child{background:#2a263b;color:#fff; }
-        .hero-product { position:relative; z-index:1; min-width:0; }.product-window { background:#fff;border:1px solid rgba(77,62,123,.12);border-radius:18px;box-shadow:0 34px 70px rgba(57,39,115,.18);overflow:hidden;display:grid;grid-template-columns:54px 1fr;transform:perspective(1100px) rotateY(-4deg) rotateX(2deg); }.app-sidebar { background:#27243b;color:#9791ae;min-height:405px;display:flex;align-items:center;flex-direction:column;gap:18px;padding:15px 0; }.mini-logo { color:white;margin-bottom:12px; }.mini-logo span,.small-logo { background:#8271ff;border-radius:6px;width:22px;height:22px;display:grid;place-items:center; }.mini-logo span:before { content:'✦';font-size:12px; }.app-sidebar>div:not(.mini-logo):not(.side-bottom) { width:32px;height:32px;display:grid;place-items:center;border-radius:8px; }.app-sidebar .side-active { color:#fff;background:#4b4663; }.side-bottom { margin-top:auto; }.side-bottom span,.avatar { width:26px;height:26px;border-radius:50%;background:#f2c99d;color:#744120;font-size:9px;font-weight:700;display:grid;place-items:center; }.app-main { padding:21px;background:#fcfbfe; }.app-top { display:flex;justify-content:space-between;align-items:start;margin-bottom:18px; }.app-top p,.app-top h3 { margin:0; }.app-top p { font-size:9px;color:#898497; }.app-top h3 { font-size:18px;letter-spacing:-.05em;margin-top:4px; }.app-top h3 span { color:#806afa; }.top-actions { display:flex;align-items:center;gap:9px; }.top-actions button { background:white;border:1px solid #ebe8f1;border-radius:5px;font-size:8px;color:#847f8d;padding:5px; }.focus-card { background:linear-gradient(110deg,#2c293f,#494264);color:#fff;padding:17px;border-radius:11px;display:flex;justify-content:space-between;align-items:center; }.small-label { color:#c6bfff;font-size:8px;font-weight:700;letter-spacing:.1em; }.focus-card h4 { font-size:16px;letter-spacing:-.045em;margin:5px 0; }.focus-card p { font-size:9px;color:#cecadb;margin:0; }.focus-ring { width:57px;height:57px;border-radius:50%;border:4px solid #8273f9;border-left-color:#706c7b;display:flex;flex-direction:column;align-items:center;justify-content:center; }.focus-ring b { font-size:15px;line-height:13px; }.focus-ring small { color:#beb9d0;font-size:7px; }.dash-columns { display:grid;grid-template-columns:1.32fr .87fr;gap:11px;margin-top:12px; }.task-panel,.signal-panel { background:#fff;border:1px solid #f0edf3;border-radius:10px;padding:12px; }.panel-head { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }.panel-head h5 { font-size:10px;margin:0;letter-spacing:-.02em; }.panel-head>span { color:#918b9e;font-size:8px; }.task-row { display:flex;align-items:center;gap:7px;padding:7px 0;border-top:1px solid #f3f0f5; }.check-circle { width:15px;height:15px;border:1px solid #d9d4df;border-radius:50%;display:grid;place-items:center;color:#a5a1ad; }.task-title { min-width:0;flex:1; }.task-title strong { display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }.task-title small { color:#9893a2;font-size:7px;display:flex;align-items:center;gap:3px; }.task-title i { font-style:normal;width:11px;height:11px;border-radius:3px;display:grid;place-items:center;font-size:4px;color:#423a52; }.status { font-size:7px;font-weight:600;padding:4px 5px;border-radius:4px;background:#f1eff4;color:#716c7a; }.status.ready { background:#e4f7ef;color:#4b9174; }.status.in-progress { background:#eeeafd;color:#7160d8; }.signal-panel { background:#faf9ff; }.live-dot { color:#39a87f!important; }.live-dot:before { content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:#39a87f;margin-right:3px; }.signal-stat { display:flex;align-items:center;gap:6px;margin-top:14px; }.signal-stat b { color:#6150da;font-size:22px;letter-spacing:-.08em; }.signal-stat span { color:#8c8798;font-size:7px;line-height:1.4; }.bars { height:43px;display:flex;gap:4px;align-items:end;margin-top:9px; }.bars i { width:10px;background:#ddd7f8;border-radius:3px 3px 1px 1px;height:35%; }.bars i:nth-child(2){height:55%}.bars i:nth-child(3){height:47%}.bars i:nth-child(4){height:68%}.bars i.highlight{height:90%;background:#7563ef}.bars i:nth-child(6){height:76%}.signal-panel p { border-top:1px solid #ece9f2;margin:8px 0 0;padding-top:8px;color:#6555ca;font-size:8px;display:flex;align-items:center;gap:3px; }.floating-note { position:absolute;background:rgba(255,255,255,.93);box-shadow:0 14px 35px rgba(44,28,92,.16);border:1px solid rgba(108,89,206,.1);border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;font-size:9px;z-index:3; }.floating-note b { display:block;font-size:9px; }.floating-note small { display:block;color:#868192;font-size:8px;margin-top:2px; }.note-one { left:-37px;bottom:54px; }.note-two { right:-26px;top:38px; }.icon-bubble { display:grid;place-items:center;width:27px;height:27px;border-radius:8px; }.purple { background:#eeeaff;color:#6855e9; }.success { color:#30aa78;margin-left:7px; }.pulse-dot { width:8px;height:8px;border-radius:50%;background:#54cda1;box-shadow:0 0 0 4px #dff7ed; }.product-glow { position:absolute;inset:12% -5%;background:#dcd3ff;filter:blur(45px);z-index:-1; }
-        .logo-strip { border-top:1px solid #ebe8e3;border-bottom:1px solid #ebe8e3;padding:28px 24px;text-align:center;background:#fffdf9; }.logo-strip p { font-size:10px;font-weight:700;letter-spacing:.13em;color:#a19baa;margin-bottom:20px; }.logo-strip div { display:flex;justify-content:center;gap:clamp(24px,6vw,82px);color:#777180;font-weight:700;font-size:19px;letter-spacing:-.05em; }.logo-strip span:nth-child(2){font-family:Georgia,serif;font-weight:400}.logo-strip span:nth-child(3){font-style:italic}.logo-strip span:nth-child(4){letter-spacing:.1em;font-size:15px}.logo-strip span:nth-child(5){font-size:15px;letter-spacing:.08em}
-        .statement { padding:150px 24px 80px;text-align:center;max-width:830px;margin:auto; }.statement h2,.demo-intro h2,.intelligence h2,.security h2 { font-size:clamp(38px,5vw,60px);line-height:1.04;letter-spacing:-.065em;margin:17px 0 19px;font-weight:630; }.statement h2 span,.demo-intro h2 span,.intelligence h2 span { color:#7562eb; }.statement p { color:var(--muted);max-width:600px;margin:auto;line-height:1.7;font-size:16px; }
-        .capabilities { max-width:1180px;margin:0 auto;padding:30px 24px 140px;display:grid;grid-template-columns:1fr 1fr;gap:17px; }.capability { border:1px solid #e8e4ee;border-radius:18px;padding:40px;overflow:hidden;background:#fff;position:relative; }.feature-large { grid-row:span 2;min-height:590px;background:#f0edff;display:flex;justify-content:space-between;gap:20px; }.feature-copy { max-width:285px;position:relative;z-index:1; }.feature-icon { width:43px;height:43px;display:grid;place-items:center;background:#fff;border-radius:12px;color:#6e58ea;box-shadow:0 5px 15px rgba(87,67,173,.1); }.feature-number { display:block;color:#7d6be7;font-weight:700;font-size:10px;letter-spacing:.11em;margin-top:33px; }.capability h3 { font-size:28px;line-height:1.1;letter-spacing:-.055em;margin:13px 0; }.capability p { color:#777286;font-size:14px;line-height:1.6; }.capability a { color:#6350dc;font-weight:650;font-size:13px;display:flex;align-items:center;gap:6px;margin-top:23px; }.ai-chat { background:#fff;border:1px solid #e3dff3;border-radius:13px;width:280px;height:289px;margin-top:150px;box-shadow:0 18px 40px rgba(72,54,137,.12);padding:13px;transform:rotate(4deg); }.chat-header { border-bottom:1px solid #f0edf4;padding-bottom:12px;font-size:9px;font-weight:650;display:flex;align-items:center;gap:6px; }.chat-header .small-logo { width:17px;height:17px;font-size:9px;color:#fff; }.chat-header i{font-style:normal;margin-left:auto;color:#a7a1b1}.chat-question { background:#f3f1f7;border-radius:7px 7px 2px 7px;margin:16px 0 9px auto;padding:8px;width:80%;font-size:9px;line-height:1.4; }.chat-answer { display:flex;gap:7px;font-size:9px;line-height:1.5; }.chat-answer>span{color:#765ff0;font-size:13px}.chat-answer p{font-size:9px;margin:0;color:#615c70}.chat-action { margin-top:14px;background:#6957e5;border-radius:6px;padding:8px;color:white;font-size:8px;display:flex;justify-content:space-between; }.feature-small { min-height:285px; }.feature-small .feature-icon { margin-bottom:25px; }.feature-small .feature-number{margin:0}.feature-small h3{margin:11px 0 8px}.automation-flow { margin-top:25px;display:flex;align-items:center;gap:8px;font-size:9px;font-weight:650;color:#777184; }.automation-flow span { background:#f5f4f7;padding:7px;border-radius:5px; }.automation-flow .flow-ai { background:#ded8ff;color:#6654d7; }.feature-dark { background:#26233a;color:#fff;border-color:#26233a; }.feature-dark .feature-icon{background:#403a5d;color:#b6aafd}.feature-dark .feature-number{color:#c3b8ff}.feature-dark p{color:#bcb7cb}.control-line { position:absolute;bottom:31px;left:40px;right:40px;display:flex;gap:10px;align-items:center;color:#c3bdd4;font-size:10px; }.control-line div{height:4px;flex:1;border-radius:10px;background:#4a4560;position:relative}.control-line i{display:block;height:100%;background:#9282fc;width:65%;border-radius:10px}.control-line b{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;left:63%;top:-3px}.control-line strong{color:#fff;font-size:10px}
-        .demo-section { background:#242136;color:#fff;padding:130px max(24px,calc((100vw - 1120px)/2));display:grid;grid-template-columns:.86fr 1.14fr;gap:82px;align-items:center; }.demo-intro .section-kicker{color:#aaa0ff}.demo-intro h2{margin-top:15px}.demo-intro p{color:#bdb9c9;line-height:1.65;max-width:370px;margin-bottom:30px}.demo-machine{border:1px solid #4a4660;background:#302d46;border-radius:15px;box-shadow:0 28px 65px rgba(0,0,0,.25);overflow:hidden;}.machine-top{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid #46425c;font-size:11px}.machine-top>div{display:flex;gap:8px;align-items:center}.machine-top .small-logo{display:grid;place-items:center;width:19px;height:19px;color:white;font-size:11px}.engine-status{color:#bcb6cf;font-size:9px}.engine-status i{width:6px;height:6px;display:inline-block;border-radius:50%;background:#5fdbac;margin-right:4px}.machine-body{padding:19px;position:relative}.goal-input{background:#3a3652;border:1px solid #4b4762;border-radius:8px;padding:13px;margin-bottom:16px}.goal-input span{color:#aaa1c3;font-size:8px;font-weight:700;letter-spacing:.1em}.goal-input p{margin:6px 0 0;font-size:12px}.engine-flow{padding:5px 2px}.flow-node{display:flex;align-items:center;gap:10px}.flow-node .node-icon{display:grid;place-items:center;background:#45405e;color:#c0b7f8;width:29px;height:29px;border-radius:8px;font-style:normal}.flow-node>div:nth-child(2){flex:1}.flow-node b{font-size:11px;display:block}.flow-node small{font-size:9px;color:#aaa6ba}.flow-node>svg{color:#61d9ab}.flow-line{height:16px;border-left:1px dashed #68617d;margin:2px 0 2px 14px}.flow-node.result .node-icon{background:#6755e6;color:#fff}.flow-node.result>svg{color:#b6aaff}.success-toast{margin-top:17px;background:#214c46;color:#a7f0d3;border-radius:7px;padding:9px;font-size:10px;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(8px);transition:.3s}.complete .success-toast{opacity:1;transform:none}.thinking .engine-status i{animation:pulse 1s infinite;background:#ffcf6c}@keyframes pulse{50%{opacity:.3}}
-        .intelligence{max-width:1120px;margin:auto;padding:150px 24px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:60px}.intelligence-copy p{color:var(--muted);max-width:430px;line-height:1.65}.outcomes{display:flex;gap:38px;margin-top:35px}.outcomes div{display:flex;align-items:center;gap:9px}.outcomes b{font-size:29px;color:#6753e6;letter-spacing:-.07em}.outcomes span{font-size:10px;color:#777285;line-height:1.35}.orbit{height:380px;position:relative;display:grid;place-items:center}.orbit-ring{position:absolute;border:1px solid #ded9ee;border-radius:50%}.ring-one{width:270px;height:270px}.ring-two{width:400px;height:400px;border-style:dashed}.orbit-center{width:109px;height:109px;border-radius:50%;background:#2a263e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 16px 45px #bdb2ea}.orbit-center span{color:#a99cff;font-size:20px}.orbit-center b{font-size:13px}.orbit-center small{font-size:8px;color:#bdb8ca}.orbit-pill{position:absolute;background:#fff;border:1px solid #eae6f0;border-radius:8px;padding:7px 10px;box-shadow:0 7px 18px rgba(54,43,90,.08);font-size:9px;font-weight:650;display:flex;align-items:center;gap:5px}.orbit-pill i{font-style:normal;width:18px;height:18px;border-radius:5px;display:grid;place-items:center;background:#ddd4ff;color:#5b49b8;font-size:6px}.pill-one{top:12px;left:50%;transform:translateX(-50%)}.pill-two{right:10px;top:125px}.pill-three{bottom:24px;left:49%;transform:translateX(-50%)}.pill-four{left:8px;top:140px}.pill-two i{background:#d6f3e9;color:#35725f}.pill-three i{background:#ffe1af;color:#855a1a}.pill-four i{background:#efcbeb;color:#813673}
-        .security{max-width:1120px;margin:0 auto 135px;padding:42px;background:#f0edff;border-radius:18px;display:grid;grid-template-columns:75px 1fr .9fr;gap:28px;align-items:start}.security-badge{width:55px;height:55px;background:#fff;display:grid;place-items:center;color:#6b57e8;border-radius:14px;box-shadow:0 8px 20px #d9d1fa}.security h2{font-size:34px;margin:8px 0}.security p{font-size:13px;line-height:1.6;color:#777286;max-width:450px}.security-points{padding-top:36px;display:grid;gap:12px;font-size:11px;font-weight:600}.security-points span{display:flex;align-items:center;gap:7px}.security-points svg{width:15px;color:#5fcb9f}
-        .final-cta{background:#6a57e8;color:#fff;text-align:center;padding:120px 24px;position:relative;overflow:hidden}.final-cta .section-kicker{color:#d1c9ff}.final-cta h2{font-size:clamp(48px,6vw,72px);line-height:.99;letter-spacing:-.075em;margin:18px 0}.final-cta em{color:#fff7cb}.final-cta p{color:#dcd7ff;margin-bottom:28px}.button-light{background:#fff;color:#5d4bd0}.final-cta small{display:block;margin-top:17px;color:#d7d1ff;font-size:10px}.cta-orb{position:absolute;border:1px solid rgba(255,255,255,.18);width:700px;height:700px;border-radius:50%;left:50%;top:-420px;transform:translateX(-50%)}
-        footer{background:#1f1c2d;color:#fff;padding:50px max(24px,calc((100vw - 1120px)/2)) 25px}.footer-main{display:flex;align-items:center;justify-content:space-between}.footer-logo{display:flex;align-items:center;justify-content:center;width:120px;height:42px;background:#fff;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:5px 9px;box-shadow:0 8px 18px rgba(0,0,0,.12)}.footer-logo img{width:100%;height:100%;object-fit:contain;display:block}.footer-main p{font-size:12px;color:#a9a4b5;margin-left:-160px}.footer-links{display:flex;gap:21px;color:#b8b2c5;font-size:11px}.footer-bottom{border-top:1px solid #393546;margin-top:42px;padding-top:20px;display:flex;justify-content:space-between;color:#817b90;font-size:10px}
-        @media(max-width:900px){.nav-inner{grid-template-columns:auto 1fr}.nav-links{justify-content:flex-end;gap:17px}.nav-links>a[href="#intelligence"],.nav-links>a[href="#security"]{display:none}.hero{grid-template-columns:1fr;padding-top:135px;text-align:center;gap:58px}.hero-copy{margin:auto}.hero-actions,.proof{justify-content:center}.hero-product{max-width:650px;margin:auto;width:92%}.capabilities{padding-bottom:100px}.ai-chat{width:240px}.demo-section{grid-template-columns:1fr;gap:40px}.intelligence{grid-template-columns:1fr;text-align:center}.intelligence-copy p{margin:auto}.outcomes{justify-content:center}.security{margin-left:24px;margin-right:24px;grid-template-columns:55px 1fr}.security-points{grid-column:2;padding-top:0}.footer-main p{margin:0}.logo-strip div{gap:26px}}
-        @media(max-width:640px){.nav{height:66px}.nav-scrolled{height:62px}.nav-inner{width:calc(100% - 32px);display:flex}.brand-logo{width:100px;height:32px}.nav-links{display:none}.nav-links-open{display:flex;position:absolute;top:58px;left:0;right:0;flex-direction:column;align-items:stretch;background:#fff;border:1px solid #eae6ef;border-radius:12px;padding:18px;gap:16px;box-shadow:0 14px 30px rgba(32,26,59,.12)}.nav-links-open .login-link{margin:0}.nav-cta{justify-content:center}.menu-button{display:block}.hero{padding:118px 20px 64px;min-height:auto}.hero h1{font-size:50px}.hero-copy{font-size:16px}.hero-actions{flex-direction:column}.button{width:100%}.product-window{grid-template-columns:37px 1fr;transform:none}.app-sidebar{min-height:340px}.app-main{padding:14px}.focus-card{padding:12px}.focus-card h4{font-size:13px}.focus-card p{max-width:190px}.dash-columns{grid-template-columns:1fr}.signal-panel{display:none}.note-one{left:-12px;bottom:-22px}.note-two{right:-13px}.logo-strip{padding:24px 10px}.logo-strip div{gap:14px;font-size:13px}.logo-strip span:nth-child(4),.logo-strip span:nth-child(5){display:none}.statement{padding:105px 20px 55px}.capabilities{display:block;padding:10px 16px 90px}.capability{margin-bottom:14px;padding:28px}.feature-large{display:block;min-height:570px}.ai-chat{margin:49px auto 0;transform:rotate(2deg)}.feature-small{min-height:270px}.demo-section{padding:90px 20px}.demo-intro h2{font-size:43px}.intelligence{padding:100px 20px}.orbit{transform:scale(.84);margin:-30px}.security{margin:0 16px 90px;padding:28px;display:block}.security-badge{margin-bottom:20px}.security-points{padding-top:20px}.footer-main{display:grid;gap:24px}.footer-links{flex-wrap:wrap}.footer-bottom{gap:13px;line-height:1.4}.final-cta{padding:95px 20px}}
-      `}</style>
-    </main>
+        </main>
+        <Footer />
+      </div>
+    </div>
   );
 }

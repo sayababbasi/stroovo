@@ -21,13 +21,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stroovo – Where Work Flows Smarter",
   description: "Stroovo is an AI-powered workflow platform that helps teams manage tasks, automate processes, and work smarter.",
-  icons: {
-    icon: [
-      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.png', sizes: '192x192', type: 'image/png' },
-    ],
-    apple: '/favicon.png',
-  },
 };
 
 import { AuthProvider } from "@/contexts/AuthContext";
