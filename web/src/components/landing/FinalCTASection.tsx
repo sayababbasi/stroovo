@@ -39,7 +39,7 @@ export default function FinalCTASection() {
               </Link>
               <Link 
                 href="#" 
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-white border border-gray-600 hover:border-gray-400 hover:bg-white/5 text-white font-semibold text-[15px] transition-all text-center"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-transparent border border-white/20 hover:border-white/40 hover:bg-white/5 text-white font-semibold text-[15px] transition-all text-center"
               >
                 Book a Demo
               </Link>

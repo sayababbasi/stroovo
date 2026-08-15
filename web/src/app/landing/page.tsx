@@ -1,22 +1,22 @@
-"use client";
+import dynamic from 'next/dynamic';
 
-// Phase 1 Components
+// Phase 1 Components (Above the fold - load immediately)
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import TrustedBySection from "@/components/landing/TrustedBySection";
-
-// Phase 2 Components
-import ProductShowcaseSection from "@/components/landing/ProductShowcaseSection";
-import AnalyticsSection from "@/components/landing/AnalyticsSection";
-import CollaborationSection from "@/components/landing/CollaborationSection";
-import GoalsSection from "@/components/landing/GoalsSection";
-import IntegrationsSection from "@/components/landing/IntegrationsSection";
-import SecuritySection from "@/components/landing/SecuritySection";
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import PricingSection from "@/components/landing/PricingSection";
-import FAQSection from "@/components/landing/FAQSection";
-import FinalCTASection from "@/components/landing/FinalCTASection";
 import Footer from "@/components/landing/Footer";
+
+// Phase 2 Components (Below the fold - lazy load for speed)
+const ProductShowcaseSection = dynamic(() => import("@/components/landing/ProductShowcaseSection"));
+const AnalyticsSection = dynamic(() => import("@/components/landing/AnalyticsSection"));
+const CollaborationSection = dynamic(() => import("@/components/landing/CollaborationSection"));
+const GoalsSection = dynamic(() => import("@/components/landing/GoalsSection"));
+const IntegrationsSection = dynamic(() => import("@/components/landing/IntegrationsSection"));
+const SecuritySection = dynamic(() => import("@/components/landing/SecuritySection"));
+const TestimonialsSection = dynamic(() => import("@/components/landing/TestimonialsSection"));
+const PricingSection = dynamic(() => import("@/components/landing/PricingSection"));
+const FAQSection = dynamic(() => import("@/components/landing/FAQSection"));
+const FinalCTASection = dynamic(() => import("@/components/landing/FinalCTASection"));
 
 export default function LandingPage() {
   return (
@@ -57,20 +57,22 @@ export default function LandingPage() {
 
           <div className="relative z-10">
             {/* Phase 1 Flow */}
-        <HeroSection />
-        <TrustedBySection />
-        
-        {/* Phase 2 Flow */}
-        <ProductShowcaseSection />
-        <AnalyticsSection />
-        <CollaborationSection />
-        <GoalsSection />
-        <IntegrationsSection />
-        <SecuritySection />
-        <TestimonialsSection />
-        <PricingSection />
-          <FAQSection />
-          <FinalCTASection />
+            <HeroSection />
+            <TrustedBySection />
+            
+            {/* Phase 2 Flow (Lazy Loaded for Speed) */}
+            <ProductShowcaseSection />
+            <TestimonialsSection />
+            <PricingSection />
+            
+            <AnalyticsSection />
+            <CollaborationSection />
+            <GoalsSection />
+            <IntegrationsSection />
+            <SecuritySection />
+            
+            <FAQSection />
+            <FinalCTASection />
           </div>
         </main>
         <Footer />

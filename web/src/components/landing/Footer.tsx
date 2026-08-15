@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Linkedin, Twitter, Github, Youtube, Heart } from "lucide-react";
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="bg-[#0A0F2C] border-t border-[#1B2339] pt-20 pb-10">
       <div className="max-w-[1300px] mx-auto px-6">
@@ -11,7 +13,7 @@ export default function Footer() {
 
           {/* Brand Column */}
           <div className="lg:col-span-2">
-            <Link href="/" className="inline-block mb-6">
+            <Link prefetch={false} href="/" className="inline-block mb-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm">
               <div className="relative w-[112px] h-[36px]">
                 <Image
                   src="/logo.png"
@@ -25,18 +27,18 @@ export default function Footer() {
               The all-in-one work management platform built for modern teams.
             </p>
             <div className="flex items-center gap-4 text-gray-400">
-              <Link href="#" className="hover:text-white transition-colors" aria-label="LinkedIn">
+              <a href="https://linkedin.com/company/revotic-ai" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:scale-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm" aria-label="Visit Stroovo on LinkedIn">
                 <Linkedin size={20} />
-              </Link>
-              <Link href="#" className="hover:text-white transition-colors" aria-label="X (Twitter)">
+              </a>
+              <a href="https://x.com/revotic_ai" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:scale-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm" aria-label="Visit Stroovo on X (Twitter)">
                 <Twitter size={20} />
-              </Link>
-              <Link href="#" className="hover:text-white transition-colors" aria-label="GitHub">
+              </a>
+              <a href="https://github.com/sayababbasi/stroovo" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:scale-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm" aria-label="Visit Stroovo on GitHub">
                 <Github size={20} />
-              </Link>
-              <Link href="#" className="hover:text-white transition-colors" aria-label="YouTube">
+              </a>
+              <a href="https://youtube.com/@revotic-ai" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:scale-110 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm" aria-label="Visit Stroovo on YouTube">
                 <Youtube size={20} />
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -44,50 +46,50 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Product</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Features</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Integrations</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Roadmap</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Changelog</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Pricing</Link></li>
+              <li><Link prefetch={false} href="/features" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Features</Link></li>
+              <li><Link prefetch={false} href="/integrations" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Integrations</Link></li>
+              <li><Link prefetch={false} href="/roadmap" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Roadmap</Link></li>
+              <li><Link prefetch={false} href="/changelog" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Changelog</Link></li>
+              <li><Link prefetch={false} href="/pricing" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Pricing</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Solutions</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Project Management</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Team Collaboration</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Task Management</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Goal Tracking</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Enterprise</Link></li>
+              <li><Link prefetch={false} href="/solutions/project-management" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Project Management</Link></li>
+              <li><Link prefetch={false} href="/solutions/team-collaboration" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Team Collaboration</Link></li>
+              <li><Link prefetch={false} href="/solutions/task-management" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Task Management</Link></li>
+              <li><Link prefetch={false} href="/solutions/goal-tracking" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Goal Tracking</Link></li>
+              <li><Link prefetch={false} href="/enterprise" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Enterprise</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Resources</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Documentation</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Help Center</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Blog</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Guides</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Templates</Link></li>
+              <li><Link prefetch={false} href="/docs" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Documentation</Link></li>
+              <li><Link prefetch={false} href="/help" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Help Center</Link></li>
+              <li><Link prefetch={false} href="/blog" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Blog</Link></li>
+              <li><Link prefetch={false} href="/guides" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Guides</Link></li>
+              <li><Link prefetch={false} href="/templates" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Templates</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Company</h4>
             <ul className="flex flex-col gap-4 mb-8">
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">About Us</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Careers</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Contact Us</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Partners</Link></li>
+              <li><Link prefetch={false} href="/about" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">About Us</Link></li>
+              <li><Link prefetch={false} href="/careers" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Careers</Link></li>
+              <li><Link prefetch={false} href="/contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Contact Us</Link></li>
+              <li><Link prefetch={false} href="/partners" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Partners</Link></li>
             </ul>
             <h4 className="text-white font-bold text-[14px] mb-4">Legal</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">Security</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white text-[14px] transition-colors">GDPR</Link></li>
+              <li><Link prefetch={false} href="/privacy" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Privacy Policy</Link></li>
+              <li><Link prefetch={false} href="/terms" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Terms of Service</Link></li>
+              <li><Link prefetch={false} href="/security" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Security</Link></li>
+              <li><Link prefetch={false} href="/gdpr" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">GDPR</Link></li>
             </ul>
           </div>
 
@@ -96,10 +98,13 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#1B2339] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-[13px]">
-            &copy; 2026 Stroovo. All rights reserved.
+            &copy; {currentYear} Stroovo. All rights reserved.
           </p>
           <div className="flex items-center text-gray-500 text-[13px]">
-            Made with <Heart size={14} className="text-rose-500 mx-1.5 fill-rose-500" /> by Revotic AI Team
+            Made with <Heart size={14} className="text-rose-500 mx-1.5 fill-rose-500" aria-label="love" /> by 
+            <a href="https://revotic.ai" target="_blank" rel="noopener noreferrer" className="ml-1 text-gray-400 hover:text-white hover:underline transition-colors focus:outline-none focus-visible:text-white">
+              Revotic AI Team
+            </a>
           </div>
         </div>
 
@@ -107,4 +112,3 @@ export default function Footer() {
     </footer>
   );
 }
-

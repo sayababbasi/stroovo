@@ -63,7 +63,21 @@ export default async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
     pathname === '/logo.png' ||
-    pathname === '/icon.png'
+    pathname === '/icon.png' ||
+    // New marketing pages
+    pathname.startsWith('/docs') ||
+    pathname.startsWith('/help') ||
+    pathname.startsWith('/blog') ||
+    pathname.startsWith('/guides') ||
+    pathname.startsWith('/templates') ||
+    pathname === '/about' ||
+    pathname === '/careers' ||
+    pathname === '/contact' ||
+    pathname === '/partners' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
+    pathname === '/security' ||
+    pathname === '/gdpr'
   ) {
     return NextResponse.next();
   }
