@@ -67,7 +67,7 @@ function LoginForm() {
 
     return (
         <div style={{
-            minHeight: '100vh',
+            height: '100vh',
             width: '100vw',
             display: 'flex',
             background: '#F9FAFB', /* Off-white to make the white card pop */
@@ -108,30 +108,52 @@ function LoginForm() {
                 </defs>
             </svg>
 
+            {/* Back to Home Button - Mobile Only */}
+            <div className="mobile-only" style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 50 }}>
+                <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748B', textDecoration: 'none', fontWeight: 600, padding: '8px 12px', background: 'white', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"></path><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Back to Home
+                </Link>
+            </div>
+
             {/* LEFT SIDE: Content & Illustration (Approx 55% width) */}
             <div style={{
                 flex: '1 1 55%',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center', /* Vertically center main content */
-                padding: '0 0 0 80px',
+                padding: '32px 0 32px 80px', /* Add padding for the back button */
                 position: 'relative',
                 zIndex: 1,
                 boxSizing: 'border-box',
                 background: '#ffffff',
                 borderRight: '1px solid #F1F5F9'
             }} className="desktop-only">
-
-                {/* Logo - Absolutely positioned so it doesn't affect vertical centering */}
-                <div style={{ position: 'absolute', top: '55px', left: '80px', display: 'flex', alignItems: 'center' }}>
-                    <img src="/logo.png" alt="Stroovo Logo" style={{ height: '56px', width: 'auto' }} />
+                
+                {/* Desktop Back Button - In normal flow at the top */}
+                <div style={{ marginLeft: '-40px' }}>
+                    <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#64748B', textDecoration: 'none', fontWeight: 600, padding: '8px 16px', background: 'white', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', transition: 'all 0.2s' }}
+                          onMouseOver={(e) => { e.currentTarget.style.color = '#0F172A'; e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.color = '#64748B'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"></path><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Back to Home
+                    </Link>
                 </div>
+
+                {/* Vertically Centered Wrapper */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+
+
 
                 {/* Main Content Layout */}
                 <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 2, maxWidth: '440px', marginTop: '-40px' }}>
 
                     {/* Text Column */}
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        {/* Logo - Inline above the text so it never overlaps and stays aligned */}
+                        <Link href="/" style={{ display: 'inline-flex', marginBottom: '8px' }}>
+                            <img src="/logo.png" alt="Stroovo Logo" style={{ height: '72px', width: 'auto', cursor: 'pointer' }} />
+                        </Link>
+
                         <h1 style={{
                             fontSize: '64px',
                             fontWeight: 800,
@@ -221,10 +243,10 @@ function LoginForm() {
                     {/* Illustration - Absolutely positioned and massively scaled */}
                     <div style={{
                         position: 'absolute',
-                        left: '220px',
+                        left: '180px',
                         top: '55%',
                         transform: 'translateY(-50%)',
-                        width: '850px',
+                        width: '950px',
                         height: 'auto',
                         zIndex: 1,
                         pointerEvents: 'none'
@@ -264,6 +286,8 @@ function LoginForm() {
                         <div style={{ fontSize: '13px', color: '#64748B' }}>Your data is encrypted and protected</div>
                     </div>
                 </div>
+                </div>
+
             </div>
 
 
@@ -285,19 +309,19 @@ function LoginForm() {
                     maxWidth: '520px',
                     background: 'white',
                     borderRadius: '28px',
-                    padding: '56px 48px',
+                    padding: '40px 48px',
                     boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0,0,0,0.1)',
                     border: '1px solid #F1F5F9',
                     boxSizing: 'border-box'
                 }}>
 
                     {/* Header */}
-                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                         <div style={{
                             width: '48px', height: '48px',
                             borderRadius: '50%',
                             background: 'rgba(101, 84, 192, 0.08)',
-                            margin: '0 auto 24px',
+                            margin: '0 auto 16px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: '#0052CC'
                         }}>
@@ -313,7 +337,7 @@ function LoginForm() {
                             border: '1px solid #FCA5A5',
                             borderRadius: '8px',
                             padding: '12px 16px',
-                            marginBottom: '24px',
+                            marginBottom: '16px',
                             color: '#991B1B',
                             fontSize: '13px',
                             display: 'flex',
@@ -327,7 +351,7 @@ function LoginForm() {
 
                     <form onSubmit={handleSubmit}>
                         {/* Email */}
-                        <div style={{ marginBottom: '20px' }}>
+                        <div style={{ marginBottom: '16px' }}>
                             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1E293B', marginBottom: '8px' }}>
                                 Work Email
                             </label>
@@ -359,7 +383,7 @@ function LoginForm() {
                         </div>
 
                         {/* Password */}
-                        <div style={{ marginBottom: '24px' }}>
+                        <div style={{ marginBottom: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>
                                     Password
@@ -414,7 +438,7 @@ function LoginForm() {
                         </div>
 
                         {/* Remember Me */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                             <div style={{ position: 'relative', width: '16px', height: '16px' }}>
                                 <input
                                     type="checkbox"
@@ -490,7 +514,7 @@ function LoginForm() {
                     </form>
 
                     {/* Divider */}
-                    <div style={{ margin: '32px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ margin: '24px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
                         <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.5px' }}>OR CONTINUE WITH</span>
                         <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
@@ -499,6 +523,8 @@ function LoginForm() {
                     {/* Social Buttons */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <button
+                            type="button"
+                            onClick={() => setError('Please contact your administrator to get access.')}
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                 padding: '10px', background: 'white', border: '1px solid #E2E8F0',
@@ -511,12 +537,16 @@ function LoginForm() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <button
+                                type="button"
+                                onClick={() => setError('Please contact your administrator to get access.')}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: '#1E293B', cursor: 'pointer' }}
                             >
                                 <svg width="16" height="16" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z" /><path fill="#81bc06" d="M12 1h10v10H1z" /><path fill="#05a6f0" d="M1 12h10v10H1z" /><path fill="#ffba08" d="M12 12h10v10H12z" /></svg>
                                 Continue with Microsoft
                             </button>
                             <button
+                                type="button"
+                                onClick={() => setError('Please contact your administrator to get access.')}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: '#1E293B', cursor: 'pointer' }}
                             >
                                 <svg width="16" height="16" viewBox="0 0 54 54"><path d="M19.712.001c-6.105 0-11.056 4.951-11.056 11.056 0 6.104 4.951 11.056 11.056 11.056h11.056V11.057C30.768 4.952 25.817.001 19.712.001" fill="#36C5F0" /><path d="M0 19.712c0 6.104 4.952 11.056 11.057 11.056s11.056-4.952 11.056-11.056V8.656H11.057C4.952 8.656 0 13.607 0 19.712" fill="#2EB67D" /><path d="M11.057 30.768c-6.104 0-11.056 4.952-11.056 11.056 0 6.105 4.952 11.056 11.056 11.056s11.056-4.951 11.056-11.056V30.768H11.057z" fill="#E01E5A" /><path d="M30.768 11.057c0-6.105-4.951-11.056-11.056-11.056s-11.056 4.951-11.056 11.056v11.056h11.056c6.105 0 11.056-4.951 11.056-11.056" fill="#ECB22E" /></svg>
@@ -526,8 +556,8 @@ function LoginForm() {
                     </div>
 
                     {/* Footer link */}
-                    <div style={{ textAlign: 'center', marginTop: '32px', fontSize: '13px', color: '#64748B' }}>
-                        New to Stroovo? <Link href="/signup" style={{ color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>Create an account</Link>
+                    <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#64748B' }}>
+                        Need an account? <Link href="/contact" style={{ color: '#0052CC', fontWeight: 600, textDecoration: 'none' }}>Contact us for an account or demo</Link>
                     </div>
                 </div>
 
@@ -536,7 +566,7 @@ function LoginForm() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '24px',
-                    marginTop: '40px',
+                    marginTop: '24px',
                     color: '#94A3B8',
                     fontSize: '12px',
                     fontWeight: 500
@@ -560,9 +590,11 @@ function LoginForm() {
             <style jsx>{`
                 @media (min-width: 1024px) {
                     .desktop-only { display: flex !important; }
+                    .mobile-only { display: none !important; }
                 }
                 @media (max-width: 1023px) {
                     .desktop-only { display: none !important; }
+                    .mobile-only { display: flex !important; }
                     .form-panel-responsive { flex: 1 1 100% !important; padding: 20px; background: #F8FAFC !important; }
                 }
             `}</style>
