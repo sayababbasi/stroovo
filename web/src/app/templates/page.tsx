@@ -1,6 +1,6 @@
 "use client";
 
-import React, from "react";
+import React from "react";
 import ResourceHubLayout from "@/components/landing/layouts/ResourceHubLayout";
 import Link from "next/link";
 import { LayoutTemplate, ArrowRight } from "lucide-react";

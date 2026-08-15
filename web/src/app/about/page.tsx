@@ -278,7 +278,7 @@ export default function AboutPage() {
               ].map((item, i) => (
                 <div key={i} className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-gray-100 flex items-center justify-center text-blue-600 mb-4 transform hover:scale-110 transition-transform">
-                    {React.cloneElement(item.icon as React.ReactElement, { className: "w-7 h-7" })}
+                    {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-7 h-7" })}
                   </div>
                   <span className="font-bold text-gray-900 text-sm">{item.label}</span>
                 </div>
