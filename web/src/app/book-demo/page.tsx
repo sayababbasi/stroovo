@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <ResourceHubLayout
       title="Book a Demo"
-      description="Schedule a personalized demo of Stroovo with our product experts."
+      subtitle="Schedule a personalized demo of Stroovo with our product experts."
     >
       <div className="max-w-4xl mx-auto py-20 px-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">

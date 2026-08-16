@@ -123,7 +123,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center text-gray-500 text-[13px]">
             Made with <Heart size={14} className="text-rose-500 mx-1.5 fill-rose-500" aria-label="love" /> by 
-            <a href="https://revotic.ai" target="_blank" rel="noopener noreferrer" className="ml-1 text-gray-400 hover:text-white hover:underline transition-colors focus:outline-none focus-visible:text-white">
+            <a href="https://revoticai.com/" target="_blank" rel="noopener noreferrer" className="ml-1 text-gray-400 hover:text-white hover:underline transition-colors focus:outline-none focus-visible:text-white">
               Revotic AI Team
             </a>
           </div>

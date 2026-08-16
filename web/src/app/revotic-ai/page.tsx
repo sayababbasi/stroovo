@@ -42,7 +42,7 @@ export default function RevoticAIPage() {
               Pioneering the future of intelligent work. We build AI-native platforms that empower human potential and transform how organizations operate.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <a href="https://revotic.ai" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-white text-[#0A0F2C] hover:bg-gray-100 font-bold rounded-lg transition-colors shadow-lg flex items-center justify-center">
+              <a href="https://revoticai.com/" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-white text-[#0A0F2C] hover:bg-gray-100 font-bold rounded-lg transition-colors shadow-lg flex items-center justify-center">
                 Visit Revotic AI <ArrowRight size={18} className="ml-2" />
               </a>
             </div>
@@ -178,7 +178,7 @@ export default function RevoticAIPage() {
                 Try Stroovo Free
               </Link>
               <a 
-                href="https://revotic.ai/careers" 
+                href="https://revoticai.com/careers" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="px-8 py-4 bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 font-bold rounded-lg transition-all"

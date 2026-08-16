@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <ResourceHubLayout
       title="Startups"
-      description="Move fast and stay organized from day one."
+      subtitle="Move fast and stay organized from day one."
     >
       <div className="max-w-4xl mx-auto py-20 px-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">

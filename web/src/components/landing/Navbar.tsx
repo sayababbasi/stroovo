@@ -54,7 +54,7 @@ export default function Navbar() {
     else setActiveDropdown(name);
   };
 
-  const isActive = (path: string) => pathname.startsWith(path);
+  const isActive = (path: string) => pathname?.startsWith(path) ?? false;
 
   const MegaMenu = ({ config, name }: { config: any, name: string }) => {
     const isOpen = activeDropdown === name;

@@ -79,6 +79,7 @@ export function CalendarView({
     const [selectedDayTasks, setSelectedDayTasks] = useState<{ day: Date, tasks: Task[] } | null>(null);
     const [quickAddDay, setQuickAddDay] = useState<Date | null>(null);
     const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [projects, setProjects] = useState<any[]>([]);
 
@@ -188,6 +189,14 @@ export function CalendarView({
     const handleAddTask = async () => {
         if (!newTaskTitle || !quickAddDay) return;
         
+        // If no project selected, fallback to the first available project
+        const projectId = selectedProjectId || (projects.length > 0 ? projects[0].id : null);
+        
+        if (!projectId) {
+            alert('A project must be created before adding tasks.');
+            return;
+        }
+
         const API_URL = '';
         try {
             const res = await fetch(`${API_URL}/api/tasks`, {
@@ -199,13 +208,17 @@ export function CalendarView({
                     dueDate: quickAddDay.toISOString(),
                     status: 'TODO',
                     priority: 'MEDIUM',
-                    progress: 0
+                    progress: 0,
+                    projectId: projectId
                 })
             });
             if (res.ok) {
                 setNewTaskTitle('');
                 setQuickAddDay(null);
                 fetchTasks();
+            } else {
+                const errData = await res.json();
+                console.error('Failed to add task:', errData);
             }
         } catch (error) {
             console.error("Failed to add task:", error);
@@ -859,6 +872,17 @@ export function CalendarView({
                                 onChange={(e) => setNewTaskTitle(e.target.value)}
                                 style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #DFE1E6', outline: 'none', fontSize: '14px' }}
                             />
+                            {projects.length > 0 && (
+                                <select 
+                                    value={selectedProjectId || projects[0]?.id || ''} 
+                                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #DFE1E6', outline: 'none', fontSize: '14px', appearance: 'none', backgroundColor: '#fff' }}
+                                >
+                                    {projects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            )}
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <button onClick={() => setQuickAddDay(null)} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#F4F5F7', color: '#42526E', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                                 <button onClick={handleAddTask} style={{ flex: 2, padding: '10px', borderRadius: '6px', border: 'none', background: '#0052CC', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Create Event</button>

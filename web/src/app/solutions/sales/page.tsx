@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <ResourceHubLayout
       title="Sales Teams"
-      description="Track deals, manage accounts, and collaborate with operations."
+      subtitle="Track deals, manage accounts, and collaborate with operations."
     >
       <div className="max-w-4xl mx-auto py-20 px-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
