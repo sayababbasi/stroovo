@@ -12,7 +12,7 @@ async function main() {
     console.log('--- High-Fidelity Seeding Started ---');
 
     // 1. Users
-    // CEO (dashboard) and Admin (admin dashboard) — requested credentials
+    // CEO (dashboard) and Admin (admin dashboard)   requested credentials
     const ceoPassword = await hashPassword('ceo@1234');
     const ceo = await prisma.user.upsert({
         where: { email: 'ceo@revoticai.com' },

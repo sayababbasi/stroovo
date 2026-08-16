@@ -10,7 +10,7 @@ function Pill({ v }: { v: number }) { const cls = v >= 70 ? 'h' : v >= 40 ? 'm' 
 function Badge({ status }: { status: string }) {
   const n = status?.replace(/_/g, ' ') || '';
   const cls = n === 'ON TRACK' ? 'on' : n === 'AT RISK' ? 'at' : n === 'COMPLETED' ? 'done' : 'off';
-  const dot: Record<string,string> = { on: '#36B37E', at: '#FFAB00', off: '#FF5630', done: '#0052CC' };
+  const dot: Record<string, string> = { on: '#36B37E', at: '#FFAB00', off: '#FF5630', done: '#0052CC' };
   return <span className={`gbadge ${cls}`}><span style={{ width: 5, height: 5, borderRadius: '50%', background: dot[cls], display: 'inline-block' }} />{n || 'UNKNOWN'}</span>;
 }
 
@@ -30,7 +30,7 @@ function MiniTrend({ positive }: { positive: boolean }) {
 }
 
 function AvatarColor(name = '') {
-  const colors = ['#0052CC','#36B37E','#FF5630','#FFAB00','#6554C0','#00B8D9','#FF8B00'];
+  const colors = ['#0052CC', '#36B37E', '#FF5630', '#FFAB00', '#6554C0', '#00B8D9', '#FF8B00'];
   let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
 }
@@ -97,7 +97,7 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                 <td><Pill v={c.healthScore ?? 0} /></td>
                 <td><Pill v={c.riskScore ?? 0} /></td>
                 <td><Pill v={c.confidenceScore ?? 0} /></td>
-                <td>{g.cycle ? <span style={{ fontSize: 11, color: '#0052CC', background: 'rgba(0,82,204,.08)', padding: '2px 7px', borderRadius: 6, fontWeight: 600 }}>{g.cycle.name}</span> : <span style={{ color: '#C1C7D0', fontSize: 12 }}>—</span>}</td>
+                <td>{g.cycle ? <span style={{ fontSize: 11, color: '#0052CC', background: 'rgba(0,82,204,.08)', padding: '2px 7px', borderRadius: 6, fontWeight: 600 }}>{g.cycle.name}</span> : <span style={{ color: '#C1C7D0', fontSize: 12 }}> </span>}</td>
                 <td>
                   {g.targetDate ? (
                     <div>
@@ -106,7 +106,7 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                         {dl === null ? '' : dl < 0 ? `${Math.abs(dl)}d overdue` : `${dl}d left`}
                       </div>
                     </div>
-                  ) : <span style={{ color: '#C1C7D0' }}>—</span>}
+                  ) : <span style={{ color: '#C1C7D0' }}> </span>}
                 </td>
                 <td><MiniTrend positive={(c.riskScore ?? 0) < 50} /></td>
                 <td onClick={e => e.stopPropagation()}>
@@ -117,7 +117,7 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                 </td>
               </tr>
               {isExp && krs.map((kr: any, index: number) => {
-                const hc: Record<string,string> = { ON_TRACK:'#36B37E', AT_RISK:'#FFAB00', CRITICAL:'#FF5630', COMPLETED:'#0052CC' };
+                const hc: Record<string, string> = { ON_TRACK: '#36B37E', AT_RISK: '#FFAB00', CRITICAL: '#FF5630', COMPLETED: '#0052CC' };
                 const hColor = hc[kr.healthStatus] || '#6B778C';
                 return (
                   <tr key={`${g.id}-key-result-${kr.id ?? kr.title ?? index}`}><td colSpan={11} style={{ padding: 0 }}>
@@ -130,7 +130,7 @@ export default function GoalsView({ goals, onSelectGoal, onEditGoal, selectedGoa
                       <div style={{ fontSize: 11, color: '#172B4D' }}>{kr.currentValue} / {kr.targetValue} <span style={{ color: '#6B778C' }}>{kr.unit}</span></div>
                       <div className="g-prog"><div className="g-prog-fill" style={{ width: `${kr.progress}%`, background: hColor }} /></div>
                       <span style={{ fontSize: 11, fontWeight: 600, color: hColor }}>{kr.progress}%</span>
-                      <span style={{ fontSize: 10, color: '#42526E' }}>{(kr.healthStatus || '').replace(/_/g,' ')}</span>
+                      <span style={{ fontSize: 10, color: '#42526E' }}>{(kr.healthStatus || '').replace(/_/g, ' ')}</span>
                     </div>
                   </td></tr>
                 );

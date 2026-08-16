@@ -83,7 +83,7 @@ export default function MembersTab({ teams, currentTeamId }: MembersTabProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
-  
+
   const handleSelect = useCallback((id: string, selected: boolean) => {
     setSelectedIds(prev => selected ? [...prev, id] : prev.filter(x => x !== id));
   }, []);
@@ -195,11 +195,11 @@ export default function MembersTab({ teams, currentTeamId }: MembersTabProps) {
 
       {/* KPI Cards */}
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-        <KpiCard icon={<Users size={18} />} title="Total Members" value={stats.total} trend={stats.total > 0 ? '+12%' : '—'} trendLabel="vs last month" color="#0052CC" />
-        <KpiCard icon={<UserCheck size={18} />} title="Active Members" value={stats.active} trend={stats.active > 0 ? '+8%' : '—'} trendLabel="vs last month" color="#36B37E" />
-        <KpiCard icon={<UserPlus size={18} />} title="New This Month" value={stats.newThisMonth} trend={stats.newThisMonth > 0 ? `+${stats.newThisMonth}` : '—'} trendLabel="vs last month" color="#FF8B00" />
-        <KpiCard icon={<Shield size={18} />} title="Roles" value={roleCount} trend="—" trendLabel="No change" color="#6554C0" />
-        <KpiCard icon={<Mail size={18} />} title="Invitations Sent" value={inviteCount} trend={inviteCount > 0 ? '+20%' : '—'} trendLabel="vs last month" color="#00B8D9" />
+        <KpiCard icon={<Users size={18} />} title="Total Members" value={stats.total} trend={stats.total > 0 ? '+12%' : ' '} trendLabel="vs last month" color="#0052CC" />
+        <KpiCard icon={<UserCheck size={18} />} title="Active Members" value={stats.active} trend={stats.active > 0 ? '+8%' : ' '} trendLabel="vs last month" color="#36B37E" />
+        <KpiCard icon={<UserPlus size={18} />} title="New This Month" value={stats.newThisMonth} trend={stats.newThisMonth > 0 ? `+${stats.newThisMonth}` : ' '} trendLabel="vs last month" color="#FF8B00" />
+        <KpiCard icon={<Shield size={18} />} title="Roles" value={roleCount} trend=" " trendLabel="No change" color="#6554C0" />
+        <KpiCard icon={<Mail size={18} />} title="Invitations Sent" value={inviteCount} trend={inviteCount > 0 ? '+20%' : ' '} trendLabel="vs last month" color="#00B8D9" />
       </div>
 
       {/* Toolbar */}
@@ -480,7 +480,7 @@ export default function MembersTab({ teams, currentTeamId }: MembersTabProps) {
         teams={teams}
         currentTeam={teams.find((t) => t.id === (currentTeamId || '')) || null}
       />
-      
+
       <AssignRoleModal
         isOpen={showAssignRoleModal}
         onClose={() => setShowAssignRoleModal(false)}

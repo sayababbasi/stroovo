@@ -1,5 +1,5 @@
 /**
- * STROOVO — Permission & Role Seeder
+ * STROOVO   Permission & Role Seeder
  * 
  * Seeds the database with:
  * 1. All permissions from the centralized registry
@@ -49,10 +49,10 @@ async function main() {
   console.log('\n👥 Step 2: Seeding system roles...');
 
   const roleNames = Object.keys(DEFAULT_ROLE_PERMISSIONS) as SystemRoleName[];
-  
+
   for (const roleName of roleNames) {
     const config = DEFAULT_ROLE_PERMISSIONS[roleName];
-    
+
     let role = await prisma.role.findUnique({ where: { name: roleName } });
     if (!role) {
       role = await prisma.role.create({
@@ -82,7 +82,7 @@ async function main() {
 
     // Delete existing role-permission mappings and recreate
     await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
-    
+
     if (permRecords.length > 0) {
       await prisma.rolePermission.createMany({
         data: permRecords.map((p: any) => ({
@@ -92,30 +92,30 @@ async function main() {
         skipDuplicates: true,
       });
     }
-    
+
     console.log(`   📦 ${roleName}: ${permRecords.length} permissions assigned`);
   }
 
   // ── Step 4: Auto-assign existing users to matching roles ──
   console.log('\n🔗 Step 4: Auto-assigning users to roles...');
-  
+
   // Map legacy role strings to system role names
   const ROLE_STRING_MAP: Record<string, string> = {
-    'Admin':         'Admin',
-    'ADMIN':         'Admin',
-    'Super Admin':   'Admin',
-    'SUPER_ADMIN':   'Admin',
-    'CEO':           'CEO',
-    'CTO':           'CTO',
-    'COO':           'COO',
-    'Manager':       'Manager',
-    'MANAGER':       'Manager',
+    'Admin': 'Admin',
+    'ADMIN': 'Admin',
+    'Super Admin': 'Admin',
+    'SUPER_ADMIN': 'Admin',
+    'CEO': 'CEO',
+    'CTO': 'CTO',
+    'COO': 'COO',
+    'Manager': 'Manager',
+    'MANAGER': 'Manager',
     'Project Manager': 'Manager',
-    'Employee':      'Employee',
-    'EMPLOYEE':      'Employee',
-    'Team Member':   'Employee',
-    'MEMBER':        'Employee',
-    'USER':          'Employee',
+    'Employee': 'Employee',
+    'EMPLOYEE': 'Employee',
+    'Team Member': 'Employee',
+    'MEMBER': 'Employee',
+    'USER': 'Employee',
   };
 
   const allUsers = await prisma.user.findMany({
@@ -124,7 +124,7 @@ async function main() {
 
   let assigned = 0;
   let skipped = 0;
-  
+
   for (const u of allUsers) {
     // Skip if user already has a systemRole assigned
     if (u.roleId) {
@@ -134,14 +134,14 @@ async function main() {
 
     const matchedRoleName = ROLE_STRING_MAP[u.role || ''];
     if (!matchedRoleName) {
-      console.log(`   ⚠️  No match for user "${u.name}" (role: "${u.role}") — skipping`);
+      console.log(`   ⚠️  No match for user "${u.name}" (role: "${u.role}")   skipping`);
       skipped++;
       continue;
     }
 
     const targetRole = await prisma.role.findUnique({ where: { name: matchedRoleName } });
     if (!targetRole) {
-      console.log(`   ⚠️  Role "${matchedRoleName}" not found in DB — skipping user "${u.name}"`);
+      console.log(`   ⚠️  Role "${matchedRoleName}" not found in DB   skipping user "${u.name}"`);
       skipped++;
       continue;
     }
@@ -150,7 +150,7 @@ async function main() {
       where: { id: u.id },
       data: { roleId: targetRole.id },
     });
-    
+
     console.log(`   ✅ Assigned "${u.name}" → ${matchedRoleName}`);
     assigned++;
   }
@@ -160,11 +160,11 @@ async function main() {
   // ── Summary ──
   console.log('\n' + '═'.repeat(50));
   console.log('🎉 Seed complete!');
-  
+
   const totalPerms = await prisma.permission.count();
   const totalRoles = await prisma.role.count();
   const totalMappings = await prisma.rolePermission.count();
-  
+
   console.log(`   Permissions: ${totalPerms}`);
   console.log(`   Roles: ${totalRoles}`);
   console.log(`   Role-Permission mappings: ${totalMappings}`);

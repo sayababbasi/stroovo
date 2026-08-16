@@ -28,7 +28,7 @@ type PermissionContext = {
   permissionKeys: string[];
 };
 
-export type AuthResult = 
+export type AuthResult =
   | { success: true; user: UserWithPermissions; effectiveRole: EffectiveRole; permissionKeys: string[] }
   | { success: false; response: NextResponse };
 
@@ -99,7 +99,7 @@ export function permissionSetForUser(user: UserWithPermissions): string[] {
     }
   }
 
-  // NO legacy wildcard fallback — permissions come ONLY from database roles.
+  // NO legacy wildcard fallback   permissions come ONLY from database roles.
   // The seed script must be run to populate roles and permissions.
 
   return dedupe(explicit);
@@ -107,7 +107,7 @@ export function permissionSetForUser(user: UserWithPermissions): string[] {
 
 // Check if a user has permission within a specific scope
 export function hasPermission(
-  user: UserWithPermissions | null | undefined, 
+  user: UserWithPermissions | null | undefined,
   permissionKey: string,
   scope?: { type: 'organization' | 'team' | 'project', id?: string }
 ): boolean {
@@ -120,7 +120,7 @@ export function hasPermission(
       user.additionalRoles.flatMap((ar: any) => ar.role?.permissions.map((p: any) => p.permission.key) || [])
     );
   }
-  
+
   if (globalPermissions.includes('*') || globalPermissions.includes(permissionKey)) {
     return true;
   }
@@ -131,7 +131,7 @@ export function hasPermission(
     return true;
   }
 
-  // NO legacy role-based fallback — authorization comes from database permissions only.
+  // NO legacy role-based fallback   authorization comes from database permissions only.
 
   if (!scope || scope.type === 'organization') {
     return false; // Already checked global
@@ -159,7 +159,7 @@ export function hasPermission(
 }
 
 export function explainPermission(
-  user: UserWithPermissions, 
+  user: UserWithPermissions,
   permissionKey: string,
   scope?: { type: 'organization' | 'team' | 'project', id?: string }
 ): { granted: boolean; sources: string[] } {
@@ -292,7 +292,7 @@ function unauthorized(message: string) {
   return NextResponse.json({ error: message }, { status: 401 });
 }
 
-export function requirePermission(permissionKey: string, scopeResolver?: (req: Request) => { type: 'organization'|'team'|'project', id?: string }) {
+export function requirePermission(permissionKey: string, scopeResolver?: (req: Request) => { type: 'organization' | 'team' | 'project', id?: string }) {
   return async (request: Request): Promise<AuthResult> => {
     const user = await loadUserFromRequest(request);
     if (!user || !user.isActive) {

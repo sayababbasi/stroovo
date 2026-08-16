@@ -82,7 +82,7 @@ async function main() {
             seedId: 'REVOTICAI-30DAY-DAY01-TASK01',
             day: 1,
             title: 'Write core positioning statement for REVOTICAI',
-            description: 'REVOTICAI — AI SaaS Builder | Building Real Products in Public',
+            description: 'REVOTICAI   AI SaaS Builder | Building Real Products in Public',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 1', 'Week 1'],
             kr: krStrategy
@@ -242,7 +242,7 @@ async function main() {
         {
             seedId: 'REVOTICAI-30DAY-DAY05-TASK03',
             day: 5,
-            title: 'Select Video 3: I Built a Full ERP System — Here\'s What I Learned',
+            title: 'Select Video 3: I Built a Full ERP System   Here\'s What I Learned',
             description: 'Build in Public + Founder focus.',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 5', 'Week 1'],
@@ -251,7 +251,7 @@ async function main() {
         {
             seedId: 'REVOTICAI-30DAY-DAY05-TASK04',
             day: 5,
-            title: 'Select Video 4: Building My SaaS ERP — Week 1',
+            title: 'Select Video 4: Building My SaaS ERP   Week 1',
             description: 'Build in Public + Product Integration focus.',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 5', 'Week 1'],
@@ -537,7 +537,7 @@ async function main() {
         {
             seedId: 'REVOTICAI-30DAY-DAY22-TASK01',
             day: 22,
-            title: 'Create Build-in-Public update: Building My SaaS ERP — Week 1',
+            title: 'Create Build-in-Public update: Building My SaaS ERP   Week 1',
             description: 'Document starting state, built items, bugs, lessons, screenshots, architecture decisions.',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 22', 'Week 4'],
@@ -548,7 +548,7 @@ async function main() {
         {
             seedId: 'REVOTICAI-30DAY-DAY23-TASK01',
             day: 23,
-            title: 'Script Video 3: I Built a Full ERP System — Here\'s What I Learned',
+            title: 'Script Video 3: I Built a Full ERP System   Here\'s What I Learned',
             description: 'Structure around lessons: Expectations vs reality, architecture, DB, UX, Auth/RBAC, performance, mistakes.',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 23', 'Week 4'],
@@ -641,7 +641,7 @@ async function main() {
         {
             seedId: 'REVOTICAI-30DAY-DAY29-TASK01',
             day: 29,
-            title: 'Prepare Video 4: Building My SaaS ERP — Week 1',
+            title: 'Prepare Video 4: Building My SaaS ERP   Week 1',
             description: 'Document Before, During, Problems, Decisions, After, Next steps.',
             priority: 'HIGH',
             tags: ['REVOTICAI', 'Content', '30-Day Plan', 'Day 29', 'Week 4'],

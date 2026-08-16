@@ -82,8 +82,8 @@ function PriorityChip({ value, onChange }: { value: Priority; onChange: (v: Prio
                 fontSize: '12px', fontWeight: 500, color: '#172B4D', padding: '4px 6px',
                 borderRadius: 4, transition: 'background 0.15s'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#F4F5F7'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={e => e.currentTarget.style.background = '#F4F5F7'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
                 {PRIORITY_LABELS[value] || value}
@@ -149,10 +149,10 @@ const TaskRow = memo(function TaskRow({
         const doneCount = updatedSubtasks.filter((s: any) => s.status === 'DONE').length;
         const totalCount = updatedSubtasks.length;
         const newProgress = Math.round((doneCount / totalCount) * 100);
-        
-        onUpdate(task.id, { 
-            progress: newProgress, 
-            subTasks: updatedSubtasks 
+
+        onUpdate(task.id, {
+            progress: newProgress,
+            subTasks: updatedSubtasks
         } as any);
 
         try {
@@ -164,9 +164,9 @@ const TaskRow = memo(function TaskRow({
             if (!res.ok) throw new Error('Failed');
         } catch (err) {
             setSubtasks(subtasks); // Revert local
-            onUpdate(task.id, { 
-                progress: task.progress, 
-                subTasks: task.subtasks || (task as any).subTasks 
+            onUpdate(task.id, {
+                progress: task.progress,
+                subTasks: task.subtasks || (task as any).subTasks
             } as any);
         }
     };
@@ -217,7 +217,7 @@ const TaskRow = memo(function TaskRow({
 
     // Due date formatting
     const dueDateDisplay = (() => {
-        if (!task.dueDate) return '—';
+        if (!task.dueDate) return ' ';
         const d = new Date(task.dueDate);
         const today = new Date();
         const isToday = d.toDateString() === today.toDateString();
@@ -285,7 +285,7 @@ const TaskRow = memo(function TaskRow({
                                 autoFocus style={{ flex: 1, border: '1px solid #0052CC', borderRadius: 4, padding: '3px 8px', fontSize: '13px', fontWeight: 500, outline: 'none', boxShadow: '0 0 0 2px rgba(0,82,204,0.1)' }} />
                         </div>
                     ) : (
-                        <span 
+                        <span
                             onDoubleClick={e => { e.stopPropagation(); setEditingTitle(true); }}
                             onClick={e => { e.stopPropagation(); onOpenDetails(task); }}
                             style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
@@ -352,14 +352,14 @@ const TaskRow = memo(function TaskRow({
                     </div>
                     {subtasks.map((st: any) => (
                         <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: '13px', color: st.status === 'DONE' ? '#8A94A6' : '#172B4D', textDecoration: st.status === 'DONE' ? 'line-through' : 'none' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={st.status === 'DONE'} 
+                            <input
+                                type="checkbox"
+                                checked={st.status === 'DONE'}
                                 onChange={e => handleSubtaskToggle(st.id, e.target.checked ? 'DONE' : 'TODO')}
-                                style={{ accentColor: '#0052CC', width: 14, height: 14, cursor: 'pointer' }} 
+                                style={{ accentColor: '#0052CC', width: 14, height: 14, cursor: 'pointer' }}
                             />
                             <span style={{ flex: 1 }}>{st.title}</span>
-                            <button 
+                            <button
                                 onClick={(e) => { e.stopPropagation(); handleSubtaskDelete(st.id); }}
                                 style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#8A94A6', opacity: 0.6 }}
                                 onMouseOver={e => e.currentTarget.style.color = '#FF5630'}

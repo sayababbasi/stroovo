@@ -16,8 +16,8 @@ export default function MyFocusView({ goals, currentUserId, onSelectGoal }: Prop
   );
 
   const critical = myGoals.filter((g: any) => (g.computed?.riskScore ?? 0) > 70);
-  const atRisk   = myGoals.filter((g: any) => (g.computed?.riskScore ?? 0) > 40 && (g.computed?.riskScore ?? 0) <= 70);
-  const healthy  = myGoals.filter((g: any) => (g.computed?.riskScore ?? 0) <= 40);
+  const atRisk = myGoals.filter((g: any) => (g.computed?.riskScore ?? 0) > 40 && (g.computed?.riskScore ?? 0) <= 70);
+  const healthy = myGoals.filter((g: any) => (g.computed?.riskScore ?? 0) <= 40);
 
   const totalExposure = myGoals.length > 0
     ? Math.round(myGoals.reduce((s: number, g: any) => s + (g.computed?.riskScore ?? 0), 0) / myGoals.length)
@@ -83,13 +83,13 @@ export default function MyFocusView({ goals, currentUserId, onSelectGoal }: Prop
 
         {critical.length > 0 && (
           <>
-            <div style={{ color: '#FF5630', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>🔴 Critical — Immediate Action</div>
+            <div style={{ color: '#FF5630', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>🔴 Critical   Immediate Action</div>
             {critical.map((g: any) => <GoalCard key={g.id} goal={g} />)}
           </>
         )}
         {atRisk.length > 0 && (
           <>
-            <div style={{ color: '#FFAB00', marginTop: critical.length ? 16 : 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>🟡 At Risk — Monitor Closely</div>
+            <div style={{ color: '#FFAB00', marginTop: critical.length ? 16 : 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>🟡 At Risk   Monitor Closely</div>
             {atRisk.map((g: any) => <GoalCard key={g.id} goal={g} />)}
           </>
         )}

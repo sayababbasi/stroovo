@@ -31,7 +31,7 @@ export default function WhyChooseStroovoSection() {
   return (
     <section className="py-24 md:py-32 bg-transparent border-b border-gray-100">
       <div className="max-w-[1300px] mx-auto px-6">
-        
+
         {/* Section Header */}
         <div className="flex flex-col items-center text-center mb-16">
           <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-6">
@@ -41,14 +41,14 @@ export default function WhyChooseStroovoSection() {
             One Platform. Infinite Possibilities.
           </h2>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl leading-relaxed">
-            Stroovo brings everything your team needs to plan, collaborate, and achieve—all in one secure, scalable platform.
+            Stroovo brings everything your team needs to plan, collaborate, and achieve all in one secure, scalable platform.
           </p>
         </div>
 
         {/* Feature Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
-            <div 
+            <div
               key={index}
               className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-default"
             >

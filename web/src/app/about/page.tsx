@@ -6,9 +6,9 @@ import TrustedBySection from "@/components/landing/TrustedBySection";
 import FinalCTASection from "@/components/landing/FinalCTASection";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { 
-  Users, Rocket, Shield, Heart, 
-  ArrowRight, Layout, CheckSquare, 
+import {
+  Users, Rocket, Shield, Heart,
+  ArrowRight, Layout, CheckSquare,
   Target, MessageSquare, Workflow, BrainCircuit,
   ChevronRight
 } from "lucide-react";
@@ -16,14 +16,14 @@ import {
 export default function AboutPage() {
   return (
     <MarketingLayout>
-      
+
       {/* 1. Hero Section */}
       <section className="pt-24 pb-20 px-6 relative overflow-hidden bg-white">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50/50 rounded-full blur-[120px] transform translate-x-1/3 -translate-y-1/4 pointer-events-none"></div>
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center opacity-[0.03] pointer-events-none"></div>
-        
+
         <div className="max-w-[1300px] mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-16">
-          
+
           {/* Left Content */}
           <div className="w-full lg:w-5/12 flex flex-col items-start text-left">
             <div className="flex items-center text-sm text-gray-500 mb-8 font-medium">
@@ -39,11 +39,11 @@ export default function AboutPage() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.1] mb-6 tracking-tight">
               Building the future of work, <span className="text-[#0052CC]">together.</span>
             </h1>
-            
+
             <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-lg">
-              Stroovo is an all-in-one work management platform built by Revotic AI to help modern teams plan, collaborate, and achieve more—every day.
+              Stroovo is an all-in-one work management platform built by Revotic AI to help modern teams plan, collaborate, and achieve more every day.
             </p>
-            
+
             <div className="flex items-center gap-4">
               <Link href="/signup" className="px-8 py-3.5 bg-[#0052CC] hover:bg-[#0047B3] text-white font-semibold rounded-lg transition-all shadow-[0_8px_20px_rgb(0,82,204,0.2)] flex items-center gap-2 group">
                 Explore Stroovo
@@ -56,7 +56,7 @@ export default function AboutPage() {
           </div>
 
           {/* Right Content (CSS Mockup Dashboard) */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
@@ -84,7 +84,7 @@ export default function AboutPage() {
                   </div>
                   <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-blue-600 font-bold">A</div>
                 </div>
-                
+
                 {/* Metric Cards */}
                 <div className="grid grid-cols-4 gap-4">
                   {[
@@ -104,24 +104,24 @@ export default function AboutPage() {
                   <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col">
                     <div className="w-32 h-4 bg-gray-100 rounded mb-4"></div>
                     <div className="flex-1 border-b border-l border-gray-100 relative">
-                       {/* Abstract chart line */}
-                       <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                         <path d="M0 80 Q 20 60, 40 70 T 80 40 T 100 20" fill="none" stroke="#0052CC" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-                       </svg>
+                      {/* Abstract chart line */}
+                      <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                        <path d="M0 80 Q 20 60, 40 70 T 80 40 T 100 20" fill="none" stroke="#0052CC" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                      </svg>
                     </div>
                   </div>
                   <div className="w-1/3 bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-center relative">
-                     {/* Donut chart abstract */}
-                     <div className="w-24 h-24 rounded-full border-8 border-blue-100 border-t-[#0052CC] border-r-[#0052CC] transform -rotate-45"></div>
-                     <div className="absolute inset-0 flex items-center justify-center flex-col">
-                       <span className="text-xl font-bold text-gray-900">1,156</span>
-                       <span className="text-[10px] text-gray-500">Total Tasks</span>
-                     </div>
+                    {/* Donut chart abstract */}
+                    <div className="w-24 h-24 rounded-full border-8 border-blue-100 border-t-[#0052CC] border-r-[#0052CC] transform -rotate-45"></div>
+                    <div className="absolute inset-0 flex items-center justify-center flex-col">
+                      <span className="text-xl font-bold text-gray-900">1,156</span>
+                      <span className="text-[10px] text-gray-500">Total Tasks</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Floating Dots Pattern */}
             <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[url('/grid-pattern.svg')] opacity-20 z-[-1]"></div>
           </motion.div>
@@ -140,7 +140,7 @@ export default function AboutPage() {
               Empowering teams to do their best work
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              We believe great work happens when teams are connected, aligned, and empowered with the right tools. Stroovo brings everything together in one secure platform—so teams can focus on what truly matters.
+              We believe great work happens when teams are connected, aligned, and empowered with the right tools. Stroovo brings everything together in one secure platform so teams can focus on what truly matters.
             </p>
           </div>
 
@@ -149,9 +149,9 @@ export default function AboutPage() {
               { icon: <Users className="w-6 h-6 text-blue-600" />, title: "Customer First", desc: "We build with empathy and obsess over helping our customers succeed." },
               { icon: <Rocket className="w-6 h-6 text-emerald-600" />, title: "Innovation", desc: "We continuously innovate to solve real-world operational challenges." },
               { icon: <Shield className="w-6 h-6 text-purple-600" />, title: "Trust & Security", desc: "Security, privacy, and reliability are at the core of everything we build." },
-              { icon: <Heart className="w-6 h-6 text-rose-600" />, title: "Together", desc: "We believe in the power of teamwork—inside our company and with our customers." }
+              { icon: <Heart className="w-6 h-6 text-rose-600" />, title: "Together", desc: "We believe in the power of teamwork inside our company and with our customers." }
             ].map((card, i) => (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -201,17 +201,17 @@ export default function AboutPage() {
       <section className="py-24 px-6 bg-white overflow-hidden">
         <div className="max-w-[1300px] mx-auto">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
-            
+
             <div className="w-full lg:w-1/2">
               <span className="text-[#0052CC] font-bold text-sm tracking-wider uppercase mb-4 block">Our Story</span>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">How Stroovo came to life</h2>
-              
+
               <div className="space-y-6 text-gray-600 leading-relaxed text-lg mb-10">
                 <p>
                   Stroovo was founded by the team at Revotic AI with a simple vision: to create a modern work management platform that helps teams move faster, stay aligned, and achieve more together.
                 </p>
                 <p>
-                  After years of building products and working with teams across industries, we saw the same challenges everywhere—fragmented tools, disconnected teams, and a lack of visibility.
+                  After years of building products and working with teams across industries, we saw the same challenges everywhere fragmented tools, disconnected teams, and a lack of visibility.
                 </p>
                 <p>
                   So we built Stroovo. Today, Stroovo helps thousands of teams around the world simplify work, streamline collaboration, and drive results.
@@ -221,8 +221,8 @@ export default function AboutPage() {
 
             <div className="w-full lg:w-1/2 relative">
               <div className="aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden relative shadow-lg">
-                <img 
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                <img
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
                   alt="Team collaborating"
                   className="w-full h-full object-cover"
                 />
@@ -230,7 +230,7 @@ export default function AboutPage() {
               </div>
 
               {/* Floating Revotic AI Card */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -267,7 +267,7 @@ export default function AboutPage() {
           <div className="relative max-w-4xl mx-auto">
             {/* Connection Lines */}
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-100 via-blue-300 to-blue-100 -translate-y-1/2 hidden md:block"></div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8 relative z-10">
               {[
                 { icon: <Layout />, label: "Projects" },
@@ -335,7 +335,7 @@ export default function AboutPage() {
               "Security and privacy are non-negotiable.",
               "Transparency in our processes and pricing.",
               "Continuous, iterative improvement over massive rewrites.",
-              "Customer-focused development—we build what teams actually need."
+              "Customer-focused development we build what teams actually need."
             ].map((principle, i) => (
               <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 flex items-start gap-4">
                 <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold text-sm">

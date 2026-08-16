@@ -163,10 +163,10 @@ export default function RolesTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* KPI Cards */}
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-        <KpiCard icon={<Shield size={18} />} title="Total Roles" value={totalRoles} trend="—" trendLabel="No change" color="#6554C0" />
-        <KpiCard icon={<Shield size={18} />} title="Custom Roles" value={customRoles} trend={customRoles > 0 ? '+25%' : '—'} trendLabel="vs last month" color="#0052CC" />
-        <KpiCard icon={<Check size={18} />} title="Permissions" value={totalPerms} trend="—" trendLabel="No change" color="#36B37E" />
-        <KpiCard icon={<Users size={18} />} title="Assignments" value={totalAssignments} trend={totalAssignments > 0 ? '+15%' : '—'} trendLabel="vs last month" color="#FF8B00" />
+        <KpiCard icon={<Shield size={18} />} title="Total Roles" value={totalRoles} trend=" " trendLabel="No change" color="#6554C0" />
+        <KpiCard icon={<Shield size={18} />} title="Custom Roles" value={customRoles} trend={customRoles > 0 ? '+25%' : ' '} trendLabel="vs last month" color="#0052CC" />
+        <KpiCard icon={<Check size={18} />} title="Permissions" value={totalPerms} trend=" " trendLabel="No change" color="#36B37E" />
+        <KpiCard icon={<Users size={18} />} title="Assignments" value={totalAssignments} trend={totalAssignments > 0 ? '+15%' : ' '} trendLabel="vs last month" color="#FF8B00" />
       </div>
 
       {/* Main Content */}

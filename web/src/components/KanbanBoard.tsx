@@ -120,7 +120,7 @@ export default function KanbanBoard({
         return () => document.removeEventListener('mousedown', onClick);
     }, []);
 
-    /* ── DnD Sensors — optimized ── */
+    /* ── DnD Sensors   optimized ── */
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -143,7 +143,7 @@ export default function KanbanBoard({
         });
     }, []);
 
-    /* ── Drag Handlers — all stable, all functional setState ── */
+    /* ── Drag Handlers   all stable, all functional setState ── */
     const handleDragStart = useCallback((e: DragStartEvent) => {
         setActiveId(e.active.id as string);
     }, []);

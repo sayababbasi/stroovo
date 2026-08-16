@@ -6,35 +6,35 @@ import { normalizePermissionKey } from '@/lib/permissions/registry';
 
 // Global fetch interceptor to automatically append the Authorization header to all api calls
 if (typeof window !== 'undefined') {
-  const originalFetch = window.fetch;
-  window.fetch = async function (input, init) {
-    let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    
-    if (url.startsWith('/api/') || url.includes('/api/') || url.startsWith('api/')) {
-      const token = localStorage.getItem('stroovo_token');
-      if (token) {
-        init = init || {};
-        init.headers = init.headers || {};
-        
-        if (init.headers instanceof Headers) {
-          if (!init.headers.has('Authorization')) {
-            init.headers.set('Authorization', `Bearer ${token}`);
-          }
-        } else if (Array.isArray(init.headers)) {
-          const hasAuth = init.headers.some(([key]) => key.toLowerCase() === 'authorization');
-          if (!hasAuth) {
-            init.headers.push(['Authorization', `Bearer ${token}`]);
-          }
-        } else {
-          const headersRecord = init.headers as Record<string, string>;
-          if (!headersRecord['Authorization'] && !headersRecord['authorization']) {
-            headersRecord['Authorization'] = `Bearer ${token}`;
-          }
+    const originalFetch = window.fetch;
+    window.fetch = async function (input, init) {
+        let url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+
+        if (url.startsWith('/api/') || url.includes('/api/') || url.startsWith('api/')) {
+            const token = localStorage.getItem('stroovo_token');
+            if (token) {
+                init = init || {};
+                init.headers = init.headers || {};
+
+                if (init.headers instanceof Headers) {
+                    if (!init.headers.has('Authorization')) {
+                        init.headers.set('Authorization', `Bearer ${token}`);
+                    }
+                } else if (Array.isArray(init.headers)) {
+                    const hasAuth = init.headers.some(([key]) => key.toLowerCase() === 'authorization');
+                    if (!hasAuth) {
+                        init.headers.push(['Authorization', `Bearer ${token}`]);
+                    }
+                } else {
+                    const headersRecord = init.headers as Record<string, string>;
+                    if (!headersRecord['Authorization'] && !headersRecord['authorization']) {
+                        headersRecord['Authorization'] = `Bearer ${token}`;
+                    }
+                }
+            }
         }
-      }
-    }
-    return originalFetch.call(this, input, init);
-  };
+        return originalFetch.call(this, input, init);
+    };
 }
 
 // Auth calls go through relative paths so the Next.js rewrite proxy forwards them correctly.
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Try to load from localStorage first for faster UX
             const storedToken = localStorage.getItem('stroovo_token');
             const storedUser = localStorage.getItem('stroovo_user');
-            
+
             console.log('[Auth] Stored token found:', !!storedToken);
             console.log('[Auth] Stored user found:', !!storedUser);
 
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log('[Auth] Verifying token with backend...');
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             headers['Authorization'] = `Bearer ${currentToken}`;
-            
+
             const response = await fetch(`/api/auth/me`, {
                 method: 'GET',
                 headers,
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
                 const userData = await response.json();
                 console.log('[Auth] Token verified successfully');
-                
+
                 // Store permissions from backend RBAC
                 const userWithPerms = {
                     ...userData.user,
@@ -141,14 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(userWithPerms);
                 setPermissions(userData.permissions || []);
                 setAccessToken(userData.accessToken || currentToken);
-                
+
                 // Update storage
                 localStorage.setItem('stroovo_token', userData.accessToken || currentToken);
                 localStorage.setItem('stroovo_user', JSON.stringify(userWithPerms));
-                
+
                 // Update cookie to 7 days (604800 seconds)
                 document.cookie = `accessToken=${userData.accessToken || currentToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
-                
+
                 return true;
             } else if (response.status === 401 || response.status === 403 || response.status === 404) {
                 console.warn('[Auth] Token verification explicitly failed, status:', response.status);
@@ -203,9 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Handle MFA requirement
             if (data.requiresMFA) {
-                return { 
-                    success: false, 
-                    requiresMFA: true, 
+                return {
+                    success: false,
+                    requiresMFA: true,
                     sessionId: data.sessionId,
                     error: 'MFA verification required'
                 };
@@ -214,14 +214,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Successful login
             setUser(data.user);
             setAccessToken(data.accessToken);
-            
+
             // Persist to localStorage for client-side state
             localStorage.setItem('stroovo_token', data.accessToken);
             localStorage.setItem('stroovo_user', JSON.stringify(data.user));
-            
+
             // Set cookie for middleware/server-side state for 7 days
             document.cookie = `accessToken=${data.accessToken}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
-            
+
             return { success: true, user: data.user };
         } catch (error) {
             console.error('Login error:', error);
@@ -249,11 +249,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Successful signup
             setUser(data.user);
             setAccessToken(tokenToUse);
-            
+
             // Persist token and user in local storage
             localStorage.setItem('stroovo_token', tokenToUse);
             localStorage.setItem('stroovo_user', JSON.stringify(data.user));
-            
+
             // Set cookie for middleware/server-side state for 7 days
             document.cookie = `accessToken=${tokenToUse}; path=/; max-age=604800; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
 
@@ -292,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const refreshTokenFn = async (): Promise<boolean> => {
         try {
-            // Use raw fetch for refresh — apiPost returns ApiResponse, not raw Response
+            // Use raw fetch for refresh   apiPost returns ApiResponse, not raw Response
             const res = await fetch(`${API_URL}/api/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -343,7 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     email: '', // Will be handled by session
                     password: '', // Will be handled by session
                     mfaToken: token,

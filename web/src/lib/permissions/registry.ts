@@ -1,5 +1,5 @@
 /**
- * STROOVO — Centralized Permission Registry
+ * STROOVO   Centralized Permission Registry
  * 
  * This is the SINGLE SOURCE OF TRUTH for all permission keys in the application.
  * Every sidebar item, tab, button, API endpoint, and route guard references this registry.
@@ -288,31 +288,31 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<SystemRoleName, {
   CEO: {
     description: 'Executive level access. Strategic oversight and business decisions.',
     permissions: [
-      // Users — view + invite only
+      // Users   view + invite only
       P.USERS_VIEW, P.USERS_INVITE,
-      // Teams — full management
+      // Teams   full management
       P.TEAMS_VIEW, P.TEAMS_CREATE, P.TEAMS_EDIT, P.TEAMS_ARCHIVE, P.TEAMS_RESTORE, P.TEAMS_MANAGE_MEMBERS,
       // Projects
       P.PROJECTS_VIEW, P.PROJECTS_CREATE, P.PROJECTS_EDIT, P.PROJECTS_ARCHIVE,
       // Tasks
       P.TASKS_VIEW, P.TASKS_CREATE, P.TASKS_EDIT, P.TASKS_ASSIGN, P.TASKS_COMPLETE,
-      // Roles — view only
+      // Roles   view only
       P.ROLES_VIEW,
-      // Permissions — view only
+      // Permissions   view only
       P.PERMISSIONS_VIEW,
-      // Billing — view only
+      // Billing   view only
       P.BILLING_VIEW,
-      // Integrations — view
+      // Integrations   view
       P.INTEGRATIONS_VIEW,
       // Logs
       P.SYSTEM_LOGS_VIEW, P.AUDIT_LOGS_VIEW,
-      // Settings — view
+      // Settings   view
       P.SETTINGS_VIEW,
       // Dashboards
       P.DASHBOARD_EXECUTIVE_VIEW, P.DASHBOARD_MANAGER_VIEW, P.DASHBOARD_EMPLOYEE_VIEW,
       // AI
       P.AI_VIEW, P.AI_MONITORING_VIEW,
-      // Automations — view
+      // Automations   view
       P.AUTOMATIONS_VIEW,
       // Notifications
       P.NOTIFICATIONS_VIEW, P.NOTIFICATIONS_MANAGE,

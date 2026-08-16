@@ -680,17 +680,202 @@ tbody td {
 
 /* ── Goal Detail Panel ───────────────────────────────── */
 .dpanel {
-  width: 420px;
+  width: min(640px, 100vw);
   height: 100%;
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  box-shadow: -4px 0 24px rgba(9, 30, 66, 0.12);
+  box-shadow: -10px 0 30px rgba(9, 30, 66, 0.08);
+}
+
+.dpanel-header {
+  padding: 24px 32px 20px;
+  background: #fff;
+}
+
+.dpanel-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #5e6c84;
+}
+
+.dp-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 32px;
+  background: #fafbfc;
+  border-top: 1px solid #dfe1e6;
+  border-bottom: 1px solid #dfe1e6;
+}
+
+.dp-metric-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dp-metric-sm span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b778c;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dp-metric-sm b {
+  font-size: 16px;
+  font-weight: 800;
+  color: #172b4d;
+}
+
+.dp-nav {
+  display: flex;
+  padding: 0 32px;
+  border-bottom: 1px solid #dfe1e6;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.dp-nav button {
+  padding: 16px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b778c;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+.dp-nav button:hover { color: #172b4d; }
+.dp-nav button.active { color: #0052cc; border-bottom-color: #0052cc; }
+
+.dpanel-content {
+  padding: 24px 32px;
+  flex: 1;
+  background: #fff;
+}
+
+.dp-card {
+  background: #fff;
+  border: 1px solid #dfe1e6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(9, 30, 66, 0.02);
+}
+
+.dp-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5e6c84;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dp-timeline-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.dp-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: -20px;
+  width: 1px;
+  background: #dfe1e6;
+}
+.dp-timeline-item:last-child::before { display: none; }
+.dp-timeline-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0052cc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  z-index: 2;
+}
+.dp-timeline-content {
+  flex: 1;
+  padding-top: 4px;
+}
+.dp-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.dp-timeline-header b { font-size: 13px; color: #172b4d; }
+.dp-timeline-header span { font-size: 12px; color: #8993a4; }
+.dp-timeline-body {
+  font-size: 13px;
+  color: #42526e;
+  background: #f4f5f7;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border: 1px solid #dfe1e6;
+}
+
+.dp-empty {
+  text-align: center;
+  padding: 40px 20px;
+  background: #fafbfc;
+  border: 1px dashed #dfe1e6;
+  border-radius: 12px;
+  color: #6b778c;
+}
+.dp-empty h4 { margin: 0 0 8px; font-size: 14px; color: #172b4d; }
+.dp-empty p { margin: 0 0 16px; font-size: 13px; }
+
+.dp-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fff;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #42526e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dp-action-btn:hover { background: #f4f5f7; }
+
+.dp-details-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  font-size: 13px;
+}
+.dp-details-label {
+  color: #6b778c;
+}
+.dp-details-value {
+  color: #172b4d;
+  font-weight: 500;
 }
 
 .dpanel-sec {
-  padding: 18px 20px;
+  padding: 24px 32px;
   border-bottom: 1px solid #dfe1e6;
 }
 
@@ -698,12 +883,12 @@ tbody td {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: #42526e;
+  color: #5e6c84;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-bottom: 12px;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
 }
 
 /* ── Progress bars (shared) ──────────────────────────── */

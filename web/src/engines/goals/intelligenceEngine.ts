@@ -162,7 +162,7 @@ function computeExpectedCompletion(goal: GoalData, daysRemaining: number): numbe
 export function computeKRHealthStatus(kr: KeyResultData, progress: number, daysRemaining: number): 'ON_TRACK' | 'AT_RISK' | 'CRITICAL' | 'COMPLETED' {
   if (progress >= 100) return 'COMPLETED';
   if (daysRemaining <= 0) return progress >= 100 ? 'COMPLETED' : 'CRITICAL';
-  
+
   const daysSince = getDaysSinceUpdate(kr.updatedAt);
   if (daysSince >= 3 && progress < 50) return 'CRITICAL';
   if (daysSince >= 3) return 'AT_RISK';
@@ -241,7 +241,7 @@ export function generateRiskFactors(goal: GoalData, daysRemaining: number, veloc
       factor: 'Low Execution Velocity',
       severity: velocity < 0.1 ? 'critical' : 'high',
       impact: Math.round((1 - velocity / 0.3) * 40),
-      description: `Progress velocity is ${velocity.toFixed(2)}%/day — significantly below target pace`
+      description: `Progress velocity is ${velocity.toFixed(2)}%/day   significantly below target pace`
     });
   }
 
@@ -272,7 +272,7 @@ export function generateRiskFactors(goal: GoalData, daysRemaining: number, veloc
       factor: 'Goal Overdue',
       severity: 'critical',
       impact: 100,
-      description: `Deadline was ${Math.abs(daysRemaining)} days ago — immediate escalation required`
+      description: `Deadline was ${Math.abs(daysRemaining)} days ago   immediate escalation required`
     });
   }
 
@@ -286,7 +286,7 @@ export function generateRiskFactors(goal: GoalData, daysRemaining: number, veloc
         factor: 'Unbalanced KR Contribution',
         severity: 'medium',
         impact: Math.round((max - min) * 0.3),
-        description: `KR progress ranges from ${min}% to ${max}% — contribution is heavily skewed`
+        description: `KR progress ranges from ${min}% to ${max}%   contribution is heavily skewed`
       });
     }
   }
@@ -364,7 +364,7 @@ export function generateAlerts(goal: GoalData, computed: Omit<ComputedGoal, 'ale
         type: 'UNBALANCED_KR',
         severity: 'warning',
         message: `Unbalanced KR contribution in "${goal.title}"`,
-        detail: `Range: ${min}%–${max}% — redistribute effort across KRs`,
+        detail: `Range: ${min}%–${max}%   redistribute effort across KRs`,
         timestamp: new Date()
       });
     }
@@ -395,7 +395,7 @@ export function generateRecommendations(goal: GoalData, computed: Omit<ComputedG
     recs.push({
       id: `${goal.id}-rec-kr`,
       action: `Increase effort on KR: "${mostStagnant.title}"`,
-      rationale: `No progress in ${getDaysSinceUpdate(mostStagnant.updatedAt)} days — this KR is blocking overall goal`,
+      rationale: `No progress in ${getDaysSinceUpdate(mostStagnant.updatedAt)} days   this KR is blocking overall goal`,
       priority: 'high',
       targetKR: mostStagnant.id
     });
@@ -409,7 +409,7 @@ export function generateRecommendations(goal: GoalData, computed: Omit<ComputedG
     if (fastest.p - slowest.p > 50) {
       recs.push({
         id: `${goal.id}-rec-rebalance`,
-        action: `Rebalance priorities — shift resources from "${fastest.kr.title}" to "${slowest.kr.title}"`,
+        action: `Rebalance priorities   shift resources from "${fastest.kr.title}" to "${slowest.kr.title}"`,
         rationale: `${fastest.p}% vs ${slowest.p}% gap creates execution imbalance`,
         priority: 'medium',
         targetKR: slowest.kr.id

@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { teamEventBus } from '@/events/team-events';
 
 // ──────────────────────────────────────
-// TeamService — Core Team Business Logic
+// TeamService   Core Team Business Logic
 // ──────────────────────────────────────
 
 export class TeamService {

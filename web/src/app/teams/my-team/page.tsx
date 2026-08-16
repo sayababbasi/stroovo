@@ -36,7 +36,7 @@ const MY_TEAM = {
     name: 'Revotic AI',
     description: 'Core product team building the next generation of workflow management tools',
     status: 'Active' as const,
-    sprint: 'Sprint 14 — Q1 2026',
+    sprint: 'Sprint 14   Q1 2026',
     sprintProgress: 68,
     sprintEnd: 'Apr 2, 2026',
     health: 82,
@@ -194,7 +194,7 @@ export default function MyTeamPage() {
 
                 {/* ─── Content ────────────────── */}
                 <div style={{ flex: 1, overflow: 'auto', padding: '24px 32px', display: 'flex', gap: '24px' }}>
-                    {/* Left Column — Members + Tasks */}
+                    {/* Left Column   Members + Tasks */}
                     <div style={{ flex: 3, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {/* Members Section */}
                         <div className="mt-card">
@@ -277,7 +277,7 @@ export default function MyTeamPage() {
                         </div>
                     </div>
 
-                    {/* Right Column — Sprint & Activity */}
+                    {/* Right Column   Sprint & Activity */}
                     <div style={{ flex: 1.2, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {/* Sprint Progress */}
                         <div className="mt-card" style={{ padding: '20px' }}>

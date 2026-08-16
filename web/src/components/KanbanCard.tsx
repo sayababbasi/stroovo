@@ -25,20 +25,20 @@ interface KanbanCardProps {
     onDelete?: (task: Task) => void;
 }
 
-/* ── Style helpers (static — no re-computation) ── */
+/* ── Style helpers (static   no re-computation) ── */
 
 const PRIORITY: Record<string, { color: string; bg: string; label: string }> = {
     URGENT: { color: '#C53030', bg: '#FED7D7', label: 'Urgent' },
-    HIGH:   { color: '#DD6B20', bg: '#FEEBC8', label: 'High' },
+    HIGH: { color: '#DD6B20', bg: '#FEEBC8', label: 'High' },
     MEDIUM: { color: '#D69E2E', bg: '#FEFCBF', label: 'Medium' },
-    LOW:    { color: '#3182CE', bg: '#EBF8FF', label: 'Low' },
+    LOW: { color: '#3182CE', bg: '#EBF8FF', label: 'Low' },
 };
 
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
-    BUG:     { bg: '#fff1f0', color: '#bf2600' },
-    STORY:   { bg: '#f0eeff', color: '#403294' },
+    BUG: { bg: '#fff1f0', color: '#bf2600' },
+    STORY: { bg: '#f0eeff', color: '#403294' },
     FEATURE: { bg: '#e8f0fe', color: '#0747a6' },
-    DESIGN:  { bg: '#e6fcf5', color: '#006644' },
+    DESIGN: { bg: '#e6fcf5', color: '#006644' },
 };
 const DEFAULT_TYPE = { bg: '#f1f3f7', color: '#44546f' };
 
@@ -74,7 +74,7 @@ function KanbanCard({
         data: { type: 'Task', task },
     });
 
-    /* GPU‑accelerated translate3d — avoids layout thrash */
+    /* GPU‑accelerated translate3d   avoids layout thrash */
     const tx = transform?.x ?? 0;
     const ty = transform?.y ?? 0;
     const cardStyle: React.CSSProperties = {
@@ -295,8 +295,8 @@ function KanbanCard({
                         <div className="kc-mi"><Paperclip size={11} strokeWidth={2.5} />{task._count!.files}</div>
                     )}
                 </div>
-                <div className="kc-av" 
-                    title={(task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee || 'Unassigned')} 
+                <div className="kc-av"
+                    title={(task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee || 'Unassigned')}
                     style={{ background: getAvatarColor((task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee as string)) }}
                 >
                     {((task.assignee && typeof task.assignee === 'object') ? task.assignee.name : (task.assignee as string))?.[0]?.toUpperCase() || '?'}
@@ -306,7 +306,7 @@ function KanbanCard({
     );
 }
 
-/* ── Memoized export — skip render unless task data changes ── */
+/* ── Memoized export   skip render unless task data changes ── */
 export default memo(KanbanCard, (prev, next) =>
     prev.task.id === next.task.id &&
     prev.task.status === next.task.status &&
@@ -315,7 +315,7 @@ export default memo(KanbanCard, (prev, next) =>
     prev.task.type === next.task.type &&
     prev.task.progress === next.task.progress &&
     prev.task.dueDate === next.task.dueDate &&
-    (typeof prev.task.assignee === 'object' ? prev.task.assignee?.id : prev.task.assignee) === 
+    (typeof prev.task.assignee === 'object' ? prev.task.assignee?.id : prev.task.assignee) ===
     (typeof next.task.assignee === 'object' ? next.task.assignee?.id : next.task.assignee) &&
     prev.task._count?.comments === next.task._count?.comments &&
     prev.task._count?.subTasks === next.task._count?.subTasks

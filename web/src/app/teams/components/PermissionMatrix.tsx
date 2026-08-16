@@ -27,7 +27,7 @@ interface PermissionMatrixProps {
 }
 
 
-// Access level definitions (UI concept — maps from permission key patterns)
+// Access level definitions (UI concept   maps from permission key patterns)
 type AccessLevel = 'none' | 'view' | 'edit' | 'full';
 
 function getAccessLevelForModule(module: string, permState: RolePermissionState, perms: Permission[]): AccessLevel {
@@ -116,13 +116,13 @@ export default function PermissionMatrix({
   // Filter
   const filteredModules = searchPerm
     ? modules.filter((mod) =>
-        grouped[mod].some(
-          (p) =>
-            p.key.toLowerCase().includes(searchPerm.toLowerCase()) ||
-            p.description?.toLowerCase().includes(searchPerm.toLowerCase()) ||
-            p.action.toLowerCase().includes(searchPerm.toLowerCase())
-        )
+      grouped[mod].some(
+        (p) =>
+          p.key.toLowerCase().includes(searchPerm.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchPerm.toLowerCase()) ||
+          p.action.toLowerCase().includes(searchPerm.toLowerCase())
       )
+    )
     : modules;
 
   const toggleModule = (mod: string) => {
@@ -253,11 +253,11 @@ export default function PermissionMatrix({
             const currentLevel = getAccessLevelForModule(mod, permState, allPermissions);
             const modPerms = searchPerm
               ? grouped[mod].filter(
-                  (p) =>
-                    p.key.toLowerCase().includes(searchPerm.toLowerCase()) ||
-                    p.description?.toLowerCase().includes(searchPerm.toLowerCase()) ||
-                    p.action.toLowerCase().includes(searchPerm.toLowerCase())
-                )
+                (p) =>
+                  p.key.toLowerCase().includes(searchPerm.toLowerCase()) ||
+                  p.description?.toLowerCase().includes(searchPerm.toLowerCase()) ||
+                  p.action.toLowerCase().includes(searchPerm.toLowerCase())
+              )
               : grouped[mod];
 
             const ModuleIcon = getModuleIcon(mod);
