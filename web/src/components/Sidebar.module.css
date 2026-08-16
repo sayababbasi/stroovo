@@ -144,12 +144,26 @@
 
 .settingsSection {
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 12px 0 8px;
+    padding: 8px 0 4px;
     flex-shrink: 0;
     background: #0B1B36; /* Opaque background to hide scrolling items */
     position: relative;
     z-index: 10;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15); /* Top shadow */
+}
+
+.settingsSection .sectionTitle {
+    padding: 8px 20px 4px;
+}
+
+.settingsSection .navItem {
+    height: 32px;
+    font-size: 13px;
+    margin: 0 12px;
+}
+
+.settingsSection .nav {
+    gap: 2px;
 }
 
 .navContainer::-webkit-scrollbar {
@@ -170,7 +184,7 @@
 }
 
 .userProfileWrapper {
-    padding: 16px;
+    padding: 4px 16px 16px 16px;
     background: #0B1B36; /* Opaque to prevent sliding content from showing */
     position: relative;
     z-index: 10;
