@@ -77,7 +77,18 @@ export default async function middleware(request: NextRequest) {
     pathname === '/privacy' ||
     pathname === '/terms' ||
     pathname === '/security' ||
-    pathname === '/gdpr'
+    pathname === '/gdpr' ||
+    pathname === '/book-demo' ||
+    pathname === '/customers' ||
+    pathname === '/story' ||
+    pathname === '/revotic-ai' ||
+    pathname.startsWith('/solutions') ||
+    pathname === '/features' ||
+    pathname === '/integrations' ||
+    pathname === '/changelog' ||
+    pathname === '/roadmap' ||
+    pathname === '/pricing' ||
+    pathname === '/enterprise'
   ) {
     return NextResponse.next();
   }

@@ -1,9 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Linkedin, Twitter, Github, Youtube, Heart } from "lucide-react";
+import { NAVIGATION_CONFIG } from "@/config/navigation";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+
+  // Helper to extract a flat list of links for a section (up to a limit)
+  const getFooterLinks = (configSection: any[], limit = 6) => {
+    return configSection.flatMap(section => section.items).slice(0, limit);
+  };
+
+  const productLinks = getFooterLinks(NAVIGATION_CONFIG.product);
+  const solutionsLinks = getFooterLinks(NAVIGATION_CONFIG.solutions);
+  const resourcesLinks = getFooterLinks(NAVIGATION_CONFIG.resources);
+  const companyLinks = getFooterLinks(NAVIGATION_CONFIG.company);
 
   return (
     <footer className="bg-[#0A0F2C] border-t border-[#1B2339] pt-20 pb-10">
@@ -46,10 +57,13 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Product</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link prefetch={false} href="/features" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Features</Link></li>
-              <li><Link prefetch={false} href="/integrations" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Integrations</Link></li>
-              <li><Link prefetch={false} href="/roadmap" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Roadmap</Link></li>
-              <li><Link prefetch={false} href="/changelog" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Changelog</Link></li>
+              {productLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link prefetch={false} href={link.href} className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
               <li><Link prefetch={false} href="/pricing" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Pricing</Link></li>
             </ul>
           </div>
@@ -57,32 +71,39 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Solutions</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link prefetch={false} href="/solutions/project-management" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Project Management</Link></li>
-              <li><Link prefetch={false} href="/solutions/team-collaboration" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Team Collaboration</Link></li>
-              <li><Link prefetch={false} href="/solutions/task-management" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Task Management</Link></li>
-              <li><Link prefetch={false} href="/solutions/goal-tracking" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Goal Tracking</Link></li>
-              <li><Link prefetch={false} href="/enterprise" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Enterprise</Link></li>
+              {solutionsLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link prefetch={false} href={link.href} className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Resources</h4>
             <ul className="flex flex-col gap-3">
-              <li><Link prefetch={false} href="/docs" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Documentation</Link></li>
-              <li><Link prefetch={false} href="/help" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Help Center</Link></li>
-              <li><Link prefetch={false} href="/blog" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Blog</Link></li>
-              <li><Link prefetch={false} href="/guides" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Guides</Link></li>
-              <li><Link prefetch={false} href="/templates" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Templates</Link></li>
+              {resourcesLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link prefetch={false} href={link.href} className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold text-[14px] mb-6">Company</h4>
             <ul className="flex flex-col gap-4 mb-8">
-              <li><Link prefetch={false} href="/about" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">About Us</Link></li>
-              <li><Link prefetch={false} href="/careers" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Careers</Link></li>
-              <li><Link prefetch={false} href="/contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Contact Us</Link></li>
-              <li><Link prefetch={false} href="/partners" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">Partners</Link></li>
+              {companyLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link prefetch={false} href={link.href} className="text-gray-400 hover:text-white hover:translate-x-1 inline-block text-[14px] transition-all focus:outline-none focus-visible:text-white focus-visible:underline">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
             <h4 className="text-white font-bold text-[14px] mb-4">Legal</h4>
             <ul className="flex flex-col gap-3">
